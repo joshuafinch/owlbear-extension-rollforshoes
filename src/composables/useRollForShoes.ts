@@ -149,7 +149,7 @@ export function useRollForShoes() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `roll-for-shoes-backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `roll-for-shoes-backup-${new Date().toISOString().replace(/:/g, '-').split('.')[0]}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

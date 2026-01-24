@@ -3,7 +3,6 @@ import CharacterManager from './components/CharacterManager.vue';
 import InstallGuide from './components/InstallGuide.vue';
 import { ref, onMounted } from 'vue';
 import OBR from "@owlbear-rodeo/sdk";
-import { setupContextMenu } from './utils/contextMenu';
 import { useTheme } from './composables/useTheme';
 
 const isReady = ref(false);
@@ -13,11 +12,6 @@ useTheme();
 onMounted(() => {
   if (OBR.isAvailable) {
     isReady.value = true;
-    OBR.onReady(() => {
-      // We might want to keep the context menu or remove it if it conflicts with the new system.
-      // For now, let's keep it as it doesn't hurt, but the main interaction is now the UI panel.
-      setupContextMenu(); 
-    });
   }
 });
 </script>
