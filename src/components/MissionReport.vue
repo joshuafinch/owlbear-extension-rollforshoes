@@ -78,14 +78,21 @@ const successCount = computed(() => props.result.dice.filter(d => d === 6).lengt
             <span>★</span> Evolve New Skill
           </button>
 
-          <!-- Failure Option -->
-          <button 
-             v-if="!isAllSixes"
-            @click="emit('takeXp')"
-            class="w-full bg-[var(--obr-bg-default)] hover:bg-gray-100 text-[var(--obr-text-primary)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-2 text-xs flex items-center justify-center gap-2"
-          >
-            Mission Failed? (Take 1 XP)
-          </button>
+          <!-- Failure / Success Options -->
+          <div v-if="!isAllSixes" class="grid grid-cols-2 gap-2">
+             <button 
+              @click="emit('takeXp')"
+              class="w-full bg-[var(--obr-bg-default)] hover:bg-gray-100 text-[var(--obr-text-primary)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-2 text-xs flex items-center justify-center gap-1 group"
+            >
+              <span class="text-red-500 group-hover:text-red-600">⚠</span> FAILED (+1 XP)
+            </button>
+             <button 
+              @click="emit('close')"
+              class="w-full bg-[var(--obr-primary-main)] hover:opacity-90 text-[var(--obr-primary-contrast)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-2 text-xs flex items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
+            >
+              <span>✓</span> SUCCEEDED
+            </button>
+          </div>
           
           <button 
             @click="emit('close')"
