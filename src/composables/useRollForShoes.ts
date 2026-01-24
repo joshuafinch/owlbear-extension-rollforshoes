@@ -74,18 +74,23 @@ export function useRollForShoes() {
     }
   };
 
-  const deleteCharacter = async (id: string) => {
-    // Optimistic
+    const deleteCharacter = async (id: string) => {
+    // Optimistic update
     delete characters.value[id];
 
     try {
-        await OBR.room.setMetadata({
-            [ROOM_DATA_KEY]: {
-                [id]: undefined // OBR way to delete a key from metadata object
-            }
-        });
+      const roomMetadata = await OBR.room.getMetadata();
+      const currentData = (roomMetadata[ROOM_DATA_KEY] as CharacterData) || {};
+      
+      // Create a copy and remove the character
+      const newData = { ...currentData };
+      delete newData[id];
+
+      await OBR.room.setMetadata({
+        [ROOM_DATA_KEY]: newData
+      });
     } catch (e) {
-        console.error("Failed to delete character", e);
+      console.error("Failed to delete character", e);
     }
   };
 
