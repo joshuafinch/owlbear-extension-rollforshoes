@@ -2,6 +2,10 @@
 import { ref } from 'vue';
 import { useRollForShoes } from '../composables/useRollForShoes';
 import CharacterCard from './CharacterCard.vue';
+import SystemTerminal from './SystemTerminal.vue';
+import MissionReport, { type RollResult } from './MissionReport.vue';
+import type { Skill } from '../types';
+import OBR from '@owlbear-rodeo/sdk';
 
 const { 
   characterList, 
@@ -15,11 +19,18 @@ const {
   linkSelectionToCharacter, 
   deleteCharacter,
   exportData,
-  importData
+  importData,
+  rollDice
 } = useRollForShoes();
 
 const newCharName = ref('');
 const isCreating = ref(false);
+
+// Tabs: 'DISPATCH' (list) | 'SYSTEMS' (admin)
+const activeTab = ref<'DISPATCH' | 'SYSTEMS'>('DISPATCH');
+
+// Rolling State
+const currentRoll = ref<RollResult | null>(null);
 
 const handleCreate = async () => {
   if (!newCharName.value.trim()) return;
@@ -46,27 +57,97 @@ const handleImport = (event: Event) => {
   reader.readAsText(file);
   input.value = '';
 };
+
+const handleRoll = (characterId: string, skill: Skill) => {
+    const character = characterList.value.find(c => c.id === characterId);
+    if (!character) return;
+
+    const dice = rollDice(skill.rank);
+    currentRoll.value = {
+        characterId,
+        characterName: character.name,
+        skillName: skill.name,
+        rank: skill.rank,
+        dice
+    };
+    
+    // Broadcast roll to room (if desired, currently local only for prototype)
+    // OBR.notification.show(`${character.name} rolled ${dice.join(', ')} for ${skill.name}`);
+};
+
+const handleRollTakeXp = () => {
+    if (currentRoll.value) {
+        addXp(currentRoll.value.characterId, 1);
+        OBR.notification.show(`${currentRoll.value.characterName} gains 1 XP from failure.`);
+        currentRoll.value = null;
+    }
+};
+
+const handleRollEvolve = () => {
+    // RfS Rules: All 6s allows you to gain a new skill at Rank + 1 based on the one you used.
+    // For now, we'll just close the modal and maybe prompt the user to add the skill manually
+    // or we could automate it partially.
+    // Let's just notify them to add it manually for flexibility.
+    if (currentRoll.value) {
+         OBR.notification.show(`CRITICAL SUCCESS! Add a new skill at Rank ${currentRoll.value.rank + 1}.`, "SUCCESS");
+         currentRoll.value = null;
+    }
+};
 </script>
 
 <template>
   <div class="h-screen flex flex-col overflow-hidden bg-[var(--obr-bg-default)]">
+    
+    <!-- Mission Report Overlay -->
+    <MissionReport 
+        v-if="currentRoll" 
+        :result="currentRoll"
+        @close="currentRoll = null"
+        @takeXp="handleRollTakeXp"
+        @evolve="handleRollEvolve"
+    />
+
     <!-- Fixed Header -->
-    <div class="flex-none p-4 pb-2 bg-[var(--obr-bg-default)] z-10">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-black text-[var(--obr-text-primary)] uppercase tracking-tighter italic border-b-4 border-[var(--obr-text-primary)] leading-none pb-1">
-           Personnel
-        </h2>
-        <button 
-          v-if="!isCreating"
-          @click="isCreating = true"
-          class="bg-[var(--obr-primary-main)] hover:bg-[var(--obr-primary-dark)] text-[var(--obr-primary-contrast)] text-xs font-black uppercase tracking-widest py-2 px-4 rounded shadow-[3px_3px_0px_0px_rgba(0,0,0,0.5)] active:translate-y-1 active:shadow-none transition-all border-2 border-[var(--obr-text-primary)]"
-        >
-          + New Recruit
-        </button>
+    <div class="flex-none bg-[var(--obr-bg-default)] z-10 pt-2 px-2 pb-0">
+      
+      <!-- Top Tabs -->
+      <div class="flex items-end gap-1 mb-0 border-b-4 border-[var(--obr-text-primary)] pl-2">
+         <button 
+           @click="activeTab = 'DISPATCH'"
+           class="px-4 py-2 font-black uppercase tracking-wider text-xs rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-text-primary)] transition-all relative top-[2px]"
+           :class="activeTab === 'DISPATCH' 
+             ? 'bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-bg-default)] z-10 -mb-[4px] pt-3 pb-3' 
+             : 'bg-[var(--obr-bg-paper)] text-[var(--obr-text-disabled)] hover:bg-gray-200 hover:text-[var(--obr-text-secondary)]'"
+         >
+           Dispatch
+         </button>
+         <button 
+           @click="activeTab = 'SYSTEMS'"
+           class="px-4 py-2 font-black uppercase tracking-wider text-xs rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-text-primary)] transition-all relative top-[2px]"
+           :class="activeTab === 'SYSTEMS' 
+             ? 'bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-bg-default)] z-10 -mb-[4px] pt-3 pb-3' 
+             : 'bg-[var(--obr-bg-paper)] text-[var(--obr-text-disabled)] hover:bg-gray-200 hover:text-[var(--obr-text-secondary)]'"
+         >
+           Systems
+         </button>
       </div>
 
-      <!-- Create Form -->
-      <div v-if="isCreating" class="mb-4 bg-[var(--obr-bg-paper)] p-3 rounded-lg border-2 border-[var(--obr-text-primary)] shadow-lg animate-fade-in-down">
+      <!-- Action Bar (Dispatch Tab Only) -->
+      <div v-if="activeTab === 'DISPATCH'" class="flex justify-between items-center py-3 px-2">
+         <h2 class="text-xl font-black text-[var(--obr-text-primary)] uppercase tracking-tighter italic leading-none">
+            Personnel
+         </h2>
+         <button 
+           v-if="!isCreating"
+           @click="isCreating = true"
+           class="bg-[var(--obr-primary-main)] hover:bg-[var(--obr-primary-dark)] text-[var(--obr-primary-contrast)] text-[10px] font-black uppercase tracking-widest py-2 px-3 rounded shadow-[3px_3px_0px_0px_rgba(0,0,0,0.5)] active:translate-y-1 active:shadow-none transition-all border-2 border-[var(--obr-text-primary)]"
+         >
+           + New Recruit
+         </button>
+      </div>
+      
+      <!-- Create Form (Dispatch Tab Only) -->
+      <div v-if="activeTab === 'DISPATCH' && isCreating" class="mx-2 mb-2 bg-[var(--obr-bg-paper)] p-3 rounded-lg border-2 border-[var(--obr-text-primary)] shadow-lg animate-fade-in-down">
         <label class="block text-[10px] font-black text-[var(--obr-text-secondary)] uppercase mb-1 tracking-widest">Recruit Name</label>
         <div class="flex gap-2">
           <input 
@@ -90,49 +171,43 @@ const handleImport = (event: Event) => {
     </div>
 
     <!-- Scrollable Content -->
-    <div class="flex-1 overflow-y-auto px-4 pb-4 space-y-4 custom-scrollbar">
+    <div class="flex-1 overflow-y-auto px-4 pb-4 space-y-4 custom-scrollbar pt-2">
       
-      <!-- Empty State -->
-      <div v-if="characterList.length === 0 && !isCreating" class="h-full flex flex-col items-center justify-center text-[var(--obr-text-disabled)] opacity-50">
-        <div class="text-6xl mb-4 grayscale">📂</div>
-        <p class="font-black uppercase text-xl">No Records Found</p>
-        <p class="text-sm font-bold mt-2">Create a recruit to begin.</p>
+      <!-- DISPATCH TAB CONTENT -->
+      <div v-if="activeTab === 'DISPATCH'">
+          <!-- Empty State -->
+          <div v-if="characterList.length === 0 && !isCreating" class="h-64 flex flex-col items-center justify-center text-[var(--obr-text-disabled)] opacity-50">
+            <div class="text-6xl mb-4 grayscale">📂</div>
+            <p class="font-black uppercase text-xl">No Records Found</p>
+            <p class="text-sm font-bold mt-2">Create a recruit to begin.</p>
+          </div>
+
+          <!-- Character List -->
+          <CharacterCard
+            v-for="char in characterList"
+            :key="char.id"
+            :character="char"
+            :selectedTokenIds="selectedItems"
+            :role="role"
+            @addXp="addXp"
+            @addSkill="addSkill"
+            @updateSkill="updateSkill"
+            @removeSkill="removeSkill"
+            @link="linkSelectionToCharacter"
+            @delete="deleteCharacter"
+            @roll="handleRoll"
+          />
+           <div class="h-10"></div>
       </div>
 
-      <!-- Character List -->
-      <CharacterCard
-        v-for="char in characterList"
-        :key="char.id"
-        :character="char"
-        :selectedTokenIds="selectedItems"
-        :role="role"
-        @addXp="addXp"
-        @addSkill="addSkill"
-        @updateSkill="updateSkill"
-        @removeSkill="removeSkill"
-        @link="linkSelectionToCharacter"
-        @delete="deleteCharacter"
-      />
-
-       <!-- Spacer for bottom actions -->
-       <div class="h-20"></div>
-    </div>
-
-    <!-- Fixed Footer (GM Only) -->
-    <div v-if="role === 'GM'" class="flex-none border-t-2 border-[var(--obr-text-disabled)] bg-[var(--obr-bg-paper)] p-3 shadow-[0px_-4px_10px_rgba(0,0,0,0.1)] z-20">
-        <h3 class="text-[10px] font-black text-[var(--obr-text-secondary)] uppercase tracking-widest mb-2 text-center">Data Management</h3>
-        <div class="flex gap-3">
-            <button 
-                @click="exportData"
-                class="flex-1 bg-[var(--obr-bg-default)] border-2 border-[var(--obr-text-primary)] hover:bg-[var(--obr-primary-main)] hover:text-white text-[var(--obr-text-primary)] text-xs font-black uppercase py-2 px-2 rounded shadow-sm transition-all active:scale-95"
-            >
-                Export
-            </button>
-            <label class="flex-1 cursor-pointer bg-[var(--obr-bg-default)] border-2 border-[var(--obr-text-primary)] hover:bg-[var(--obr-primary-main)] hover:text-white text-[var(--obr-text-primary)] text-xs font-black uppercase py-2 px-2 rounded shadow-sm transition-all active:scale-95 text-center flex items-center justify-center">
-                Import
-                <input type="file" class="hidden" accept=".json" @change="handleImport" />
-            </label>
-        </div>
+      <!-- SYSTEMS TAB CONTENT -->
+      <div v-if="activeTab === 'SYSTEMS'" class="h-full pb-4">
+          <SystemTerminal 
+            :role="role"
+            @export="exportData"
+            @import="handleImport"
+          />
+      </div>
     </div>
   </div>
 </template>

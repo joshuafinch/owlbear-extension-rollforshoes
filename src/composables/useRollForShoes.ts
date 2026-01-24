@@ -271,6 +271,11 @@ export function useRollForShoes() {
     removeSkill,
     linkSelectionToCharacter,
     exportData,
-    importData
+    importData,
+    rollDice
   };
+}
+
+function rollDice(count: number): number[] {
+    return Array.from({ length: count }, () => Math.floor(Math.random() * 6) + 1);
 }

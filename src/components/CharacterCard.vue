@@ -15,6 +15,7 @@ const emit = defineEmits<{
   (e: 'removeSkill', id: string, index: number): void;
   (e: 'link', id: string): void;
   (e: 'delete', id: string): void;
+  (e: 'roll', id: string, skill: Skill): void;
 }>();
 
 const isExpanded = ref(false);
@@ -79,9 +80,18 @@ const cancelSkillEdit = () => {
            </div>
            <div class="flex flex-col">
               <h3 class="font-black text-lg text-[var(--obr-text-primary)] uppercase tracking-tight leading-none group-hover:text-[var(--obr-primary-main)] transition-colors">{{ character.name }}</h3>
-              <span class="text-[10px] font-bold text-[var(--obr-text-disabled)] uppercase tracking-wider flex items-center gap-1">
-                 <span class="transform transition-transform duration-300 inline-block" :class="{ 'rotate-90': isExpanded }">▶</span> 
-                 {{ isExpanded ? 'Collapse' : 'Expand' }} details
+              <span class="text-[10px] font-bold text-[var(--obr-text-disabled)] uppercase tracking-wider flex items-center gap-1 group-hover:text-[var(--obr-text-secondary)] transition-colors">
+                 <svg 
+                   class="w-4 h-4 transform transition-transform duration-300"
+                   :class="{ 'rotate-180': isExpanded }"
+                   fill="none" 
+                   stroke="currentColor" 
+                   viewBox="0 0 24 24" 
+                   xmlns="http://www.w3.org/2000/svg"
+                 >
+                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M19 9l-7 7-7-7"></path>
+                 </svg>
+                 <span class="sr-only">{{ isExpanded ? 'Collapse' : 'Expand' }} details</span>
               </span>
            </div>
         </div>
@@ -144,6 +154,15 @@ const cancelSkillEdit = () => {
 
             <!-- View Mode -->
             <template v-if="editingSkillIndex !== index">
+                <!-- Roll Button -->
+                <button 
+                   @click.stop="emit('roll', character.id, skill)"
+                   class="mr-3 w-8 h-8 flex items-center justify-center bg-[var(--obr-text-primary)] hover:bg-[var(--obr-primary-main)] text-white font-black text-xs rounded shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] active:translate-y-0.5 active:shadow-none transition-all z-20 border border-transparent hover:border-white"
+                   title="Roll Dice"
+                >
+                   🎲
+                </button>
+
                 <div class="flex-1 z-10 cursor-pointer" @click="startEditingSkill(index, skill)" title="Click to edit">
                      <span class="font-bold text-[var(--obr-text-primary)] block leading-tight">{{ skill.name }}</span>
                 </div>
