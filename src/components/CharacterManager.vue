@@ -95,13 +95,14 @@ const handleRollTakeXp = () => {
     }
 };
 
-const handleRollEvolve = () => {
-    // RfS Rules: All 6s allows you to gain a new skill at Rank + 1 based on the one you used.
-    // For now, we'll just close the modal and maybe prompt the user to add the skill manually
-    // or we could automate it partially.
-    // Let's just notify them to add it manually for flexibility.
-    if (currentRoll.value) {
-         OBR.notification.show(`CRITICAL SUCCESS! Add a new skill at Rank ${currentRoll.value.rank + 1}.`, "SUCCESS");
+const handleRollEvolve = (newSkillName: string) => {
+    if (currentRoll.value && newSkillName) {
+         addSkill(currentRoll.value.characterId, {
+            name: newSkillName,
+            rank: currentRoll.value.rank + 1
+         });
+         
+         OBR.notification.show(`${currentRoll.value.characterName} acquired new skill: ${newSkillName} (Rank ${currentRoll.value.rank + 1})`, "SUCCESS");
          currentRoll.value = null;
     }
 };
@@ -116,7 +117,7 @@ const handleRollEvolve = () => {
         :result="currentRoll"
         @close="currentRoll = null"
         @takeXp="handleRollTakeXp"
-        @evolve="handleRollEvolve"
+        @confirmEvolve="handleRollEvolve"
     />
 
     <!-- Fixed Header -->

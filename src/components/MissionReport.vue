@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, nextTick } from 'vue';
 
 export interface RollResult {
   characterId: string;
@@ -16,11 +16,28 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'takeXp'): void;
-  (e: 'evolve'): void;
+  (e: 'confirmEvolve', skillName: string): void;
 }>();
+
+const isEvolving = ref(false);
+const newSkillName = ref('');
+const skillInput = ref<HTMLInputElement | null>(null);
 
 const isAllSixes = computed(() => props.result.dice.length > 0 && props.result.dice.every(d => d === 6));
 const successCount = computed(() => props.result.dice.filter(d => d === 6).length);
+
+const startEvolution = () => {
+  isEvolving.value = true;
+  nextTick(() => {
+    skillInput.value?.focus();
+  });
+};
+
+const confirmEvolution = () => {
+  if (newSkillName.value.trim()) {
+    emit('confirmEvolve', newSkillName.value.trim());
+  }
+};
 </script>
 
 <template>
@@ -39,8 +56,8 @@ const successCount = computed(() => props.result.dice.filter(d => d === 6).lengt
            {{ result.characterName }} // {{ result.skillName }} {{ result.rank }}
         </div>
 
-        <!-- Dice Container -->
-        <div class="flex flex-wrap justify-center gap-3 mb-8">
+        <!-- Dice Container (Hidden during evolution to save space/focus) -->
+        <div v-if="!isEvolving" class="flex flex-wrap justify-center gap-3 mb-8">
           <div 
             v-for="(die, index) in result.dice" 
             :key="index"
@@ -56,7 +73,13 @@ const successCount = computed(() => props.result.dice.filter(d => d === 6).lengt
 
         <!-- Status Messages -->
         <div class="mb-6 min-h-[3rem] flex items-center justify-center">
-          <div v-if="isAllSixes" class="text-[#ff0055] font-black text-3xl uppercase tracking-tighter italic animate-pulse drop-shadow-md transform -rotate-2">
+          <div v-if="isEvolving" class="w-full">
+             <div class="text-[#ff0055] font-black text-lg uppercase tracking-tighter italic mb-2 animate-pulse">
+                Evolution Protocol Initiated
+             </div>
+             <p class="text-xs font-bold uppercase text-[var(--obr-text-secondary)]">Enter name for Rank {{ result.rank + 1 }} Skill</p>
+          </div>
+          <div v-else-if="isAllSixes" class="text-[#ff0055] font-black text-3xl uppercase tracking-tighter italic animate-pulse drop-shadow-md transform -rotate-2">
             CRITICAL SUCCESS!
           </div>
           <div v-else-if="successCount > 0" class="text-[var(--obr-primary-main)] font-black text-xl uppercase tracking-widest">
@@ -69,37 +92,67 @@ const successCount = computed(() => props.result.dice.filter(d => d === 6).lengt
 
         <!-- Actions -->
         <div class="space-y-2">
-          <!-- Advancement Option -->
-          <button 
-            v-if="isAllSixes"
-            @click="emit('evolve')"
-            class="w-full bg-[#ff0055] hover:bg-[#d40045] text-white border-2 border-black font-black uppercase py-3 text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 mb-4"
-          >
-            <span>★</span> Evolve New Skill
-          </button>
+          
+          <!-- Evolution Form -->
+          <div v-if="isEvolving" class="animate-fade-in">
+             <input 
+                ref="skillInput"
+                v-model="newSkillName"
+                type="text"
+                class="w-full bg-black text-white border-2 border-[#ff0055] p-3 font-bold uppercase text-center mb-2 focus:outline-none focus:shadow-[0_0_10px_#ff0055]"
+                placeholder="NEW SKILL NAME..."
+                @keyup.enter="confirmEvolution"
+             />
+             <div class="grid grid-cols-2 gap-2">
+                <button 
+                  @click="isEvolving = false"
+                  class="w-full bg-[var(--obr-bg-paper)] hover:bg-gray-200 text-[var(--obr-text-primary)] border-2 border-black font-bold uppercase py-2 text-xs"
+                >
+                  Cancel
+                </button>
+                <button 
+                  @click="confirmEvolution"
+                  class="w-full bg-[#ff0055] hover:bg-[#d40045] text-white border-2 border-black font-black uppercase py-2 text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none"
+                >
+                  Confirm
+                </button>
+             </div>
+          </div>
 
-          <!-- Failure / Success Options -->
-          <div v-if="!isAllSixes" class="grid grid-cols-2 gap-2">
-             <button 
-              @click="emit('takeXp')"
-              class="w-full bg-[var(--obr-bg-default)] hover:bg-gray-100 text-[var(--obr-text-primary)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-2 text-xs flex items-center justify-center gap-1 group"
+          <!-- Normal Actions -->
+          <div v-else>
+            <!-- Advancement Option -->
+            <button 
+              v-if="isAllSixes"
+              @click="startEvolution"
+              class="w-full bg-[#ff0055] hover:bg-[#d40045] text-white border-2 border-black font-black uppercase py-3 text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 mb-4"
             >
-              <span class="text-red-500 group-hover:text-red-600">⚠</span> FAILED (+1 XP)
+              <span>★</span> Evolve New Skill
             </button>
-             <button 
+
+            <!-- Failure / Success Options -->
+            <div v-if="!isAllSixes" class="grid grid-cols-2 gap-2">
+              <button 
+                @click="emit('takeXp')"
+                class="w-full bg-[var(--obr-bg-default)] hover:bg-gray-100 text-[var(--obr-text-primary)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-2 text-xs flex items-center justify-center gap-1 group"
+              >
+                <span class="text-red-500 group-hover:text-red-600">⚠</span> FAILED (+1 XP)
+              </button>
+              <button 
+                @click="emit('close')"
+                class="w-full bg-[var(--obr-primary-main)] hover:opacity-90 text-[var(--obr-primary-contrast)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-2 text-xs flex items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
+              >
+                <span>✓</span> SUCCEEDED
+              </button>
+            </div>
+            
+            <button 
               @click="emit('close')"
-              class="w-full bg-[var(--obr-primary-main)] hover:opacity-90 text-[var(--obr-primary-contrast)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-2 text-xs flex items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
+              class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] font-bold uppercase text-[10px] tracking-widest py-2"
             >
-              <span>✓</span> SUCCEEDED
+              Dismiss Report
             </button>
           </div>
-          
-          <button 
-            @click="emit('close')"
-            class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] font-bold uppercase text-[10px] tracking-widest py-2"
-          >
-            Dismiss Report
-          </button>
         </div>
       </div>
       
