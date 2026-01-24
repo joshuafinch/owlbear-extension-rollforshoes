@@ -16,3 +16,12 @@ export interface CharacterLink {
 }
 
 export type CharacterData = Record<string, Character>;
+
+export interface RollEntry {
+  id: string;
+  characterName: string;
+  skillName: string;
+  rank: number;
+  dice: number[];
+  timestamp: number;
+}

@@ -4,11 +4,13 @@ import { useRollForShoes } from '../composables/useRollForShoes';
 import CharacterCard from './CharacterCard.vue';
 import SystemTerminal from './SystemTerminal.vue';
 import MissionReport, { type RollResult } from './MissionReport.vue';
+import MissionLog from './MissionLog.vue';
 import type { Skill } from '../types';
 import OBR from '@owlbear-rodeo/sdk';
 
 const { 
   characterList, 
+  rollHistory,
   selectedItems, 
   role,
   createCharacter, 
@@ -20,14 +22,15 @@ const {
   deleteCharacter,
   exportData,
   importData,
-  rollDice
+  rollDice,
+  addLogEntry
 } = useRollForShoes();
 
 const newCharName = ref('');
 const isCreating = ref(false);
 
-// Tabs: 'DISPATCH' (list) | 'SYSTEMS' (admin)
-const activeTab = ref<'DISPATCH' | 'SYSTEMS'>('DISPATCH');
+// Tabs: 'DISPATCH' (list) | 'LOGS' (history) | 'SYSTEMS' (admin)
+const activeTab = ref<'DISPATCH' | 'LOGS' | 'SYSTEMS'>('DISPATCH');
 
 // Rolling State
 const currentRoll = ref<RollResult | null>(null);
@@ -63,6 +66,8 @@ const handleRoll = (characterId: string, skill: Skill) => {
     if (!character) return;
 
     const dice = rollDice(skill.rank);
+    
+    // Create local roll result for modal
     currentRoll.value = {
         characterId,
         characterName: character.name,
@@ -70,9 +75,16 @@ const handleRoll = (characterId: string, skill: Skill) => {
         rank: skill.rank,
         dice
     };
-    
-    // Broadcast roll to room (if desired, currently local only for prototype)
-    // OBR.notification.show(`${character.name} rolled ${dice.join(', ')} for ${skill.name}`);
+
+    // Add to shared log
+    addLogEntry({
+        id: crypto.randomUUID(),
+        characterName: character.name,
+        skillName: skill.name,
+        rank: skill.rank,
+        dice,
+        timestamp: Date.now()
+    });
 };
 
 const handleRollTakeXp = () => {
@@ -110,27 +122,36 @@ const handleRollEvolve = () => {
     <!-- Fixed Header -->
     <div class="flex-none bg-[var(--obr-bg-default)] z-10 pt-2 px-2 pb-0">
       
-      <!-- Top Tabs -->
-      <div class="flex items-end gap-1 mb-0 border-b-4 border-[var(--obr-text-primary)] pl-2">
-         <button 
-           @click="activeTab = 'DISPATCH'"
-           class="px-4 py-2 font-black uppercase tracking-wider text-xs rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-text-primary)] transition-all relative top-[2px]"
-           :class="activeTab === 'DISPATCH' 
-             ? 'bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-bg-default)] z-10 -mb-[4px] pt-3 pb-3' 
-             : 'bg-[var(--obr-bg-paper)] text-[var(--obr-text-disabled)] hover:bg-gray-200 hover:text-[var(--obr-text-secondary)]'"
-         >
-           Dispatch
-         </button>
-         <button 
-           @click="activeTab = 'SYSTEMS'"
-           class="px-4 py-2 font-black uppercase tracking-wider text-xs rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-text-primary)] transition-all relative top-[2px]"
-           :class="activeTab === 'SYSTEMS' 
-             ? 'bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-bg-default)] z-10 -mb-[4px] pt-3 pb-3' 
-             : 'bg-[var(--obr-bg-paper)] text-[var(--obr-text-disabled)] hover:bg-gray-200 hover:text-[var(--obr-text-secondary)]'"
-         >
-           Systems
-         </button>
-      </div>
+       <!-- Top Tabs -->
+       <div class="flex items-end gap-1 mb-0 border-b-4 border-[var(--obr-text-primary)] pl-2">
+          <button 
+            @click="activeTab = 'DISPATCH'"
+            class="px-4 py-2 font-black uppercase tracking-wider text-xs rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-text-primary)] transition-all relative top-[2px]"
+            :class="activeTab === 'DISPATCH' 
+              ? 'bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-bg-default)] z-10 -mb-[4px] pt-3 pb-3' 
+              : 'bg-[var(--obr-bg-paper)] text-[var(--obr-text-disabled)] hover:bg-gray-200 hover:text-[var(--obr-text-secondary)]'"
+          >
+            Dispatch
+          </button>
+          <button 
+            @click="activeTab = 'LOGS'"
+            class="px-4 py-2 font-black uppercase tracking-wider text-xs rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-text-primary)] transition-all relative top-[2px]"
+            :class="activeTab === 'LOGS' 
+              ? 'bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-bg-default)] z-10 -mb-[4px] pt-3 pb-3' 
+              : 'bg-[var(--obr-bg-paper)] text-[var(--obr-text-disabled)] hover:bg-gray-200 hover:text-[var(--obr-text-secondary)]'"
+          >
+            Logs
+          </button>
+          <button 
+            @click="activeTab = 'SYSTEMS'"
+            class="px-4 py-2 font-black uppercase tracking-wider text-xs rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-text-primary)] transition-all relative top-[2px]"
+            :class="activeTab === 'SYSTEMS' 
+              ? 'bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-bg-default)] z-10 -mb-[4px] pt-3 pb-3' 
+              : 'bg-[var(--obr-bg-paper)] text-[var(--obr-text-disabled)] hover:bg-gray-200 hover:text-[var(--obr-text-secondary)]'"
+          >
+            Systems
+          </button>
+       </div>
 
       <!-- Action Bar (Dispatch Tab Only) -->
       <div v-if="activeTab === 'DISPATCH'" class="flex justify-between items-center py-3 px-2">
@@ -198,6 +219,11 @@ const handleRollEvolve = () => {
             @roll="handleRoll"
           />
            <div class="h-10"></div>
+      </div>
+
+      <!-- LOGS TAB CONTENT -->
+      <div v-if="activeTab === 'LOGS'" class="h-full pb-4">
+          <MissionLog :history="rollHistory" />
       </div>
 
       <!-- SYSTEMS TAB CONTENT -->

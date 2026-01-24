@@ -1,10 +1,11 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import OBR from '@owlbear-rodeo/sdk';
 import getPluginId from '../utils/getPluginId';
-import type { Character, CharacterData, Skill, CharacterLink } from '../types';
+import type { Character, CharacterData, Skill, CharacterLink, RollEntry } from '../types';
 
 export function useRollForShoes() {
   const characters = ref<CharacterData>({});
+  const rollHistory = ref<RollEntry[]>([]);
   const selectedItems = ref<string[]>([]);
   const role = ref<string>('PLAYER');
   
@@ -12,6 +13,8 @@ export function useRollForShoes() {
   const ROOM_DATA_KEY = getPluginId('characters');
   // Item metadata key for linking a token to a character
   const LINK_KEY = getPluginId('link');
+  // Room metadata key for storing roll logs
+  const LOGS_DATA_KEY = getPluginId('logs');
 
   // Computed helper to get list as array
   const characterList = computed(() => {
@@ -142,6 +145,20 @@ export function useRollForShoes() {
     }
   };
 
+  const addLogEntry = async (entry: RollEntry) => {
+    // Optimistic
+    const newHistory = [entry, ...rollHistory.value].slice(0, 50); // Keep last 50
+    rollHistory.value = newHistory;
+
+    try {
+       await OBR.room.setMetadata({
+        [LOGS_DATA_KEY]: newHistory
+      });
+    } catch (e) {
+        console.error('Failed to add log entry', e);
+    }
+  };
+
   const exportData = () => {
     try {
       const dataStr = JSON.stringify(characters.value, null, 2);
@@ -223,6 +240,7 @@ export function useRollForShoes() {
       // Load initial data
       const metadata = await OBR.room.getMetadata();
       characters.value = (metadata[ROOM_DATA_KEY] as CharacterData) || {};
+      rollHistory.value = (metadata[LOGS_DATA_KEY] as RollEntry[]) || [];
 
       // Load initial role
       role.value = await OBR.player.getRole();
@@ -230,6 +248,7 @@ export function useRollForShoes() {
       // Listen for room data changes
       unsubscribeRoom.value = OBR.room.onMetadataChange((newMetadata) => {
         const newData = newMetadata[ROOM_DATA_KEY] as CharacterData;
+        const newLogs = newMetadata[LOGS_DATA_KEY] as RollEntry[];
         
         // IMPORTANT: When a character is deleted, newData might be undefined or missing the key
         // We must handle the case where newData is undefined (if the entire key was removed)
@@ -242,6 +261,10 @@ export function useRollForShoes() {
             // so newData should still exist but contain fewer keys.
             // If the entire ROOM_DATA_KEY is somehow wiped, we should clear our list.
              characters.value = {};
+        }
+
+        if (newLogs) {
+            rollHistory.value = newLogs;
         }
       });
 
@@ -272,7 +295,9 @@ export function useRollForShoes() {
     linkSelectionToCharacter,
     exportData,
     importData,
-    rollDice
+    rollDice,
+    rollHistory,
+    addLogEntry
   };
 }
 
