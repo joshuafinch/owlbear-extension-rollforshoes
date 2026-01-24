@@ -1,6 +1,12 @@
 @import "tailwindcss";
 
 :root {
+  --obr-bg-default: #ffffff;
+  --obr-bg-paper: #f3f4f6;
+  --obr-text-primary: #111827;
+  --obr-text-secondary: #6b7280;
+  --obr-primary-main: #6366f1;
+
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;

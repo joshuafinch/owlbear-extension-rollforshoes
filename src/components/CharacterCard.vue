@@ -66,26 +66,26 @@ const cancelSkillEdit = () => {
 </script>
 
 <template>
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-3 border border-gray-200 dark:border-gray-700">
+  <div class="bg-[var(--obr-bg-paper)] backdrop-blur-xl rounded-2xl shadow-lg p-4 mb-3 border border-[var(--obr-text-disabled)] border-opacity-20 transition-all duration-300 hover:shadow-xl">
     <!-- Header -->
     <div class="flex items-center justify-between mb-2">
       <div class="flex items-center gap-2 cursor-pointer select-none" @click="isExpanded = !isExpanded">
-        <span class="text-gray-400 text-sm transform transition-transform" :class="{ 'rotate-90': isExpanded }">▶</span>
-        <h3 class="font-bold text-lg text-gray-900 dark:text-white">{{ character.name }}</h3>
+        <span class="text-[var(--obr-text-disabled)] text-sm transform transition-transform" :class="{ 'rotate-90': isExpanded }">▶</span>
+        <h3 class="font-bold text-lg text-[var(--obr-text-primary)]">{{ character.name }}</h3>
       </div>
       
       <div class="flex items-center gap-2">
-        <div class="flex items-center bg-gray-100 dark:bg-gray-900 rounded px-2 py-1">
-          <span class="text-xs font-bold text-gray-500 mr-2">XP</span>
+        <div class="flex items-center bg-[var(--obr-bg-default)] rounded px-2 py-1 shadow-sm">
+          <span class="text-xs font-bold text-[var(--obr-text-secondary)] mr-2">XP</span>
           <button 
             @click="emit('addXp', character.id, -1)"
             :disabled="character.xp <= 0"
-            class="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-[var(--obr-text-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
           >-</button>
-          <span class="mx-2 font-mono font-bold w-6 text-center">{{ character.xp }}</span>
+          <span class="mx-2 font-mono font-bold w-6 text-center text-[var(--obr-text-primary)]">{{ character.xp }}</span>
           <button 
             @click="emit('addXp', character.id, 1)"
-            class="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+            class="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-[var(--obr-text-primary)]"
           >+</button>
         </div>
       </div>
@@ -95,7 +95,7 @@ const cancelSkillEdit = () => {
     <div v-if="canLink" class="flex justify-end mb-2">
         <button 
             @click="emit('link', character.id)"
-            class="text-xs bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-2 py-1 rounded"
+            class="text-xs bg-[var(--obr-primary-main)] bg-opacity-10 text-[var(--obr-primary-main)] hover:bg-opacity-20 px-2 py-1 rounded"
             title="Link currently selected tokens to this character"
         >
             Link Selected Token
@@ -103,21 +103,21 @@ const cancelSkillEdit = () => {
     </div>
 
     <!-- Details -->
-    <div v-if="isExpanded" class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-      <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Skills</h4>
+    <div v-if="isExpanded" class="mt-4 pt-4 border-t border-[var(--obr-text-disabled)] border-opacity-20">
+      <h4 class="text-xs font-bold text-[var(--obr-text-secondary)] uppercase tracking-wider mb-2">Skills</h4>
       
       <div class="space-y-2 mb-4">
         <div 
           v-for="(skill, index) in character.skills" 
           :key="index"
-          class="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 p-2 rounded group"
+          class="flex items-center justify-between bg-[var(--obr-bg-default)] p-2 rounded group shadow-sm"
         >
           <!-- View Mode -->
           <template v-if="editingSkillIndex !== index">
-              <span class="font-medium cursor-pointer hover:text-indigo-600 truncate flex-1" @click="startEditingSkill(index, skill)" title="Click to edit">{{ skill.name }}</span>
+              <span class="font-medium cursor-pointer hover:text-[var(--obr-primary-main)] truncate flex-1 text-[var(--obr-text-primary)]" @click="startEditingSkill(index, skill)" title="Click to edit">{{ skill.name }}</span>
               <div class="flex items-center gap-3 ml-2">
                  <span 
-                    class="font-bold font-mono bg-white dark:bg-gray-900 px-2 py-0.5 rounded border border-gray-200 dark:border-gray-600 text-sm cursor-pointer hover:border-indigo-400"
+                    class="font-bold font-mono bg-[var(--obr-bg-paper)] text-[var(--obr-text-primary)] px-2 py-0.5 rounded border border-[var(--obr-text-disabled)] border-opacity-30 text-sm cursor-pointer hover:border-[var(--obr-primary-main)]"
                     @click="startEditingSkill(index, skill)"
                     title="Click to edit"
                  >
@@ -125,7 +125,7 @@ const cancelSkillEdit = () => {
                  </span>
                  <button 
                     @click="emit('removeSkill', character.id, index)"
-                    class="text-gray-300 hover:text-red-500 px-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    class="text-[var(--obr-text-disabled)] hover:text-red-500 px-1 opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Remove Skill"
                  >×</button>
               </div>
@@ -137,7 +137,7 @@ const cancelSkillEdit = () => {
                   <input 
                     v-model="editSkillName"
                     type="text"
-                    class="flex-1 bg-white dark:bg-gray-900 border border-indigo-300 dark:border-indigo-700 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    class="flex-1 bg-[var(--obr-bg-paper)] text-[var(--obr-text-primary)] border border-[var(--obr-primary-main)] rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--obr-primary-main)]"
                     @keyup.enter="saveSkillEdit(index)"
                     @keyup.esc="cancelSkillEdit"
                     ref="editInput"
@@ -147,7 +147,7 @@ const cancelSkillEdit = () => {
                     type="number"
                     min="1"
                     max="10"
-                    class="w-12 bg-white dark:bg-gray-900 border border-indigo-300 dark:border-indigo-700 rounded px-1 py-1 text-center text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    class="w-12 bg-[var(--obr-bg-paper)] text-[var(--obr-text-primary)] border border-[var(--obr-primary-main)] rounded px-1 py-1 text-center text-sm focus:outline-none focus:ring-1 focus:ring-[var(--obr-primary-main)]"
                     @keyup.enter="saveSkillEdit(index)"
                   />
                   <button @click="saveSkillEdit(index)" class="text-green-600 hover:text-green-800 text-xs font-bold">✓</button>
@@ -163,7 +163,7 @@ const cancelSkillEdit = () => {
           v-model="newSkillName" 
           type="text" 
           placeholder="New Skill Name"
-          class="flex-1 bg-transparent border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 outline-none px-1 py-1 text-sm"
+          class="flex-1 bg-transparent border-b border-[var(--obr-text-disabled)] border-opacity-40 focus:border-[var(--obr-primary-main)] outline-none px-1 py-1 text-sm text-[var(--obr-text-primary)] placeholder-[var(--obr-text-disabled)]"
           @keyup.enter="handleAddSkill"
         />
         <input 
@@ -171,16 +171,16 @@ const cancelSkillEdit = () => {
           type="number" 
           min="1" 
           max="10"
-          class="w-12 bg-transparent border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 outline-none px-1 py-1 text-center text-sm"
+          class="w-12 bg-transparent border-b border-[var(--obr-text-disabled)] border-opacity-40 focus:border-[var(--obr-primary-main)] outline-none px-1 py-1 text-center text-sm text-[var(--obr-text-primary)]"
           @keyup.enter="handleAddSkill"
         />
         <button 
           @click="handleAddSkill"
-          class="text-indigo-600 hover:text-indigo-800 text-sm font-bold px-2"
+          class="text-[var(--obr-primary-main)] hover:text-[var(--obr-primary-main)] opacity-80 hover:opacity-100 text-sm font-bold px-2"
         >Add</button>
       </div>
 
-      <div class="mt-6 flex justify-between border-t border-gray-100 dark:border-gray-700 pt-2">
+      <div class="mt-6 flex justify-between border-t border-[var(--obr-text-disabled)] border-opacity-20 pt-2">
          <button 
             v-if="isGm"
             @click="handleDelete" 
