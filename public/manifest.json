@@ -1,5 +1,8 @@
 {
   "name": "Roll for Shoes",
+  "description": "Character Manager for the Roll for Shoes system",
+  "author": "Aurayu",
+  "homepage_url": "https://rollforshoes.aurayu.com",
   "version": "1.0.0",
   "manifest_version": 1,
   "action": {
