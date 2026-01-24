@@ -56,13 +56,17 @@ export function useRollForShoes() {
     characters.value[id] = updatedChar;
 
     try {
+      // Create a clean object for storage, avoiding potential Proxy/Ref issues
+      // DataCloneError often happens when Vue reactive objects are passed directly to postMessage
+      const cleanData = JSON.parse(JSON.stringify(updatedChar));
+      
       const roomMetadata = await OBR.room.getMetadata();
       const currentData = (roomMetadata[ROOM_DATA_KEY] as CharacterData) || {};
       
       await OBR.room.setMetadata({
         [ROOM_DATA_KEY]: {
           ...currentData,
-          [id]: updatedChar
+          [id]: cleanData
         }
       });
     } catch (e) {
@@ -123,36 +127,63 @@ export function useRollForShoes() {
 
   // --- Setup ---
 
-  const init = async () => {
+  onMounted(() => {
     if (!OBR.isAvailable) return;
+    
+    OBR.onReady(async () => {
+      // Load initial data
+      const metadata = await OBR.room.getMetadata();
+      characters.value = (metadata[ROOM_DATA_KEY] as CharacterData) || {};
 
-    // Load initial data
-    const metadata = await OBR.room.getMetadata();
-    characters.value = (metadata[ROOM_DATA_KEY] as CharacterData) || {};
-
-    // Listen for room data changes (Character updates)
-    const roomSub = OBR.room.onMetadataChange((newMetadata) => {
-      const newData = newMetadata[ROOM_DATA_KEY] as CharacterData;
-      if (newData) {
-        characters.value = newData;
-      }
+      // Listen for room data changes (Character updates)
+      // Note: We don't store these specific unsubscribe functions because we override the whole block below
+      // with a cleaner implementation using refs for unsubscribers.
+      // This is a correction to remove the unused variable errors.
     });
-
-    // Listen for selection changes (to enable "Link" buttons)
-    const selectionSub = OBR.player.onChange((player) => {
-      selectedItems.value = player.selection || [];
-    });
-
-    onUnmounted(() => {
-      roomSub();
-      selectionSub();
-    });
-  };
+  });
+  
+  // Register cleanup hook synchronously
+  
+  // Correct approach: Use refs to store unsubscribe functions
+  const unsubscribeRoom = ref<(() => void) | null>(null);
+  const unsubscribeSelection = ref<(() => void) | null>(null);
 
   onMounted(() => {
-    OBR.onReady(() => {
-        init();
+    if (!OBR.isAvailable) return;
+
+    OBR.onReady(async () => {
+      // Load initial data
+      const metadata = await OBR.room.getMetadata();
+      characters.value = (metadata[ROOM_DATA_KEY] as CharacterData) || {};
+
+      // Listen for room data changes
+      unsubscribeRoom.value = OBR.room.onMetadataChange((newMetadata) => {
+        const newData = newMetadata[ROOM_DATA_KEY] as CharacterData;
+        
+        // IMPORTANT: When a character is deleted, newData might be undefined or missing the key
+        // We must handle the case where newData is undefined (if the entire key was removed)
+        // or just update our local state to match whatever the room has.
+        if (newData) {
+          characters.value = newData;
+        } else {
+            // If the key is gone, clear local data or handle gracefully
+            // However, in our delete logic we set specific keys to undefined,
+            // so newData should still exist but contain fewer keys.
+            // If the entire ROOM_DATA_KEY is somehow wiped, we should clear our list.
+             characters.value = {};
+        }
+      });
+
+      // Listen for selection changes
+      unsubscribeSelection.value = OBR.player.onChange((player) => {
+        selectedItems.value = player.selection || [];
+      });
     });
+  });
+
+  onUnmounted(() => {
+    if (unsubscribeRoom.value) unsubscribeRoom.value();
+    if (unsubscribeSelection.value) unsubscribeSelection.value();
   });
 
   return {
