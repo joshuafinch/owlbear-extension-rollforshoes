@@ -13,7 +13,9 @@ const {
   updateSkill,
   removeSkill,
   linkSelectionToCharacter, 
-  deleteCharacter 
+  deleteCharacter,
+  exportData,
+  importData
 } = useRollForShoes();
 
 const newCharName = ref('');
@@ -24,6 +26,26 @@ const handleCreate = async () => {
   await createCharacter(newCharName.value);
   newCharName.value = '';
   isCreating.value = false;
+};
+
+const handleImport = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  if (!input.files || input.files.length === 0) return;
+  
+  const file = input.files[0];
+  const reader = new FileReader();
+  
+  reader.onload = (e) => {
+    if (e.target?.result && typeof e.target.result === 'string') {
+        if (confirm('This will overwrite all current character data. Are you sure?')) {
+            importData(e.target.result);
+        }
+    }
+  };
+  
+  reader.readAsText(file);
+  // Reset input so same file can be selected again if needed
+  input.value = '';
 };
 </script>
 
@@ -84,6 +106,24 @@ const handleCreate = async () => {
         @link="linkSelectionToCharacter"
         @delete="deleteCharacter"
       />
+    </div>
+
+    <!-- Data Management (GM Only) -->
+    <div v-if="role === 'GM'" class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Data Management</h3>
+        <div class="flex gap-3">
+            <button 
+                @click="exportData"
+                class="flex-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium py-2 px-4 rounded shadow-sm transition-colors"
+            >
+                Export JSON
+            </button>
+            <label class="flex-1 cursor-pointer bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium py-2 px-4 rounded shadow-sm transition-colors text-center">
+                Import JSON
+                <input type="file" class="hidden" accept=".json" @change="handleImport" />
+            </label>
+        </div>
+        <p class="text-xs text-gray-400 mt-2 text-center">Back up your character data or transfer it to another room.</p>
     </div>
   </div>
 </template>

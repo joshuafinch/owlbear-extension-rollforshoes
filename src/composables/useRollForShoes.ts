@@ -142,6 +142,57 @@ export function useRollForShoes() {
     }
   };
 
+  const exportData = () => {
+    try {
+      const dataStr = JSON.stringify(characters.value, null, 2);
+      const blob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `roll-for-shoes-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Failed to export data", e);
+      OBR.notification.show("Failed to export data", "ERROR");
+    }
+  };
+
+  const importData = async (jsonContent: string) => {
+    try {
+      const data = JSON.parse(jsonContent);
+      
+      // Basic validation: check if it's an object
+      if (typeof data !== 'object' || data === null) {
+        throw new Error('Invalid data format: Not an object');
+      }
+
+      // Check for at least one character-like structure if not empty
+      const values = Object.values(data);
+      if (values.length > 0) {
+         const sample = values[0] as any;
+         if (!sample.id || !sample.name || !sample.skills) {
+             throw new Error('Invalid data format: Missing character fields');
+         }
+      }
+
+      // Optimistic update
+      characters.value = data as CharacterData;
+
+      // Update Room
+      await OBR.room.setMetadata({
+        [ROOM_DATA_KEY]: data
+      });
+      
+      OBR.notification.show('Data imported successfully');
+    } catch (e) {
+      console.error('Import failed', e);
+      OBR.notification.show('Failed to import data: Invalid format', 'ERROR');
+    }
+  };
+
   // --- Setup ---
 
   onMounted(() => {
@@ -218,6 +269,8 @@ export function useRollForShoes() {
     addSkill,
     updateSkill,
     removeSkill,
-    linkSelectionToCharacter
+    linkSelectionToCharacter,
+    exportData,
+    importData
   };
 }
