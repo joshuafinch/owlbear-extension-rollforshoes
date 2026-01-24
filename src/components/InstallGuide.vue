@@ -16,15 +16,15 @@ const copyUrl = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col items-center justify-center p-4 bg-[#fbbf24] font-sans relative overflow-hidden">
+  <div class="h-screen flex flex-col items-center overflow-y-auto p-4 bg-[#fbbf24] font-sans relative">
     
     <!-- Bold Pattern Background -->
-    <div class="absolute inset-0 z-0 opacity-20 pointer-events-none" 
+    <div class="fixed inset-0 z-0 opacity-20 pointer-events-none" 
          style="background-image: url('/running-shoe.svg'); background-size: 100px 100px; filter: grayscale(1) contrast(1.5);">
     </div>
     
     <!-- Main "Job Ticket" Container -->
-    <div class="relative z-10 max-w-2xl w-full bg-white shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] border-4 border-black transform md:rotate-1 transition-transform hover:rotate-0 duration-300">
+    <div class="relative z-10 max-w-2xl w-full bg-white shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] border-4 border-black transform md:rotate-1 transition-transform hover:rotate-0 duration-300 my-8 flex-shrink-0">
       
       <!-- "Tape" decorations -->
       <div class="absolute -top-4 left-1/4 w-24 h-8 bg-white/50 border-2 border-gray-300/50 transform -rotate-3 z-20 backdrop-blur-sm"></div>
