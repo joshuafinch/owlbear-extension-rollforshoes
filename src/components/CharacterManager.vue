@@ -44,55 +44,62 @@ const handleImport = (event: Event) => {
   };
   
   reader.readAsText(file);
-  // Reset input so same file can be selected again if needed
   input.value = '';
 };
 </script>
 
 <template>
-  <div class="w-full max-w-md mx-auto p-4">
-    <!-- Header / Actions -->
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-xl font-bold text-[var(--obr-text-primary)]">Characters</h2>
-      <button 
-        v-if="!isCreating"
-        @click="isCreating = true"
-        class="bg-[var(--obr-primary-main)] hover:opacity-90 text-[var(--obr-primary-contrast)] text-sm font-medium py-1.5 px-3 rounded shadow-sm transition-colors cursor-pointer"
-      >
-        + New Character
-      </button>
-    </div>
+  <div class="h-screen flex flex-col overflow-hidden bg-[var(--obr-bg-default)]">
+    <!-- Fixed Header -->
+    <div class="flex-none p-4 pb-2 bg-[var(--obr-bg-default)] z-10">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-black text-[var(--obr-text-primary)] uppercase tracking-tighter italic border-b-4 border-[var(--obr-text-primary)] leading-none pb-1">
+           Personnel
+        </h2>
+        <button 
+          v-if="!isCreating"
+          @click="isCreating = true"
+          class="bg-[var(--obr-primary-main)] hover:bg-[var(--obr-primary-dark)] text-[var(--obr-primary-contrast)] text-xs font-black uppercase tracking-widest py-2 px-4 rounded shadow-[3px_3px_0px_0px_rgba(0,0,0,0.5)] active:translate-y-1 active:shadow-none transition-all border-2 border-[var(--obr-text-primary)]"
+        >
+          + New Recruit
+        </button>
+      </div>
 
-    <!-- Create Form -->
-    <div v-if="isCreating" class="mb-6 bg-[var(--obr-bg-paper)] backdrop-blur-xl p-4 rounded-2xl border border-[var(--obr-primary-main)] border-opacity-30 shadow-lg">
-      <label class="block text-xs font-bold text-[var(--obr-text-secondary)] uppercase mb-1">Name</label>
-      <div class="flex gap-2">
-        <input 
-          v-model="newCharName"
-          type="text" 
-          class="flex-1 rounded border-[var(--obr-text-disabled)] border-opacity-40 bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] px-3 py-2 text-sm focus:ring-2 focus:ring-[var(--obr-primary-main)] outline-none border"
-          placeholder="e.g. Ollie"
-          @keyup.enter="handleCreate"
-        />
-        <button 
-          @click="handleCreate"
-          class="bg-[var(--obr-primary-main)] hover:opacity-90 text-[var(--obr-primary-contrast)] font-bold px-4 rounded text-sm"
-        >Save</button>
-        <button 
-          @click="isCreating = false"
-          class="text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] px-2"
-        >×</button>
+      <!-- Create Form -->
+      <div v-if="isCreating" class="mb-4 bg-[var(--obr-bg-paper)] p-3 rounded-lg border-2 border-[var(--obr-text-primary)] shadow-lg animate-fade-in-down">
+        <label class="block text-[10px] font-black text-[var(--obr-text-secondary)] uppercase mb-1 tracking-widest">Recruit Name</label>
+        <div class="flex gap-2">
+          <input 
+            v-model="newCharName"
+            type="text" 
+            class="flex-1 bg-[var(--obr-bg-default)] border-2 border-[var(--obr-text-disabled)] rounded px-3 py-2 text-sm font-bold text-[var(--obr-text-primary)] focus:border-[var(--obr-primary-main)] outline-none uppercase"
+            placeholder="CODENAME..."
+            @keyup.enter="handleCreate"
+            autoFocus
+          />
+          <button 
+            @click="handleCreate"
+            class="bg-[var(--obr-primary-main)] text-[var(--obr-primary-contrast)] font-black px-4 rounded text-sm uppercase border-2 border-[var(--obr-text-primary)] shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:translate-y-0.5 active:shadow-none"
+          >Save</button>
+          <button 
+            @click="isCreating = false"
+            class="text-[var(--obr-text-secondary)] hover:text-red-500 font-bold px-2"
+          >✕</button>
+        </div>
       </div>
     </div>
 
-    <!-- Empty State -->
-    <div v-if="characterList.length === 0 && !isCreating" class="text-center py-10 text-[var(--obr-text-disabled)]">
-      <p>No characters yet.</p>
-      <p class="text-sm">Create one to get started.</p>
-    </div>
+    <!-- Scrollable Content -->
+    <div class="flex-1 overflow-y-auto px-4 pb-4 space-y-4 custom-scrollbar">
+      
+      <!-- Empty State -->
+      <div v-if="characterList.length === 0 && !isCreating" class="h-full flex flex-col items-center justify-center text-[var(--obr-text-disabled)] opacity-50">
+        <div class="text-6xl mb-4 grayscale">📂</div>
+        <p class="font-black uppercase text-xl">No Records Found</p>
+        <p class="text-sm font-bold mt-2">Create a recruit to begin.</p>
+      </div>
 
-    <!-- List -->
-    <div class="space-y-4">
+      <!-- Character List -->
       <CharacterCard
         v-for="char in characterList"
         :key="char.id"
@@ -106,24 +113,46 @@ const handleImport = (event: Event) => {
         @link="linkSelectionToCharacter"
         @delete="deleteCharacter"
       />
+
+       <!-- Spacer for bottom actions -->
+       <div class="h-20"></div>
     </div>
 
-    <!-- Data Management (GM Only) -->
-    <div v-if="role === 'GM'" class="mt-8 pt-6 border-t border-[var(--obr-text-disabled)] border-opacity-20">
-        <h3 class="text-xs font-bold text-[var(--obr-text-disabled)] uppercase tracking-wider mb-3">Data Management</h3>
+    <!-- Fixed Footer (GM Only) -->
+    <div v-if="role === 'GM'" class="flex-none border-t-2 border-[var(--obr-text-disabled)] bg-[var(--obr-bg-paper)] p-3 shadow-[0px_-4px_10px_rgba(0,0,0,0.1)] z-20">
+        <h3 class="text-[10px] font-black text-[var(--obr-text-secondary)] uppercase tracking-widest mb-2 text-center">Data Management</h3>
         <div class="flex gap-3">
             <button 
                 @click="exportData"
-                class="flex-1 bg-[var(--obr-bg-paper)] border border-[var(--obr-text-disabled)] border-opacity-30 hover:bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] text-sm font-medium py-2 px-4 rounded shadow-sm transition-colors"
+                class="flex-1 bg-[var(--obr-bg-default)] border-2 border-[var(--obr-text-primary)] hover:bg-[var(--obr-primary-main)] hover:text-white text-[var(--obr-text-primary)] text-xs font-black uppercase py-2 px-2 rounded shadow-sm transition-all active:scale-95"
             >
-                Export JSON
+                Export
             </button>
-            <label class="flex-1 cursor-pointer bg-[var(--obr-bg-paper)] border border-[var(--obr-text-disabled)] border-opacity-30 hover:bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] text-sm font-medium py-2 px-4 rounded shadow-sm transition-colors text-center">
-                Import JSON
+            <label class="flex-1 cursor-pointer bg-[var(--obr-bg-default)] border-2 border-[var(--obr-text-primary)] hover:bg-[var(--obr-primary-main)] hover:text-white text-[var(--obr-text-primary)] text-xs font-black uppercase py-2 px-2 rounded shadow-sm transition-all active:scale-95 text-center flex items-center justify-center">
+                Import
                 <input type="file" class="hidden" accept=".json" @change="handleImport" />
             </label>
         </div>
-        <p class="text-xs text-[var(--obr-text-disabled)] mt-2 text-center">Back up your character data or transfer it to another room.</p>
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Custom Scrollbar Styling */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--obr-text-disabled);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--obr-primary-main);
+}
+</style>
