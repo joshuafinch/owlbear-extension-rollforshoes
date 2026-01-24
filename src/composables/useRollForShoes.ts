@@ -8,6 +8,7 @@ export function useRollForShoes() {
   const rollHistory = ref<RollEntry[]>([]);
   const selectedItems = ref<string[]>([]);
   const role = ref<string>('PLAYER');
+  const debugMode = ref<boolean>(false);
   
   // Room metadata key for storing all characters
   const ROOM_DATA_KEY = getPluginId('characters');
@@ -297,10 +298,15 @@ export function useRollForShoes() {
     importData,
     rollDice,
     rollHistory,
-    addLogEntry
+    addLogEntry,
+    debugMode
   };
 }
 
-function rollDice(count: number): number[] {
+function rollDice(count: number, debug = false): number[] {
+    if (debug) {
+        // High chance of 6s for testing
+        return Array.from({ length: count }, () => Math.random() > 0.3 ? 6 : Math.floor(Math.random() * 6) + 1);
+    }
     return Array.from({ length: count }, () => Math.floor(Math.random() * 6) + 1);
 }

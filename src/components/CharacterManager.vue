@@ -23,7 +23,8 @@ const {
   exportData,
   importData,
   rollDice,
-  addLogEntry
+  addLogEntry,
+  debugMode
 } = useRollForShoes();
 
 const newCharName = ref('');
@@ -65,7 +66,7 @@ const handleRoll = (characterId: string, skill: Skill) => {
     const character = characterList.value.find(c => c.id === characterId);
     if (!character) return;
 
-    const dice = rollDice(skill.rank);
+    const dice = rollDice(skill.rank, debugMode.value);
     
     // Create local roll result for modal
     currentRoll.value = {
@@ -231,8 +232,10 @@ const handleRollEvolve = (newSkillName: string) => {
       <div v-if="activeTab === 'SYSTEMS'" class="h-full pb-4">
           <SystemTerminal 
             :role="role"
+            :isDebug="debugMode"
             @export="exportData"
             @import="handleImport"
+            @toggleDebug="debugMode = !debugMode"
           />
       </div>
     </div>

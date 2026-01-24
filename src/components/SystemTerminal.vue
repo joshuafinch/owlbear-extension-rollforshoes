@@ -3,11 +3,13 @@ import { computed } from 'vue';
 
 const props = defineProps<{
   role: string;
+  isDebug?: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'export'): void;
   (e: 'import', event: Event): void;
+  (e: 'toggleDebug'): void;
 }>();
 
 const isGm = computed(() => props.role === 'GM');
@@ -73,6 +75,27 @@ const isGm = computed(() => props.role === 'GM');
                 <p class="text-[10px] text-red-500 bg-red-900/10 p-2 border border-red-900/30">
                     ⚠ WARNING: IMPORT_OVERRIDE is a destructive operation. Previous session data will be purged immediately. Proceed with caution.
                 </p>
+             </div>
+
+             <!-- DEBUG TOOLS -->
+             <div class="mt-4">
+                <p class="text-xs mb-2 text-yellow-500 font-bold">> DEBUG_PROTOCOLS:</p>
+                <div class="pl-2 border-l-2 border-yellow-900 ml-1">
+                     <button 
+                        @click="emit('toggleDebug')"
+                        class="w-full text-left hover:bg-yellow-900/30 p-2 rounded transition-colors flex items-center justify-between group"
+                    >
+                        <div>
+                             <p class="text-xs font-bold" :class="isDebug ? 'text-yellow-400 animate-pulse' : 'text-gray-500'">
+                               <span class="mr-2">⚡</span> FORCE_LUCK_MODE()
+                            </p>
+                            <p class="text-[10px] text-gray-500 pl-6">Reroute entropy. Bias RNG towards success.</p>
+                        </div>
+                        <div class="text-[10px] font-black px-2 py-0.5 border" :class="isDebug ? 'border-yellow-500 text-yellow-500 bg-yellow-900/20' : 'border-gray-700 text-gray-700'">
+                            {{ isDebug ? 'ACTIVE' : 'OFFLINE' }}
+                        </div>
+                    </button>
+                </div>
              </div>
         </div>
 
