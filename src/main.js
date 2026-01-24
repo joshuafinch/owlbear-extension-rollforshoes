@@ -1,24 +1,21 @@
 import './style.css'
-import javascriptLogo from './javascript.svg'
-import viteLogo from '/vite.svg'
+import OBR from "@owlbear-rodeo/sdk";
 import { setupCounter } from './counter.js'
+import { setupContextMenu } from './contextMenu.js'
+import { setupRollForShoesList } from './rollForShoesList.js'
 
 document.querySelector('#app').innerHTML = `
   <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-      <img src="${javascriptLogo}" class="logo vanilla" alt="JavaScript logo" />
-    </a>
-    <h1>Hello Vite!</h1>
+    <h1>Owlbear Extension: Roll for Shoes</h1>
+    <ul id="roll-for-shoes-list"></ul>
     <div class="card">
       <button id="counter" type="button"></button>
     </div>
-    <p class="read-the-docs">
-      Click on the Vite logo to learn more
-    </p>
   </div>
 `
 
-setupCounter(document.querySelector('#counter'))
+OBR.onReady(() => {
+  setupCounter(document.querySelector('#counter'))
+  setupContextMenu()
+  setupRollForShoesList(document.querySelector('#roll-for-shoes-list'))
+})
