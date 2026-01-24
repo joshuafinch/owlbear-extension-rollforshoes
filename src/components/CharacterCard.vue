@@ -66,128 +66,171 @@ const cancelSkillEdit = () => {
 </script>
 
 <template>
-  <div class="bg-[var(--obr-bg-paper)] backdrop-blur-xl rounded-2xl shadow-lg p-4 mb-3 border border-[var(--obr-text-disabled)] border-opacity-20 transition-all duration-300 hover:shadow-xl">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-2">
-      <div class="flex items-center gap-2 cursor-pointer select-none" @click="isExpanded = !isExpanded">
-        <span class="text-[var(--obr-text-disabled)] text-sm transform transition-transform" :class="{ 'rotate-90': isExpanded }">▶</span>
-        <h3 class="font-bold text-lg text-[var(--obr-text-primary)]">{{ character.name }}</h3>
-      </div>
-      
-      <div class="flex items-center gap-2">
-        <div class="flex items-center bg-[var(--obr-bg-default)] rounded px-2 py-1 shadow-sm">
-          <span class="text-xs font-bold text-[var(--obr-text-secondary)] mr-2">XP</span>
+  <div class="bg-[var(--obr-bg-paper)] backdrop-blur-xl rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] p-0 mb-4 border-2 border-[var(--obr-text-primary)] transition-all duration-300 hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.5)] overflow-hidden">
+    
+    <!-- Header / Summary View -->
+    <div class="p-3 bg-gradient-to-r from-[var(--obr-bg-default)] to-[var(--obr-bg-paper)]">
+      <div class="flex items-center justify-between">
+        
+        <!-- Name & Toggle -->
+        <div class="flex items-center gap-3 cursor-pointer select-none group flex-1" @click="isExpanded = !isExpanded">
+           <div class="w-8 h-8 flex items-center justify-center bg-[var(--obr-text-primary)] text-[var(--obr-bg-paper)] rounded-full font-black border-2 border-[var(--obr-bg-paper)] shadow-sm transform transition-transform group-hover:scale-110">
+              {{ character.name.charAt(0).toUpperCase() }}
+           </div>
+           <div class="flex flex-col">
+              <h3 class="font-black text-lg text-[var(--obr-text-primary)] uppercase tracking-tight leading-none group-hover:text-[var(--obr-primary-main)] transition-colors">{{ character.name }}</h3>
+              <span class="text-[10px] font-bold text-[var(--obr-text-disabled)] uppercase tracking-wider flex items-center gap-1">
+                 <span class="transform transition-transform duration-300 inline-block" :class="{ 'rotate-90': isExpanded }">▶</span> 
+                 {{ isExpanded ? 'Collapse' : 'Expand' }} details
+              </span>
+           </div>
+        </div>
+        
+        <!-- XP Counter -->
+        <div class="flex items-center bg-[var(--obr-bg-default)] rounded border-2 border-[var(--obr-text-primary)] px-1 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]">
+          <div class="flex flex-col items-center mr-2 pl-1 border-r border-[var(--obr-text-disabled)] border-opacity-30 pr-2">
+             <span class="text-[8px] font-black uppercase text-[var(--obr-text-secondary)] leading-none">XP</span>
+          </div>
           <button 
             @click="emit('addXp', character.id, -1)"
             :disabled="character.xp <= 0"
-            class="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-[var(--obr-text-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-6 h-6 flex items-center justify-center rounded hover:bg-red-500 hover:text-white text-[var(--obr-text-primary)] font-bold transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-inherit"
           >-</button>
-          <span class="mx-2 font-mono font-bold w-6 text-center text-[var(--obr-text-primary)]">{{ character.xp }}</span>
+          <span class="mx-1 font-mono font-black text-lg w-6 text-center text-[var(--obr-text-primary)]">{{ character.xp }}</span>
           <button 
             @click="emit('addXp', character.id, 1)"
-            class="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-[var(--obr-text-primary)]"
+            class="w-6 h-6 flex items-center justify-center rounded hover:bg-green-500 hover:text-white text-[var(--obr-text-primary)] font-bold transition-colors"
           >+</button>
         </div>
       </div>
     </div>
 
-    <!-- Actions Bar -->
-    <div v-if="canLink" class="flex justify-end mb-2">
+    <!-- Actions Bar (Collapsed State) -->
+     <div v-if="!isExpanded && canLink" class="px-3 pb-3 flex justify-end">
         <button 
-            @click="emit('link', character.id)"
-            class="text-xs bg-[var(--obr-primary-main)] bg-opacity-10 text-[var(--obr-primary-main)] hover:bg-opacity-20 px-2 py-1 rounded"
-            title="Link currently selected tokens to this character"
+            @click.stop="emit('link', character.id)"
+            class="text-[10px] font-bold uppercase bg-[var(--obr-primary-main)] text-[var(--obr-primary-contrast)] hover:opacity-90 px-2 py-1 rounded shadow-sm flex items-center gap-1"
         >
-            Link Selected Token
+            <span>🔗 Link Token</span>
         </button>
-    </div>
+     </div>
 
-    <!-- Details -->
-    <div v-if="isExpanded" class="mt-4 pt-4 border-t border-[var(--obr-text-disabled)] border-opacity-20">
-      <h4 class="text-xs font-bold text-[var(--obr-text-secondary)] uppercase tracking-wider mb-2">Skills</h4>
+    <!-- Expanded Details -->
+    <div v-if="isExpanded" class="border-t-2 border-[var(--obr-text-primary)] bg-[var(--obr-bg-default)] bg-opacity-50">
       
-      <div class="space-y-2 mb-4">
-        <div 
-          v-for="(skill, index) in character.skills" 
-          :key="index"
-          class="flex items-center justify-between bg-[var(--obr-bg-default)] p-2 rounded group shadow-sm"
-        >
-          <!-- View Mode -->
-          <template v-if="editingSkillIndex !== index">
-              <span class="font-medium cursor-pointer hover:text-[var(--obr-primary-main)] truncate flex-1 text-[var(--obr-text-primary)]" @click="startEditingSkill(index, skill)" title="Click to edit">{{ skill.name }}</span>
-              <div class="flex items-center gap-3 ml-2">
-                 <span 
-                    class="font-bold font-mono bg-[var(--obr-bg-paper)] text-[var(--obr-text-primary)] px-2 py-0.5 rounded border border-[var(--obr-text-disabled)] border-opacity-30 text-sm cursor-pointer hover:border-[var(--obr-primary-main)]"
-                    @click="startEditingSkill(index, skill)"
-                    title="Click to edit"
-                 >
-                    {{ skill.rank }}
-                 </span>
-                 <button 
-                    @click="emit('removeSkill', character.id, index)"
-                    class="text-[var(--obr-text-disabled)] hover:text-red-500 px-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Remove Skill"
-                 >×</button>
-              </div>
-          </template>
-
-          <!-- Edit Mode -->
-          <template v-else>
-              <div class="flex items-center gap-2 w-full">
-                  <input 
-                    v-model="editSkillName"
-                    type="text"
-                    class="flex-1 bg-[var(--obr-bg-paper)] text-[var(--obr-text-primary)] border border-[var(--obr-primary-main)] rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--obr-primary-main)]"
-                    @keyup.enter="saveSkillEdit(index)"
-                    @keyup.esc="cancelSkillEdit"
-                    ref="editInput"
-                  />
-                  <input 
-                    v-model.number="editSkillRank"
-                    type="number"
-                    min="1"
-                    max="10"
-                    class="w-12 bg-[var(--obr-bg-paper)] text-[var(--obr-text-primary)] border border-[var(--obr-primary-main)] rounded px-1 py-1 text-center text-sm focus:outline-none focus:ring-1 focus:ring-[var(--obr-primary-main)]"
-                    @keyup.enter="saveSkillEdit(index)"
-                  />
-                  <button @click="saveSkillEdit(index)" class="text-green-600 hover:text-green-800 text-xs font-bold">✓</button>
-                  <button @click="cancelSkillEdit" class="text-gray-500 hover:text-gray-700 text-xs">✕</button>
-              </div>
-          </template>
+      <!-- Skills Section -->
+      <div class="p-3">
+        <div class="flex justify-between items-end mb-2">
+            <h4 class="text-xs font-black text-[var(--obr-text-primary)] uppercase tracking-widest border-b-2 border-[var(--obr-primary-main)] inline-block">Skills</h4>
+            
+            <!-- Link Action (Expanded) -->
+             <button 
+                v-if="canLink"
+                @click="emit('link', character.id)"
+                class="text-[10px] font-bold uppercase text-[var(--obr-primary-main)] hover:underline flex items-center gap-1"
+            >
+                <span>🔗 Link Token</span>
+            </button>
         </div>
-      </div>
+        
+        <div class="space-y-2 mb-4">
+          <div 
+            v-for="(skill, index) in character.skills" 
+            :key="index"
+            class="relative flex items-center justify-between bg-[var(--obr-bg-paper)] p-2 rounded border border-[var(--obr-text-disabled)] border-opacity-30 group hover:border-[var(--obr-primary-main)] hover:shadow-md transition-all"
+          >
+            <!-- Background rank watermark -->
+            <div class="absolute right-10 top-1/2 -translate-y-1/2 text-4xl font-black text-[var(--obr-text-disabled)] opacity-5 pointer-events-none z-0">{{ skill.rank }}</div>
 
-      <!-- Add Skill Form -->
-      <div class="flex gap-2 items-center">
-        <input 
-          v-model="newSkillName" 
-          type="text" 
-          placeholder="New Skill Name"
-          class="flex-1 bg-transparent border-b border-[var(--obr-text-disabled)] border-opacity-40 focus:border-[var(--obr-primary-main)] outline-none px-1 py-1 text-sm text-[var(--obr-text-primary)] placeholder-[var(--obr-text-disabled)]"
-          @keyup.enter="handleAddSkill"
-        />
-        <input 
-          v-model.number="newSkillRank" 
-          type="number" 
-          min="1" 
-          max="10"
-          class="w-12 bg-transparent border-b border-[var(--obr-text-disabled)] border-opacity-40 focus:border-[var(--obr-primary-main)] outline-none px-1 py-1 text-center text-sm text-[var(--obr-text-primary)]"
-          @keyup.enter="handleAddSkill"
-        />
-        <button 
-          @click="handleAddSkill"
-          class="text-[var(--obr-primary-main)] hover:text-[var(--obr-primary-main)] opacity-80 hover:opacity-100 text-sm font-bold px-2"
-        >Add</button>
-      </div>
+            <!-- View Mode -->
+            <template v-if="editingSkillIndex !== index">
+                <div class="flex-1 z-10 cursor-pointer" @click="startEditingSkill(index, skill)" title="Click to edit">
+                     <span class="font-bold text-[var(--obr-text-primary)] block leading-tight">{{ skill.name }}</span>
+                </div>
+                
+                <div class="flex items-center gap-2 z-10 ml-2">
+                   <!-- Rank Badge -->
+                   <div 
+                      class="w-8 h-8 flex items-center justify-center bg-[var(--obr-text-primary)] text-[var(--obr-bg-paper)] font-black rounded shadow-sm cursor-pointer hover:scale-110 transition-transform border-2 border-transparent hover:border-[var(--obr-primary-main)]"
+                      @click="startEditingSkill(index, skill)"
+                      title="Click to edit"
+                   >
+                      {{ skill.rank }}
+                   </div>
+                   
+                   <button 
+                      @click="emit('removeSkill', character.id, index)"
+                      class="w-6 h-6 flex items-center justify-center text-[var(--obr-text-disabled)] hover:text-red-500 hover:bg-red-100 rounded opacity-0 group-hover:opacity-100 transition-all"
+                      title="Remove Skill"
+                   >×</button>
+                </div>
+            </template>
 
-      <div class="mt-6 flex justify-between border-t border-[var(--obr-text-disabled)] border-opacity-20 pt-2">
-         <button 
-            v-if="isGm"
-            @click="handleDelete" 
-            class="text-xs text-red-500 hover:text-red-700 underline"
-         >
-            Delete Character
-         </button>
+            <!-- Edit Mode -->
+            <template v-else>
+                <div class="flex items-center gap-2 w-full z-10 bg-[var(--obr-bg-paper)] p-1 -m-1 rounded ring-2 ring-[var(--obr-primary-main)] shadow-lg">
+                    <input 
+                      v-model="editSkillName"
+                      type="text"
+                      class="flex-1 bg-transparent text-[var(--obr-text-primary)] font-bold px-1 py-1 text-sm focus:outline-none"
+                      @keyup.enter="saveSkillEdit(index)"
+                      @keyup.esc="cancelSkillEdit"
+                      ref="editInput"
+                      autoFocus
+                    />
+                    <div class="flex flex-col items-center">
+                        <label class="text-[8px] font-black uppercase text-[var(--obr-text-secondary)]">Rank</label>
+                        <input 
+                        v-model.number="editSkillRank"
+                        type="number"
+                        min="1"
+                        max="10"
+                        class="w-10 bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] border border-[var(--obr-text-disabled)] rounded px-1 py-0 text-center text-sm font-bold focus:outline-none focus:border-[var(--obr-primary-main)]"
+                        @keyup.enter="saveSkillEdit(index)"
+                        />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <button @click="saveSkillEdit(index)" class="bg-green-500 text-white w-6 h-6 rounded flex items-center justify-center hover:bg-green-600 shadow-sm text-xs font-bold">✓</button>
+                        <button @click="cancelSkillEdit" class="bg-gray-200 text-gray-600 w-6 h-6 rounded flex items-center justify-center hover:bg-gray-300 shadow-sm text-xs font-bold">✕</button>
+                    </div>
+                </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Add Skill Form -->
+        <div class="flex gap-2 items-center bg-[var(--obr-bg-paper)] p-2 rounded-lg border border-dashed border-[var(--obr-text-disabled)] hover:border-[var(--obr-primary-main)] transition-colors">
+          <div class="w-6 h-6 flex items-center justify-center rounded-full bg-[var(--obr-primary-main)] text-white font-bold text-xs shrink-0 shadow-sm">+</div>
+          <input 
+            v-model="newSkillName" 
+            type="text" 
+            placeholder="ADD NEW SKILL..."
+            class="flex-1 bg-transparent outline-none px-1 py-1 text-sm font-bold text-[var(--obr-text-primary)] placeholder-[var(--obr-text-disabled)] uppercase tracking-wide"
+            @keyup.enter="handleAddSkill"
+          />
+          <input 
+            v-model.number="newSkillRank" 
+            type="number" 
+            min="1" 
+            max="10"
+            class="w-10 bg-[var(--obr-bg-default)] border border-[var(--obr-text-disabled)] border-opacity-30 rounded px-1 py-1 text-center text-xs font-bold text-[var(--obr-text-primary)] outline-none focus:border-[var(--obr-primary-main)]"
+            @keyup.enter="handleAddSkill"
+          />
+          <button 
+            @click="handleAddSkill"
+            class="text-[var(--obr-primary-main)] hover:bg-[var(--obr-primary-main)] hover:text-white rounded px-2 py-1 text-xs font-black uppercase transition-colors"
+          >Save</button>
+        </div>
+
+        <div class="mt-4 pt-2 flex justify-end">
+           <button 
+              v-if="isGm"
+              @click="handleDelete" 
+              class="text-[10px] font-black uppercase text-red-400 hover:text-red-600 hover:bg-red-50 px-2 py-1 rounded flex items-center gap-1 transition-colors"
+           >
+              <span>🗑 Delete File</span>
+           </button>
+        </div>
       </div>
     </div>
   </div>
