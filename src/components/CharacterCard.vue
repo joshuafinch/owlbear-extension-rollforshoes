@@ -76,13 +76,13 @@ const cancelSkillEdit = () => {
         <!-- Name & Toggle -->
         <div class="flex items-center gap-3 cursor-pointer select-none group flex-1" @click="isExpanded = !isExpanded">
            <div class="w-8 h-8 flex items-center justify-center bg-[var(--obr-text-primary)] text-[var(--obr-bg-paper)] rounded-full font-black border-2 border-[var(--obr-bg-paper)] shadow-sm transform transition-transform group-hover:scale-110">
-              {{ character.name.charAt(0).toUpperCase() }}
+              <span class="text-[var(--obr-bg-paper)] text-sm">{{ character.name.charAt(0).toUpperCase() }}</span>
            </div>
            <div class="flex flex-col">
               <h3 class="font-black text-lg text-[var(--obr-text-primary)] uppercase tracking-tight leading-none group-hover:text-[var(--obr-primary-main)] transition-colors">{{ character.name }}</h3>
               <span class="text-[10px] font-bold text-[var(--obr-text-disabled)] uppercase tracking-wider flex items-center gap-1 group-hover:text-[var(--obr-text-secondary)] transition-colors">
                  <svg 
-                   class="w-4 h-4 transform transition-transform duration-300"
+                   class="w-4 h-4 transform transition-transform duration-300 text-[var(--obr-text-primary)]"
                    :class="{ 'rotate-180': isExpanded }"
                    fill="none" 
                    stroke="currentColor" 
