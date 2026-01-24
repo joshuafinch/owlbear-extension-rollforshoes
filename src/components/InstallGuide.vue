@@ -16,68 +16,146 @@ const copyUrl = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-[#242424] text-[#213547] dark:text-gray-100 font-sans">
-    <div class="max-w-2xl w-full bg-white dark:bg-[#1a1a1a] shadow-xl rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800">
-      <!-- Header -->
-      <div class="bg-indigo-600 p-8 text-center">
-        <h1 class="text-3xl font-bold text-white mb-2">Owlbear Extension: Roll for Shoes</h1>
-        <p class="text-indigo-100">Enhance your game with custom rolling mechanics</p>
+  <div class="min-h-screen flex flex-col items-center justify-center p-4 bg-[#fbbf24] font-sans relative overflow-hidden">
+    
+    <!-- Bold Pattern Background -->
+    <div class="absolute inset-0 z-0 opacity-20 pointer-events-none" 
+         style="background-image: url('/running-shoe.svg'); background-size: 100px 100px; filter: grayscale(1) contrast(1.5);">
+    </div>
+    
+    <!-- Main "Job Ticket" Container -->
+    <div class="relative z-10 max-w-2xl w-full bg-white shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] border-4 border-black transform md:rotate-1 transition-transform hover:rotate-0 duration-300">
+      
+      <!-- "Tape" decorations -->
+      <div class="absolute -top-4 left-1/4 w-24 h-8 bg-white/50 border-2 border-gray-300/50 transform -rotate-3 z-20 backdrop-blur-sm"></div>
+      <div class="absolute -bottom-4 right-1/4 w-24 h-8 bg-white/50 border-2 border-gray-300/50 transform rotate-2 z-20 backdrop-blur-sm"></div>
+
+      <!-- Header Section -->
+      <div class="border-b-4 border-black bg-[#ff0055] p-0 relative overflow-hidden h-72 flex items-center justify-center group">
+         
+         <!-- Background: Dynamic Rays -->
+         <div class="absolute inset-0 opacity-50" 
+              style="background: repeating-conic-gradient(#ff0055 0deg 20deg, #ff3377 20deg 40deg);">
+         </div>
+         
+         <!-- Dot Pattern -->
+         <div class="absolute inset-0 bg-[radial-gradient(black_2px,transparent_2px)] [background-size:24px_24px] opacity-20"></div>
+
+         <!-- Chaotic Content Wrapper -->
+         <div class="relative z-10 w-full max-w-xl h-full flex items-center justify-center p-4">
+            
+            <!-- The Icon (Sticker style) -->
+            <div class="absolute top-6 left-6 md:left-12 transform -rotate-12 z-20 hover:scale-110 transition-transform duration-300">
+                <div class="bg-white p-2 border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,0.5)]">
+                    <img src="/apple-touch-icon.png" alt="Icon" class="w-16 h-16 object-contain" />
+                </div>
+                <!-- Tape -->
+                <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-6 bg-yellow-200/90 rotate-3 shadow-sm"></div>
+            </div>
+
+            <!-- The Title Stack -->
+            <div class="flex flex-col items-center transform rotate-2 hover:rotate-0 transition-transform duration-300 select-none">
+                <!-- ROLL -->
+                <h1 class="text-8xl md:text-9xl font-black text-white italic uppercase leading-[0.75] tracking-tighter drop-shadow-[8px_8px_0px_rgba(0,0,0,1)] stroke-black z-10" 
+                    style="-webkit-text-stroke: 3px black; paint-order: stroke fill;">
+                    ROLL
+                </h1>
+                
+                <!-- FOR SHOES -->
+                <h1 class="text-6xl md:text-7xl font-black text-[#fbbf24] italic uppercase leading-[0.9] tracking-tighter drop-shadow-[8px_8px_0px_rgba(0,0,0,1)] stroke-black z-0 transform -skew-x-12 translate-x-4" 
+                    style="-webkit-text-stroke: 3px black; paint-order: stroke fill;">
+                    FOR SHOES
+                </h1>
+            </div>
+
+            <!-- Badge / Dispatch Label -->
+             <div class="absolute bottom-4 right-4 md:bottom-6 md:right-12 transform rotate-6 z-20">
+                <div class="bg-black text-white border-2 border-white px-3 py-1 text-xs font-black uppercase tracking-[0.2em] shadow-[4px_4px_0px_rgba(255,255,255,0.5)] flex items-center gap-2 transform hover:scale-105 transition-transform">
+                    <span class="block w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                    Extension Dispatch
+                </div>
+            </div>
+            
+            <!-- Random Debris (CSS shapes) -->
+            <div class="absolute top-1/4 right-1/4 w-4 h-4 bg-yellow-400 border-2 border-black rotate-45 animate-pulse"></div>
+            <div class="absolute bottom-1/3 left-1/4 w-3 h-3 bg-blue-400 border-2 border-black -rotate-12 rounded-full"></div>
+         </div>
       </div>
 
-      <!-- Content -->
-      <div class="p-8 space-y-8">
+      <!-- Content Body -->
+      <div class="p-6 md:p-8 bg-[#fdfbf7] relative">
         
-        <!-- Context -->
-        <div class="flex items-start gap-4">
-          <div class="bg-indigo-100 dark:bg-indigo-900/30 p-3 rounded-lg shrink-0">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div>
-            <h2 class="text-xl font-semibold mb-2">Extension Detected</h2>
-            <p class="text-gray-600 dark:text-gray-300 leading-relaxed">
-              You've opened this extension directly in your browser. To use it, you need to install it inside Owlbear Rodeo.
-            </p>
-          </div>
+        <!-- Stamp Watermark -->
+        <div class="hidden md:block absolute top-20 right-10 opacity-10 pointer-events-none transform -rotate-12 border-8 border-black p-4 rounded-xl text-black font-black text-7xl uppercase tracking-widest mix-blend-multiply">
+            APPROVED
         </div>
 
-        <!-- Instructions -->
-        <div class="border-t border-gray-200 dark:border-gray-700 pt-8">
-          <h2 class="text-xl font-semibold mb-6">How to Install</h2>
-          <ol class="space-y-6 list-decimal list-outside text-gray-600 dark:text-gray-300 ml-5">
-            <li class="pl-2">
-              <div class="mb-2"><span class="font-medium text-gray-900 dark:text-white">Copy the Extension URL:</span></div>
-              <div class="flex gap-2 max-w-full">
-                <code class="flex-1 block p-3 bg-gray-100 dark:bg-[#2a2a2a] rounded border border-gray-200 dark:border-gray-700 font-mono text-sm break-all">
-                  {{ url }}
-                </code>
-                <button 
-                  @click="copyUrl"
-                  class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded font-medium transition-colors flex items-center gap-2 whitespace-nowrap shrink-0 shadow-sm"
-                  title="Copy to clipboard"
-                >
-                  <span v-if="copied">Copied!</span>
-                  <span v-else>Copy URL</span>
-                </button>
-              </div>
-            </li>
-            <li class="pl-2">
-              Open your <a href="https://www.owlbear.rodeo/" target="_blank" class="text-indigo-600 hover:underline dark:text-indigo-400 font-medium">Owlbear Rodeo</a> room.
-            </li>
-            <li class="pl-2">
-              Click the <span class="font-bold text-gray-800 dark:text-gray-200">Extras</span> menu (three dots) in the bottom toolbar.
-            </li>
-            <li class="pl-2">
-              Select <span class="font-bold text-gray-800 dark:text-gray-200">Extensions</span>, then click <span class="font-bold text-gray-800 dark:text-gray-200">Custom Extension</span> (the + icon at top-right).
-            </li>
-            <li class="pl-2">
-              Paste the URL into the input field and click <span class="font-bold text-gray-800 dark:text-gray-200">Install</span>.
-            </li>
-          </ol>
+        <!-- Mission Text -->
+        <div class="mb-8 text-center relative z-10 bg-yellow-100 border-4 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-xl font-black uppercase text-black mb-1 flex items-center justify-center gap-2">
+                <span class="text-red-600 text-2xl">⚠</span> MISSION DIRECTIVE
+            </h2>
+            <p class="text-lg font-bold text-gray-900 leading-snug">
+                Installation required inside <span class="bg-blue-600 text-white px-2 decoration-clone box-decoration-clone">Owlbear Rodeo</span> to proceed.
+            </p>
+        </div>
+
+        <!-- Steps List - "Ticket" style -->
+        <div class="space-y-4 font-bold text-gray-800">
+            
+            <!-- Step 1 -->
+            <div class="flex flex-col sm:flex-row border-4 border-black bg-white group hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(220,38,38,1)] transition-all">
+                <div class="sm:w-20 bg-black text-white flex items-center justify-center font-black text-4xl py-2 sm:py-0">1</div>
+                <div class="flex-1 p-4 border-t-4 sm:border-t-0 sm:border-l-4 border-black">
+                    <div class="font-black uppercase text-xs text-red-600 mb-1 tracking-wider">Secure Asset</div>
+                    <div class="flex flex-col gap-3">
+                         <div class="text-xl font-black">Copy Manifest URL</div>
+                         <div class="flex gap-2">
+                            <code class="flex-1 bg-gray-100 border-2 border-dashed border-gray-400 p-2 font-mono text-xs font-bold truncate select-all">{{ url }}</code>
+                            <button @click="copyUrl" class="bg-yellow-400 border-2 border-black px-4 py-2 font-black uppercase text-sm hover:bg-yellow-300 active:bg-yellow-500 transition-colors flex items-center gap-2">
+                                <span v-if="copied">✔ COPIED</span>
+                                <span v-else>COPY</span>
+                            </button>
+                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+             <div class="flex flex-col sm:flex-row border-4 border-black bg-white group hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(37,99,235,1)] transition-all">
+                <div class="sm:w-20 bg-black text-white flex items-center justify-center font-black text-4xl py-2 sm:py-0">2</div>
+                <div class="flex-1 p-4 border-t-4 sm:border-t-0 sm:border-l-4 border-black">
+                     <div class="font-black uppercase text-xs text-blue-600 mb-1 tracking-wider">Infiltrate</div>
+                     <div class="text-xl font-black">Open <a href="https://www.owlbear.rodeo/" target="_blank" class="underline decoration-4 decoration-blue-500 hover:text-blue-600 hover:decoration-black">Owlbear Rodeo</a></div>
+                </div>
+            </div>
+            
+            <!-- Step 3 -->
+             <div class="flex flex-col sm:flex-row border-4 border-black bg-white group hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(22,163,74,1)] transition-all">
+                <div class="sm:w-20 bg-black text-white flex items-center justify-center font-black text-4xl py-2 sm:py-0">3</div>
+                <div class="flex-1 p-4 border-t-4 sm:border-t-0 sm:border-l-4 border-black">
+                    <div class="font-black uppercase text-xs text-green-600 mb-1 tracking-wider">Locate</div>
+                    <div class="text-lg">Click <span class="bg-gray-200 px-2 border-2 border-black text-sm font-black mx-1">•••</span> (Extras) → <span class="uppercase font-black">Extensions</span></div>
+                </div>
+            </div>
+
+             <!-- Step 4 -->
+             <div class="flex flex-col sm:flex-row border-4 border-black bg-white group hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(147,51,234,1)] transition-all">
+                <div class="sm:w-20 bg-black text-white flex items-center justify-center font-black text-4xl py-2 sm:py-0">4</div>
+                <div class="flex-1 p-4 border-t-4 sm:border-t-0 sm:border-l-4 border-black">
+                    <div class="font-black uppercase text-xs text-purple-600 mb-1 tracking-wider">Execute</div>
+                    <div class="text-lg leading-tight">Click <span class="font-black bg-black text-white px-1">+ Custom Extension</span> and paste the URL.</div>
+                </div>
+            </div>
+
         </div>
 
       </div>
+      
+      <!-- Footer -->
+       <div class="bg-black p-4 text-center text-white font-mono text-sm font-bold uppercase tracking-[0.2em] border-t-4 border-white">
+         Do Anything // Fail Forward
+       </div>
     </div>
   </div>
 </template>
