@@ -5,9 +5,10 @@
   "homepage_url": "https://rollforshoes.aurayu.com",
   "version": "1.0.0",
   "manifest_version": 1,
+  "icon": "/apple-touch-icon.png",
   "action": {
     "title": "Roll for Shoes",
-    "icon": "/icon.svg",
+    "icon": "/running-shoe.svg",
     "popover": "/",
     "height": 600,
     "width": 400
