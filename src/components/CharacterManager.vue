@@ -49,7 +49,6 @@ const handleCreate = async () => {
           class="flex-1 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
           placeholder="e.g. Ollie"
           @keyup.enter="handleCreate"
-          autoFocus
         />
         <button 
           @click="handleCreate"
