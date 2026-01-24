@@ -34,17 +34,17 @@ const countSuccesses = (dice: number[]) => dice.filter(d => d === 6).length;
             v-for="entry in history" 
             :key="entry.id"
             class="relative bg-white p-3 shadow-md border-l-4 font-mono text-xs group transition-all hover:-translate-x-1"
-            :class="isCritical(entry.dice) ? 'border-[#ff0055]' : 'border-[var(--obr-text-primary)]'"
+            :class="isCritical(entry.dice) ? 'border-[#ff0055]' : 'border-black'"
         >
             <!-- Timestamp Badge -->
-            <div class="absolute -right-2 -top-2 bg-[var(--obr-text-primary)] text-white px-1.5 py-0.5 text-[8px] font-bold transform rotate-3 group-hover:rotate-0 transition-transform">
+            <div class="absolute -right-2 -top-2 bg-black text-white px-1.5 py-0.5 text-[8px] font-bold transform rotate-3 group-hover:rotate-0 transition-transform">
                 {{ formatTime(entry.timestamp) }}
             </div>
 
             <!-- Content -->
             <div class="flex flex-col gap-1">
                 <div class="flex justify-between items-baseline border-b border-dashed border-gray-300 pb-1 mb-1">
-                    <span class="font-black uppercase text-[var(--obr-text-primary)]">{{ entry.characterName }}</span>
+                    <span class="font-black uppercase text-black">{{ entry.characterName }}</span>
                     <span class="text-[10px] text-gray-500">{{ entry.skillName }} ({{ entry.rank }})</span>
                 </div>
                 
