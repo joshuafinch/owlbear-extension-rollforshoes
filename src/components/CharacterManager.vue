@@ -6,9 +6,11 @@ import CharacterCard from './CharacterCard.vue';
 const { 
   characterList, 
   selectedItems, 
+  role,
   createCharacter, 
   addXp, 
   addSkill, 
+  updateSkill,
   removeSkill,
   linkSelectionToCharacter, 
   deleteCharacter 
@@ -74,8 +76,10 @@ const handleCreate = async () => {
         :key="char.id"
         :character="char"
         :selectedTokenIds="selectedItems"
+        :role="role"
         @addXp="addXp"
         @addSkill="addSkill"
+        @updateSkill="updateSkill"
         @removeSkill="removeSkill"
         @link="linkSelectionToCharacter"
         @delete="deleteCharacter"

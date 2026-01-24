@@ -6,6 +6,7 @@ import type { Character, CharacterData, Skill, CharacterLink } from '../types';
 export function useRollForShoes() {
   const characters = ref<CharacterData>({});
   const selectedItems = ref<string[]>([]);
+  const role = ref<string>('PLAYER');
   
   // Room metadata key for storing all characters
   const ROOM_DATA_KEY = getPluginId('characters');
@@ -97,7 +98,8 @@ export function useRollForShoes() {
   const addXp = (id: string, amount: number) => {
     const char = characters.value[id];
     if (!char) return;
-    updateCharacter(id, { xp: char.xp + amount });
+    const newXp = Math.max(0, char.xp + amount);
+    updateCharacter(id, { xp: newXp });
   };
 
   const addSkill = (id: string, skill: Skill) => {
@@ -106,6 +108,16 @@ export function useRollForShoes() {
     updateCharacter(id, { skills: [...char.skills, skill] });
   };
   
+  const updateSkill = (id: string, skillIndex: number, updates: Partial<Skill>) => {
+    const char = characters.value[id];
+    if (!char) return;
+    const newSkills = [...char.skills];
+    if (newSkills[skillIndex]) {
+        newSkills[skillIndex] = { ...newSkills[skillIndex], ...updates };
+        updateCharacter(id, { skills: newSkills });
+    }
+  };
+
   const removeSkill = (id: string, skillIndex: number) => {
     const char = characters.value[id];
     if (!char) return;
@@ -161,6 +173,9 @@ export function useRollForShoes() {
       const metadata = await OBR.room.getMetadata();
       characters.value = (metadata[ROOM_DATA_KEY] as CharacterData) || {};
 
+      // Load initial role
+      role.value = await OBR.player.getRole();
+
       // Listen for room data changes
       unsubscribeRoom.value = OBR.room.onMetadataChange((newMetadata) => {
         const newData = newMetadata[ROOM_DATA_KEY] as CharacterData;
@@ -179,9 +194,10 @@ export function useRollForShoes() {
         }
       });
 
-      // Listen for selection changes
+      // Listen for selection changes and role changes
       unsubscribeSelection.value = OBR.player.onChange((player) => {
         selectedItems.value = player.selection || [];
+        role.value = player.role;
       });
     });
   });
@@ -195,10 +211,12 @@ export function useRollForShoes() {
     characters,
     characterList,
     selectedItems,
+    role,
     createCharacter,
     deleteCharacter,
     addXp,
     addSkill,
+    updateSkill,
     removeSkill,
     linkSelectionToCharacter
   };
