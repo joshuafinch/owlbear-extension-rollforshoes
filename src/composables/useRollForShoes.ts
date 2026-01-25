@@ -20,20 +20,66 @@ export function useRollForShoes() {
   const activeCharacterId = ref<string | null>(null);
 
   // Computed helper to get list as array
-  const characterList = computed(() => {
-    return Object.values(characters.value).sort((a, b) => a.createdAt - b.createdAt);
+  const characterList = computed({
+    get: () => {
+        return Object.values(characters.value).sort((a, b) => {
+            // Sort by order if available, otherwise fallback to creation date
+            if (a.order !== undefined && b.order !== undefined) {
+                return a.order - b.order;
+            }
+            return a.createdAt - b.createdAt;
+        });
+    },
+    set: () => {
+        // We can't directly set a computed property like this to reorder
+        // Instead we'll implement a reorderCharacters action
+    }
   });
 
   // --- Actions ---
 
+  const reorderCharacters = async (newOrder: Character[]) => {
+      // Create updates for all characters with new order indices
+      const updates: Record<string, Character> = {};
+      const roomMetadata = await OBR.room.getMetadata();
+      const currentData = (roomMetadata[ROOM_DATA_KEY] as CharacterData) || {};
+      
+      newOrder.forEach((char, index) => {
+          updates[char.id] = { ...char, order: index };
+          // Optimistic update
+          if (characters.value[char.id]) {
+              characters.value[char.id].order = index;
+          }
+      });
+      
+      try {
+        // Strip reactivity
+        const cleanUpdates: CharacterData = {};
+        for(const id in updates) {
+            cleanUpdates[id] = JSON.parse(JSON.stringify(updates[id]));
+        }
+
+        await OBR.room.setMetadata({
+            [ROOM_DATA_KEY]: {
+                ...currentData,
+                ...cleanUpdates
+            }
+        });
+      } catch (e) {
+          console.error("Failed to reorder characters", e);
+      }
+  };
+
   const createCharacter = async (name: string) => {
     const id = crypto.randomUUID();
+    const existingCount = Object.keys(characters.value).length;
     const newChar: Character = {
       id,
       name,
       xp: 0,
       skills: [{ name: 'Do Anything', rank: 1 }],
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      order: existingCount // Append to end
     };
 
     // Optimistic update
@@ -362,7 +408,8 @@ export function useRollForShoes() {
     rollHistory,
     addLogEntry,
     debugMode,
-    activeCharacterId
+    activeCharacterId,
+    reorderCharacters
   };
 }
 

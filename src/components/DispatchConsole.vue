@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRollForShoes } from '../composables/useRollForShoes';
 import CharacterCard from './CharacterCard.vue';
 import CreationRow from './common/CreationRow.vue';
-import type { Skill } from '../types';
+import draggable from 'vuedraggable';
+import type { Skill, Character } from '../types';
 
 const emit = defineEmits<{
   (e: 'roll', characterId: string, skill: Skill): void;
@@ -21,10 +22,19 @@ const {
   reorderSkills,
   linkSelectionToCharacter, 
   deleteCharacter,
-  activeCharacterId
+  activeCharacterId,
+  reorderCharacters
 } = useRollForShoes();
 
 const isCreating = ref(false);
+
+// Computed property for vuedraggable to handle characters array
+const draggableCharacters = computed({
+  get: () => characterList.value,
+  set: (value: Character[]) => {
+     reorderCharacters(value);
+  }
+});
 
 const handleCreate = async (name: string) => {
   await createCharacter(name);
@@ -33,6 +43,14 @@ const handleCreate = async (name: string) => {
 
 const onRoll = (characterId: string, skill: Skill) => {
     emit('roll', characterId, skill);
+};
+
+const onDragStart = () => {
+  document.body.classList.add('grabbing');
+};
+
+const onDragEnd = () => {
+  document.body.classList.remove('grabbing');
 };
 </script>
 
@@ -63,22 +81,50 @@ const onRoll = (characterId: string, skill: Skill) => {
 
           <!-- Character List -->
           <div class="px-2">
-           <CharacterCard
-             v-for="char in characterList"
-             :key="char.id"
-             :character="char"
-             :selectedTokenIds="selectedItems"
-             :role="role"
-             :isActive="activeCharacterId === char.id"
-             @addXp="addXp"
-             @addSkill="addSkill"
-             @updateSkill="updateSkill"
-             @removeSkill="removeSkill"
-             @reorderSkills="reorderSkills"
-             @link="linkSelectionToCharacter"
-             @delete="deleteCharacter"
-             @roll="onRoll"
-           />
+           <draggable
+             v-model="draggableCharacters"
+             item-key="id"
+             handle=".character-drag-handle"
+             ghost-class="sortable-ghost"
+             drag-class="sortable-drag"
+             :animation="200"
+             :force-fallback="true"
+             :fallback-tolerance="3"
+             :fallback-on-body="true"
+             @start="onDragStart"
+             @end="onDragEnd"
+           >
+             <template #item="{ element: char }">
+               <div class="relative group/card">
+                 <!-- Character Card -->
+                 <CharacterCard
+                   :character="char"
+                   :selectedTokenIds="selectedItems"
+                   :role="role"
+                   :isActive="activeCharacterId === char.id"
+                   @addXp="addXp"
+                   @addSkill="addSkill"
+                   @updateSkill="updateSkill"
+                   @removeSkill="removeSkill"
+                   @reorderSkills="reorderSkills"
+                   @link="linkSelectionToCharacter"
+                   @delete="deleteCharacter"
+                   @roll="onRoll"
+                 />
+                 
+                 <!-- Drag Handle (positioned absolutely to overlay the card edge) -->
+                 <div 
+                   v-if="!activeCharacterId" 
+                   class="character-drag-handle absolute left-0 top-0 bottom-4 w-6 -ml-2 z-10 flex items-center justify-center opacity-0 group-hover/card:opacity-100 cursor-grab active:cursor-grabbing transition-opacity"
+                   title="Drag to reorder"
+                 >
+                   <div class="h-8 w-4 bg-[var(--obr-text-disabled)]/20 hover:bg-[var(--obr-primary-main)]/50 rounded-r flex items-center justify-center backdrop-blur-sm">
+                     <span class="text-[8px] text-[var(--obr-text-primary)] font-black leading-none transform -rotate-90">::</span>
+                   </div>
+                 </div>
+               </div>
+             </template>
+           </draggable>
           </div>
            
            <!-- Reusable Create Component -->
@@ -112,5 +158,24 @@ const onRoll = (characterId: string, skill: Skill) => {
 @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+.sortable-ghost {
+  opacity: 0.5;
+  filter: grayscale(100%);
+}
+.sortable-ghost > * {
+  opacity: 0.5;
+}
+
+.sortable-drag {
+  opacity: 1;
+  z-index: 50;
+  transform: rotate(1deg) scale(1.02);
+  cursor: grabbing;
+}
+:global(body.grabbing), :global(body.grabbing *) {
+  cursor: grabbing !important;
+  user-select: none !important;
 }
 </style>

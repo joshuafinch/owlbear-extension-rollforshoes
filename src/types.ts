@@ -10,6 +10,7 @@ export interface Character {
   skills: Skill[];
   createdAt: number;
   imageUrl?: string;
+  order?: number; // Added order field
 }
 
 export interface CharacterLink {
