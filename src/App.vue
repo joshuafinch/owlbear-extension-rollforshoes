@@ -19,7 +19,7 @@ onMounted(() => {
 <template>
   <InstallGuide v-if="!isReady" />
   
-  <div v-else class="font-sans h-screen transition-colors duration-300 bg-[var(--obr-bg-paper)] text-[var(--obr-text-primary)] overflow-hidden">
+  <div v-else class="font-sans h-screen transition-colors duration-300 bg-[var(--obr-surface-card)] text-[var(--obr-text-primary)] overflow-hidden">
     <!-- Main Container -->
     <div class="w-full h-full mx-auto">
       <CharacterManager />

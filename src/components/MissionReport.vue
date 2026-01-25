@@ -61,17 +61,17 @@ const confirmEvolution = () => {
 
 <template>
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in" aria-modal="true" role="dialog">
-    <div class="w-full max-w-sm bg-[var(--obr-bg-paper)] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden transform transition-all scale-100">
+    <div class="w-full max-w-sm bg-[var(--obr-surface-card)] border-4 border-[var(--obr-border-base)] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden transform transition-all scale-100">
       
       <!-- Top Secret Striped Header -->
-      <div class="h-4 bg-[repeating-linear-gradient(45deg,#000,#000_10px,#fbbf24_10px,#fbbf24_20px)] border-b-4 border-black"></div>
+      <div class="h-4 bg-[repeating-linear-gradient(45deg,#000,#000_10px,var(--obr-brand-hazard)_10px,var(--obr-brand-hazard)_20px)] border-b-4 border-black"></div>
       
       <div class="p-6 text-center">
         <!-- Header -->
         <h2 class="text-3xl font-black uppercase tracking-tighter italic mb-2 text-[var(--obr-text-primary)]">
           Mission Report
         </h2>
-        <div class="inline-block bg-black text-white text-xs font-mono px-3 py-1 mb-6 tracking-widest">
+        <div class="inline-block bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)] text-xs font-mono px-3 py-1 mb-6 tracking-widest">
            {{ result.characterName }} // {{ result.skillName }} {{ result.rank }}
         </div>
 
@@ -83,7 +83,7 @@ const confirmEvolution = () => {
             class="w-16 h-16 flex items-center justify-center border-4 rounded-lg text-4xl font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] transition-all duration-500 animate-bounce-in"
             :class="die === 6 
               ? 'bg-[var(--obr-primary-main)] border-black text-white scale-110 z-10' 
-              : 'bg-white border-gray-300 text-gray-400'"
+              : 'bg-[var(--obr-surface-card)] border-[var(--obr-border-subtle)] text-[var(--obr-text-disabled)]'"
             :style="{ animationDelay: `${index * 50}ms` }"
             :aria-label="`Die ${index + 1}: ${die}`"
           >
@@ -94,12 +94,12 @@ const confirmEvolution = () => {
         <!-- Status Messages -->
         <div class="mb-4 min-h-[3rem] flex items-center justify-center" aria-live="polite">
           <div v-if="isEvolving" class="w-full">
-             <div class="text-[#ff0055] font-black text-xl uppercase tracking-tighter italic mb-2 animate-pulse">
+             <div class="text-[var(--obr-status-critical)] font-black text-xl uppercase tracking-tighter italic mb-2 animate-pulse">
                 Evolution Protocol Initiated
              </div>
              <p class="text-sm font-bold uppercase text-[var(--obr-text-secondary)]">Enter name for Rank {{ result.rank + 1 }} Skill</p>
           </div>
-          <div v-else-if="isAllSixes" class="text-[#ff0055] font-black text-4xl uppercase tracking-tighter italic animate-pulse drop-shadow-md transform -rotate-2">
+          <div v-else-if="isAllSixes" class="text-[var(--obr-status-critical)] font-black text-4xl uppercase tracking-tighter italic animate-pulse drop-shadow-md transform -rotate-2">
             CRITICAL SUCCESS!
           </div>
           <div v-else-if="successCount > 0" class="text-[var(--obr-primary-main)] font-black text-2xl uppercase tracking-widest">
@@ -113,7 +113,7 @@ const confirmEvolution = () => {
         <!-- Current XP Display -->
         <div v-if="!isAllSixes && !isEvolving" class="flex items-center justify-center gap-2 mb-4">
              <span class="text-xs font-bold uppercase text-[var(--obr-text-secondary)] tracking-widest">Current Status:</span>
-             <div class="bg-black text-white px-2 py-0.5 rounded text-sm font-mono font-bold">
+             <div class="bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)] px-2 py-0.5 rounded text-sm font-mono font-bold">
                  {{ currentXp }} XP
              </div>
         </div>
@@ -129,20 +129,20 @@ const confirmEvolution = () => {
                 type="text"
                 autocomplete="off"
                 data-1p-ignore
-                class="w-full bg-black text-white border-2 border-[#ff0055] p-3 font-bold text-center mb-2 focus:outline-none focus:shadow-[0_0_10px_#ff0055]"
+                class="w-full bg-[var(--obr-surface-input)] text-[var(--obr-text-primary)] border-2 border-[var(--obr-status-critical)] p-3 font-bold text-center mb-2 focus:outline-none focus:shadow-[0_0_10px_var(--obr-status-critical)]"
                 placeholder="NEW SKILL NAME..."
                 @keyup.enter="confirmEvolution"
              />
              <div class="grid grid-cols-2 gap-2">
                 <button 
                   @click="isEvolving = false"
-                  class="w-full bg-[var(--obr-bg-paper)] hover:bg-gray-200 text-[var(--obr-text-primary)] border-2 border-black font-bold uppercase py-3 text-sm"
+                  class="w-full bg-[var(--obr-surface-card)] hover:bg-[var(--obr-surface-hover)] text-[var(--obr-text-primary)] border-2 border-[var(--obr-border-base)] font-bold uppercase py-3 text-sm"
                 >
                   Cancel
                 </button>
                 <button 
                   @click="confirmEvolution"
-                  class="w-full bg-[#ff0055] hover:bg-[#d40045] text-white border-2 border-black font-black uppercase py-3 text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none"
+                  class="w-full bg-[var(--obr-status-critical)] hover:opacity-90 text-white border-2 border-black font-black uppercase py-3 text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none"
                 >
                   Confirm
                 </button>
@@ -155,7 +155,7 @@ const confirmEvolution = () => {
             <button 
               v-if="isAllSixes"
               @click="startEvolution"
-              class="w-full bg-[#ff0055] hover:bg-[#d40045] text-white border-2 border-black font-black uppercase py-3 text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 mb-4"
+              class="w-full bg-[var(--obr-status-critical)] hover:opacity-90 text-white border-2 border-black font-black uppercase py-3 text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 mb-4"
             >
               <span>★</span> Evolve New Skill
             </button>
@@ -171,7 +171,7 @@ const confirmEvolution = () => {
               <button 
                 v-if="!isRetroactive"
                 @click="emit('succeeded', result.id)"
-                class="w-full bg-green-600 hover:bg-green-700 text-white border-2 border-black font-bold uppercase py-3 text-sm flex items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
+                class="w-full bg-[var(--obr-status-success)] hover:opacity-90 text-white border-2 border-black font-bold uppercase py-3 text-sm flex items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
               >
                 <span class="text-lg">✓</span> SUCCEEDED
               </button>
@@ -181,9 +181,9 @@ const confirmEvolution = () => {
                 <button 
                     v-if="!isRetroactive"
                     @click="emit('takeXp', result.id)"
-                    class="flex-1 bg-[var(--obr-bg-default)] hover:bg-[var(--obr-text-primary)] text-[var(--obr-text-primary)] hover:text-[var(--obr-bg-default)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-3 text-sm flex flex-col items-center justify-center gap-1 group shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
+                    class="flex-1 bg-[var(--obr-surface-base)] hover:bg-[var(--obr-text-primary)] text-[var(--obr-text-primary)] hover:text-[var(--obr-bg-default)] border-2 border-[var(--obr-border-base)] font-bold uppercase py-3 text-sm flex flex-col items-center justify-center gap-1 group shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
                 >
-                    <span class="text-red-500 group-hover:text-red-600 text-lg leading-none">⚠</span> 
+                    <span class="text-[var(--obr-status-danger)] group-hover:text-[var(--obr-status-danger)] text-lg leading-none">⚠</span> 
                     <span class="leading-none">FAIL (+1 XP)</span>
                 </button>
                 
@@ -191,12 +191,12 @@ const confirmEvolution = () => {
                 <button 
                     v-if="canAdvanceOnFail"
                     @click="startEvolution"
-                    class="flex-1 bg-[var(--obr-primary-main)] hover:opacity-90 text-[var(--obr-primary-contrast)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-3 text-sm flex flex-col items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
+                    class="flex-1 bg-[var(--obr-primary-main)] hover:opacity-90 text-[var(--obr-primary-contrast)] border-2 border-[var(--obr-border-base)] font-bold uppercase py-3 text-sm flex flex-col items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
                 >
                     <span class="text-lg leading-none">⚡</span> 
                     <span class="leading-none">ADVANCE (-{{ nonSixesCount }} XP)</span>
                 </button>
-                 <div v-else-if="!isRetroactive || (isRetroactive && !canAdvanceOnFail)" class="flex-1 flex items-center justify-center bg-gray-100 border-2 border-dashed border-gray-300 text-gray-400 font-bold text-xs uppercase text-center p-1 cursor-not-allowed select-none">
+                 <div v-else-if="!isRetroactive || (isRetroactive && !canAdvanceOnFail)" class="flex-1 flex items-center justify-center bg-[var(--obr-surface-base)] border-2 border-dashed border-[var(--obr-border-subtle)] text-[var(--obr-text-disabled)] font-bold text-xs uppercase text-center p-1 cursor-not-allowed select-none">
                      Need {{ nonSixesCount }} XP to advance
                  </div>
               </div>
@@ -206,7 +206,7 @@ const confirmEvolution = () => {
             <button 
               v-if="!isEvolving"
                @click="emit('close')"
-               class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-bg-default)] font-bold uppercase text-xs tracking-widest py-4 mt-2 rounded border border-transparent hover:border-[var(--obr-text-disabled)] transition-colors"
+               class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-surface-hover)] font-bold uppercase text-xs tracking-widest py-4 mt-2 rounded border border-transparent hover:border-[var(--obr-border-subtle)] transition-colors"
             >
                Dismiss Report (Decide Later)
             </button>

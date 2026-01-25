@@ -237,7 +237,7 @@ const handleLogSucceeded = (logId: string) => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col overflow-hidden bg-[var(--obr-bg-paper)]">
+  <div class="h-full flex flex-col overflow-hidden bg-[var(--obr-surface-card)]">
     
     <!-- Mission Report Overlay -->
     <MissionReport 
@@ -251,36 +251,36 @@ const handleLogSucceeded = (logId: string) => {
     />
 
     <!-- Fixed Header -->
-    <div class="flex-none bg-[var(--obr-bg-default)] z-10 pt-2 px-2 pb-0">
+    <div class="flex-none bg-[var(--obr-surface-base)] z-10 pt-2 px-2 pb-0">
       
        <!-- Top Tabs -->
-       <div class="flex items-end gap-1 mb-0 border-b-4 border-[var(--obr-text-primary)] pl-2">
+       <div class="flex items-end gap-1 mb-0 border-b-4 border-[var(--obr-border-base)] pl-2">
           <button 
             @click="activeTab = 'DISPATCH'"
-            class="px-5 py-3 font-black uppercase tracking-wider text-sm rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-text-primary)] transition-all relative top-[2px]"
+            class="px-5 py-3 font-black uppercase tracking-wider text-sm rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-border-base)] transition-all relative top-[2px]"
             :class="activeTab === 'DISPATCH' 
-              ? 'bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-bg-default)] z-10 -mb-[4px] pt-4 pb-4' 
-              : 'bg-[var(--obr-bg-paper)] text-[var(--obr-text-disabled)] hover:bg-gray-200 hover:text-[var(--obr-text-secondary)]'"
+              ? 'bg-[var(--obr-surface-base)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-surface-base)] z-10 -mb-[4px] pt-4 pb-4' 
+              : 'bg-[var(--obr-surface-card)] text-[var(--obr-text-disabled)] hover:bg-[var(--obr-surface-hover)] hover:text-[var(--obr-text-secondary)]'"
           >
             Dispatch
           </button>
           <button 
             @click="activeTab = 'LOGS'"
-            class="px-5 py-3 font-black uppercase tracking-wider text-sm rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-text-primary)] transition-all relative top-[2px]"
+            class="px-5 py-3 font-black uppercase tracking-wider text-sm rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-border-base)] transition-all relative top-[2px]"
             :class="activeTab === 'LOGS' 
-              ? 'bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-bg-default)] z-10 -mb-[4px] pt-4 pb-4' 
-              : 'bg-[var(--obr-bg-paper)] text-[var(--obr-text-disabled)] hover:bg-gray-200 hover:text-[var(--obr-text-secondary)]'"
+              ? 'bg-[var(--obr-surface-base)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-surface-base)] z-10 -mb-[4px] pt-4 pb-4' 
+              : 'bg-[var(--obr-surface-card)] text-[var(--obr-text-disabled)] hover:bg-[var(--obr-surface-hover)] hover:text-[var(--obr-text-secondary)]'"
           >
             Logs
           </button>
           <button 
             @click="activeTab = 'SYSTEMS'"
-            class="px-5 py-3 font-black uppercase tracking-wider text-sm rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-text-primary)] transition-all relative top-[2px]"
+            class="px-5 py-3 font-black uppercase tracking-wider text-sm rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-border-base)] transition-all relative top-[2px]"
             :class="activeTab === 'SYSTEMS' 
-              ? 'bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-bg-default)] z-10 -mb-[4px] pt-4 pb-4' 
-              : 'bg-[var(--obr-bg-paper)] text-[var(--obr-text-disabled)] hover:bg-gray-200 hover:text-[var(--obr-text-secondary)]'"
+              ? 'bg-[var(--obr-surface-base)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-surface-base)] z-10 -mb-[4px] pt-4 pb-4' 
+              : 'bg-[var(--obr-surface-card)] text-[var(--obr-text-disabled)] hover:bg-[var(--obr-surface-base)] hover:text-[var(--obr-text-secondary)]'"
           >
-            Systems
+            System
           </button>
        </div>
     </div>

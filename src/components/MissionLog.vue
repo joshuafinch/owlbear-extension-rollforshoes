@@ -89,7 +89,7 @@ const handleDeleteClick = (id: string) => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col bg-[#f0f0f0] border-t-4 border-[var(--obr-text-primary)] relative">
+  <div class="h-full flex flex-col bg-[var(--obr-surface-base)] border-t-4 border-[var(--obr-border-base)] relative">
     
     <!-- Reuse Mission Report for Retroactive Evolution -->
     <MissionReport 
@@ -110,13 +110,13 @@ const handleDeleteClick = (id: string) => {
     />
 
     <!-- Tape Header -->
-    <div class="bg-[var(--obr-text-primary)] text-[var(--obr-bg-paper)] px-4 py-2 text-xs font-black uppercase tracking-widest flex justify-between items-center">
+    <div class="bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)] px-4 py-2 text-xs font-black uppercase tracking-widest flex justify-between items-center">
         <span>// MISSION LOG // ARCHIVE</span>
         <span>REC_ID: {{ Math.floor(Date.now() / 1000) }}</span>
     </div>
 
     <!-- Scrollable Logs -->
-    <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-[var(--obr-bg-default)]">
+    <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-[var(--obr-surface-base)]">
         
         <div v-if="history.length === 0" class="text-center py-10 opacity-40">
              <div class="text-5xl mb-2 grayscale">📇</div>
@@ -127,29 +127,29 @@ const handleDeleteClick = (id: string) => {
             <!-- ROLL ENTRY -->
             <div 
                 v-if="entry.type === 'ROLL'"
-                class="relative bg-white p-3 shadow-md border-l-4 font-mono text-sm group transition-all hover:-translate-x-1"
-                :class="isCritical(entry.dice) ? 'border-[#ff0055]' : 'border-black'"
+                class="relative bg-[var(--obr-surface-card)] p-3 shadow-md border-l-4 font-mono text-sm group transition-all hover:-translate-x-1"
+                :class="isCritical(entry.dice) ? 'border-[var(--obr-status-critical)]' : 'border-[var(--obr-border-base)]'"
             >
                 <!-- Timestamp Badge -->
-                <div class="absolute -right-2 -top-2 bg-black text-white px-2 py-0.5 text-[10px] font-bold transform rotate-3 group-hover:rotate-0 transition-transform">
+                <div class="absolute -right-2 -top-2 bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)] px-2 py-0.5 text-[10px] font-bold transform rotate-3 group-hover:rotate-0 transition-transform">
                     {{ formatTime(entry.timestamp) }}
                 </div>
 
                 <!-- Content -->
                 <div class="flex flex-col gap-1">
-                    <div class="flex justify-between items-baseline border-b border-dashed border-gray-300 pb-1 mb-1">
-                        <span class="font-black text-black text-base">{{ entry.characterName }}</span>
-                        <span class="text-xs text-gray-500">{{ entry.skillName }} ({{ entry.rank }})</span>
+                    <div class="flex justify-between items-baseline border-b border-dashed border-[var(--obr-border-subtle)] pb-1 mb-1">
+                        <span class="font-black text-[var(--obr-text-primary)] text-base">{{ entry.characterName }}</span>
+                        <span class="text-xs text-[var(--obr-text-secondary)]">{{ entry.skillName }} ({{ entry.rank }})</span>
                     </div>
                     
                     <div class="flex items-center gap-2 mt-1">
-                        <span class="font-bold text-gray-400 select-none">></span>
+                        <span class="font-bold text-[var(--obr-text-disabled)] select-none">></span>
                         <div class="flex gap-1 flex-wrap">
                             <span 
                                 v-for="(die, i) in entry.dice" 
                                 :key="i"
-                                class="w-6 h-6 flex items-center justify-center border border-black rounded text-xs font-bold shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
-                                :class="die === 6 ? 'bg-[var(--obr-primary-main)] text-white' : 'bg-gray-100 text-gray-600'"
+                                class="w-6 h-6 flex items-center justify-center border border-[var(--obr-border-base)] rounded text-xs font-bold shadow-[1px_1px_0px_0px_rgba(0,0,0,0.2)]"
+                                :class="die === 6 ? 'bg-[var(--obr-primary-main)] text-white' : 'bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)]'"
                             >
                                 {{ die }}
                             </span>
@@ -167,7 +167,7 @@ const handleDeleteClick = (id: string) => {
                              <template v-if="isCritical(entry.dice)">
                                 <button 
                                     @click="startRetroEvolution(entry)"
-                                    class="text-[10px] bg-[#ff0055] text-white hover:bg-[#d40045] border border-black px-2 py-1 font-bold uppercase animate-pulse"
+                                    class="text-[10px] bg-[var(--obr-status-critical)] text-white hover:opacity-90 border border-[var(--obr-border-base)] px-2 py-1 font-bold uppercase animate-pulse"
                                 >
                                     Evolve!
                                 </button>
@@ -179,18 +179,18 @@ const handleDeleteClick = (id: string) => {
                                  <button 
                                     v-if="!entry.actionsTaken?.includes('xp')"
                                     @click="emit('takeXp', entry.id, entry.characterId)"
-                                    class="text-[10px] bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-1 font-bold uppercase text-red-600"
+                                    class="text-[10px] bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-1 font-bold uppercase text-[var(--obr-status-danger)]"
                                     title="Claim 1 XP for Failure"
                                 >
                                     FAIL (+1 XP)
                                 </button>
-                                <span v-else class="text-[10px] text-gray-400 font-bold italic uppercase mr-2">XP Claimed</span>
+                                <span v-else class="text-[10px] text-[var(--obr-text-disabled)] font-bold italic uppercase mr-2">XP Claimed</span>
 
                                 <!-- Advance -->
                                 <button 
                                     v-if="canAffordAdvance(entry) && latestRollIds.has(entry.id)"
                                     @click="startRetroEvolution(entry)"
-                                    class="text-[10px] bg-[var(--obr-primary-main)] text-white hover:opacity-90 border border-black px-2 py-1 font-bold uppercase animate-pulse"
+                                    class="text-[10px] bg-[var(--obr-primary-main)] text-white hover:opacity-90 border border-[var(--obr-border-base)] px-2 py-1 font-bold uppercase animate-pulse"
                                     title="Spend XP to Advance"
                                 >
                                     Advance!
@@ -198,7 +198,7 @@ const handleDeleteClick = (id: string) => {
                                 <!-- OLD/HISTORICAL ROLL - Advance Blocked -->
                                 <button 
                                     v-else-if="canAffordAdvance(entry) && !latestRollIds.has(entry.id)"
-                                    class="text-[10px] bg-gray-300 text-gray-500 border border-gray-400 px-2 py-1 font-bold uppercase cursor-not-allowed opacity-50"
+                                    class="text-[10px] bg-[var(--obr-bg-default)] text-[var(--obr-text-disabled)] border border-[var(--obr-text-disabled)] px-2 py-1 font-bold uppercase cursor-not-allowed opacity-50"
                                     title="Must advance on latest roll"
                                     disabled
                                 >
@@ -209,7 +209,7 @@ const handleDeleteClick = (id: string) => {
                                  <button 
                                     v-if="!entry.actionsTaken?.includes('xp')"
                                     @click="emit('succeeded', entry.id)"
-                                    class="text-[10px] bg-green-50 hover:bg-green-100 border border-green-200 px-2 py-1 font-bold uppercase text-green-600"
+                                    class="text-[10px] bg-green-50 hover:bg-green-100 border border-green-200 px-2 py-1 font-bold uppercase text-[var(--obr-status-success)]"
                                     title="Mark as Succeeded"
                                 >
                                     SUCCESS
@@ -218,19 +218,19 @@ const handleDeleteClick = (id: string) => {
                         </div>
                         
                         <!-- Terminal State Status -->
-                        <div v-else class="text-[10px] text-gray-400 uppercase font-bold italic">
+                        <div v-else class="text-[10px] text-[var(--obr-text-disabled)] uppercase font-bold italic">
                             <span v-if="entry.actionsTaken?.includes('advance')">Evolved</span>
                             <span v-else-if="entry.actionsTaken?.includes('succeeded')">Succeeded</span>
                         </div>
 
                         <div class="flex justify-end ml-auto items-center gap-2">
-                            <span v-if="isCritical(entry.dice)" class="text-[#ff0055] font-black text-xs uppercase border-2 border-[#ff0055] px-1 transform -rotate-2">
+                            <span v-if="isCritical(entry.dice)" class="text-[var(--obr-status-critical)] font-black text-xs uppercase border-2 border-[var(--obr-status-critical)] px-1 transform -rotate-2">
                                 ★ CRITICAL ★
                             </span>
                             <span v-else-if="countSuccesses(entry.dice) > 0" class="text-[var(--obr-primary-main)] font-bold text-xs uppercase">
                                 {{ countSuccesses(entry.dice) }} Successes
                             </span>
-                            <span v-else class="text-gray-400 font-bold text-xs uppercase">
+                            <span v-else class="text-[var(--obr-text-disabled)] font-bold text-xs uppercase">
                                 Standard
                             </span>
                             
@@ -238,7 +238,7 @@ const handleDeleteClick = (id: string) => {
                             <button 
                                 @click="handleDeleteClick(entry.id)"
                                 class="opacity-0 group-hover:opacity-100 transition-opacity font-bold ml-2 px-1 rounded text-xs"
-                                :class="deletingLogId === entry.id ? 'bg-red-600 text-white opacity-100' : 'text-gray-400 hover:text-red-600'"
+                                :class="deletingLogId === entry.id ? 'bg-[var(--obr-status-danger)] text-white opacity-100' : 'text-[var(--obr-text-disabled)] hover:text-[var(--obr-status-danger)]'"
                                 :title="deletingLogId === entry.id ? 'Click again to confirm delete' : 'Delete Log Entry'"
                             >
                                 {{ deletingLogId === entry.id ? 'CONFIRM?' : '✕' }}
@@ -251,45 +251,51 @@ const handleDeleteClick = (id: string) => {
             <!-- SKILL ENTRY -->
             <div 
                 v-else-if="entry.type === 'SKILL'"
-                class="relative bg-[var(--obr-bg-default)] p-4 shadow-md border-l-8 border-[var(--obr-primary-main)] font-mono text-sm opacity-90 my-2 rounded-r-lg group"
+                class="relative bg-[var(--obr-surface-card)] p-3 shadow-md border-l-4 border-[var(--obr-primary-main)] font-mono text-sm my-2 group transition-all hover:-translate-x-1"
             >
-                 <!-- Timestamp Badge -->
-                 <div class="absolute -right-2 -top-2 bg-[var(--obr-primary-main)] text-white px-3 py-1 text-[10px] font-bold rounded-full shadow-sm">
-                    {{ formatTime(entry.timestamp) }}
+                <!-- Header: Character Name + Time -->
+                <div class="flex justify-between items-baseline border-b border-dashed border-[var(--obr-border-subtle)] pb-1 mb-2">
+                    <span class="font-black text-[var(--obr-text-primary)] text-base">{{ entry.characterName }}</span>
+                    <span class="text-[10px] font-bold text-[var(--obr-text-secondary)]">{{ formatTime(entry.timestamp) }}</span>
                 </div>
                 
-                <div class="flex flex-col gap-2 text-center">
-                    <div class="text-[10px] uppercase text-[var(--obr-text-secondary)] tracking-[0.2em] font-black border-b border-gray-200 pb-1 w-full">
-                        ✨ Skill Acquired ✨
+                <!-- Achievement Block -->
+                <div class="bg-[var(--obr-primary-main)]/5 rounded p-3 text-center border border-[var(--obr-primary-main)]/20 mb-2 relative overflow-hidden">
+                    <!-- Decorator Icon -->
+                    <div class="absolute -right-4 -bottom-4 text-[var(--obr-primary-main)] opacity-10 text-6xl transform rotate-12 select-none">★</div>
+                    
+                    <div class="text-[9px] uppercase text-[var(--obr-primary-main)] tracking-[0.2em] font-black mb-1">
+                        ✨ Skill Acquired
                     </div>
                     
-                    <div class="font-black text-xl leading-tight text-[var(--obr-text-primary)] my-1">
+                    <div class="font-black text-lg leading-tight text-[var(--obr-text-primary)] my-1 relative z-10">
                         {{ entry.newSkillName }}
                     </div>
 
-                    <div class="flex justify-center items-center gap-2">
-                         <div class="text-xs font-bold bg-black text-white px-3 py-1 rounded shadow-sm">
-                            Rank {{ entry.rank }}
-                        </div>
+                    <div class="inline-block bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)] text-[10px] font-bold px-2 py-0.5 rounded shadow-sm mt-1 relative z-10">
+                        Rank {{ entry.rank }}
                     </div>
+                </div>
 
-                    <div class="mt-2 text-[10px] uppercase bg-gray-50 rounded p-1 flex justify-between px-2 text-gray-600 font-bold">
-                        <span>{{ entry.characterName }}</span>
+                <!-- Footer: Cost + Actions -->
+                <div class="flex justify-between items-center mt-1">
+                     <!-- Cost Badge -->
+                    <div class="text-[10px] font-bold uppercase px-2 py-0.5 rounded"
+                         :class="entry.cost > 0 ? 'bg-[var(--obr-bg-default)] text-[var(--obr-text-disabled)]' : 'bg-[var(--obr-status-success)]/10 text-[var(--obr-status-success)]'"
+                    >
                         <span v-if="entry.cost > 0">-{{ entry.cost }} XP</span>
-                        <span v-else class="text-[var(--obr-primary-main)]">Free (Crit)</span>
+                        <span v-else>Free (Crit)</span>
                     </div>
 
-                    <!-- Delete Button (Only on Hover) -->
-                    <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                         <button 
-                            @click="handleDeleteClick(entry.id)"
-                            class="font-bold px-1 text-xs rounded"
-                            :class="deletingLogId === entry.id ? 'bg-red-600 text-white opacity-100' : 'text-gray-400 hover:text-red-600'"
-                            :title="deletingLogId === entry.id ? 'Click again to confirm delete' : 'Delete Log Entry'"
-                        >
-                            {{ deletingLogId === entry.id ? 'CONFIRM?' : '✕' }}
-                        </button>
-                    </div>
+                    <!-- Delete Button (Standardized) -->
+                     <button 
+                        @click="handleDeleteClick(entry.id)"
+                        class="opacity-0 group-hover:opacity-100 transition-opacity font-bold ml-2 px-1 rounded text-xs"
+                        :class="deletingLogId === entry.id ? 'bg-[var(--obr-status-danger)] text-white opacity-100' : 'text-[var(--obr-text-disabled)] hover:text-[var(--obr-status-danger)]'"
+                        :title="deletingLogId === entry.id ? 'Click again to confirm delete' : 'Delete Log Entry'"
+                    >
+                        {{ deletingLogId === entry.id ? 'CONFIRM?' : '✕' }}
+                    </button>
                 </div>
             </div>
         </template>

@@ -1,14 +1,53 @@
 @import "tailwindcss";
 
 :root {
-  --obr-bg-default: #ffffff;
-  --obr-bg-paper: #f3f4f6;
-  --obr-text-primary: #374151; /* Gray-700 instead of black */
-  --obr-text-secondary: #6b7280;
+  /* --- BASE VARIABLES (Light Mode Default) --- */
+  
+  /* Backgrounds */
+  --obr-bg-default: #fefce8; /* Warm paper */
+  /* Note: --obr-bg-paper REMOVED. Use --obr-surface-card instead. */
+  
+  /* Text */
+  --obr-text-primary: rgba(0, 0, 0, 0.87);
+  --obr-text-secondary: rgba(0, 0, 0, 0.6);
+  --obr-text-disabled: rgba(0, 0, 0, 0.38);
+
+  /* Brand / Accents */
   --obr-primary-main: #6366f1;
   --obr-primary-dark: #4338ca;
   --obr-primary-contrast: #ffffff;
+  
+  --obr-secondary-main: #a855f7;
+  --obr-secondary-contrast: #ffffff;
 
+  /* --- SEMANTIC TOKENS --- */
+
+  /* Surface Layers */
+  --obr-surface-base: var(--obr-bg-default);
+  --obr-surface-card: #ffffff;
+  --obr-surface-input: var(--obr-bg-default);
+  --obr-surface-hover: rgba(0, 0, 0, 0.05);
+
+  /* Borders */
+  --obr-border-base: var(--obr-text-primary);
+  --obr-border-subtle: var(--obr-text-disabled);
+  --obr-border-focus: var(--obr-primary-main);
+
+  /* Text Semantics */
+  /* Used for text sitting on top of inverted backgrounds (like badges) */
+  --obr-text-inverse: #ffffff; 
+
+  /* Status Colors (Adaptive) */
+  --obr-status-success: #10b981; /* Emerald-500 */
+  --obr-status-warning: #f59e0b; /* Amber-500 */
+  --obr-status-danger: #ef4444;  /* Red-500 */
+  --obr-status-critical: #ff0055; /* Brand Pink */
+
+  /* Brand Specifics */
+  --obr-brand-hazard: #fbbf24;   /* Amber-400 */
+  --obr-brand-accent: #ff0055;   /* Brand Pink */
+
+  /* Typography */
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -17,6 +56,32 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- DARK MODE OVERRIDES --- */
+.dark {
+  /* Backgrounds */
+  --obr-bg-default: #0f172a; /* Slate-950 */
+  
+  /* Text */
+  --obr-text-primary: #ffffff;
+  --obr-text-secondary: rgba(255, 255, 255, 0.7);
+  --obr-text-disabled: rgba(255, 255, 255, 0.5);
+
+  /* Surfaces */
+  --obr-surface-card: #1e293b; /* Slate-900 */
+  --obr-surface-hover: rgba(255, 255, 255, 0.05);
+
+  /* Text Semantics */
+  /* In dark mode, if we have "dark text on light badge", we might want dark slate. 
+     However, usually badges in dark mode are still dark. 
+     If we want 'inverted' text (e.g. text on a white badge in dark mode), this would be dark.
+     BUT: In our design, badges usually follow the primary color which is contrasting to white.
+     Let's define inverse as the 'Paper' color of the opposite mode for safety, 
+     or just keep it simple.
+     For now, let's assume 'inverse' means "The color of the Card Surface".
+  */
+  --obr-text-inverse: #1e293b; 
 }
 
 /* Global scrollbar reset to prevent double scrolling on body */

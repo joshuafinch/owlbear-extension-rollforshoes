@@ -133,5 +133,64 @@ Adherence to these standards is non-negotiable to maintain a cohesive codebase.
 *   **CSP Violations in Console (Report Only):**
     *   *Note:* These are expected in the dev environment due to strict headers in the parent frame. As long as they are "report-only" and the app works, they can be ignored.
 
+## 7. Theming & Styling
+
+The extension must respect Owlbear Rodeo's theme settings (Light/Dark mode) to provide a seamless user experience. We use a **Semantic Layer** defined in `src/style.css` to abstract raw OBR variables into purposeful design tokens.
+
+### Core Principles
+*   **Avoid Hardcoded Colors:** Do not use `bg-white`, `text-black`, `border-gray-200` etc., unless explicitly required by a specific design aesthetic (e.g., brand-specific "hazard" yellow).
+*   **Use Semantic Variables:** Always prefer the semantic variables (e.g., `--obr-surface-card`) over the raw OBR variables (e.g., `--obr-bg-paper`). This ensures consistency if we change the mapping later.
+
+### Semantic Tokens (Reference)
+
+#### Surfaces
+| Token | Purpose | Raw Mapping (Default) |
+| :--- | :--- | :--- |
+| `--obr-surface-base` | Main application background | `--obr-bg-default` |
+| `--obr-surface-card` | Raised elements, modals, panels | White (Light) / Slate-800 (Dark) |
+| `--obr-surface-input` | Text inputs, sunken areas | `--obr-bg-default` |
+| `--obr-surface-hover` | Hover overlays | `rgba(0,0,0, 0.05)` |
+
+#### Typography
+| Token | Purpose | Raw Mapping (Default) |
+| :--- | :--- | :--- |
+| `--obr-text-inverse` | Text on inverted/dark backgrounds | White (Light) / Slate-800 (Dark) |
+
+#### Borders
+| Token | Purpose | Raw Mapping (Default) |
+| :--- | :--- | :--- |
+| `--obr-border-base` | Standard structural borders | `--obr-text-primary` |
+| `--obr-border-subtle` | Dividers, secondary borders | `--obr-text-disabled` |
+| `--obr-border-focus` | Active inputs, selected states | `--obr-primary-main` |
+
+#### Status Colors (Adaptive)
+| Token | Purpose | Color (Approx) |
+| :--- | :--- | :--- |
+| `--obr-status-success` | Success, Completion | Emerald-500 |
+| `--obr-status-warning` | Alerts, Cautions | Amber-500 |
+| `--obr-status-danger` | Destructive actions (Delete) | Red-500 |
+| `--obr-status-critical` | Game Criticals (Brand Pink) | Brand Pink (`#ff0055`) |
+
+#### Brand Identity
+| Token | Purpose | Color |
+| :--- | :--- | :--- |
+| `--obr-brand-hazard` | Install Guide, Warnings | Amber-400 |
+| `--obr-brand-accent` | Primary Brand Accent | Brand Pink |
+
+### Usage Example
+```html
+<!-- Correct -->
+<div class="bg-[var(--obr-surface-card)] border border-[var(--obr-border-base)]">
+  <h2 class="text-[var(--obr-text-primary)]">Title</h2>
+  <button class="bg-[var(--obr-status-success)] text-white">Save</button>
+</div>
+
+<!-- Incorrect -->
+<div class="bg-[var(--obr-bg-paper)] border border-gray-500">
+  <h2 class="text-black">Title</h2>
+  <button class="bg-green-500">Save</button>
+</div>
+```
+
 ---
-*Updated by opencode on Jan 24 2026*
+*Updated by opencode on Jan 25 2026*

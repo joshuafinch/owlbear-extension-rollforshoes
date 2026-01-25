@@ -47,7 +47,7 @@ const handleActivate = () => {
 <template>
   <div class="mt-4 px-2">
     <!-- Active Form State -->
-    <div v-if="isActive" class="bg-[var(--obr-bg-paper)] p-3 rounded-lg border-2 border-[var(--obr-text-primary)] shadow-lg animate-fade-in-up shrink-0">
+    <div v-if="isActive" class="bg-[var(--obr-surface-card)] p-3 rounded-lg border-2 border-[var(--obr-text-primary)] shadow-lg animate-fade-in-up shrink-0">
         <div class="flex flex-col gap-3">
             <div class="flex items-center gap-2">
                 <input 

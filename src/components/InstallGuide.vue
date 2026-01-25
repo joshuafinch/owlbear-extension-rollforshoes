@@ -16,7 +16,7 @@ const copyUrl = async () => {
 </script>
 
 <template>
-  <div class="h-screen flex flex-col items-center overflow-y-auto p-4 bg-[#fbbf24] font-sans relative">
+  <div class="h-screen flex flex-col items-center overflow-y-auto p-4 bg-[var(--obr-brand-hazard)] font-sans relative">
     
     <!-- Bold Pattern Background -->
     <div class="fixed inset-0 z-0 opacity-20 pointer-events-none" 
@@ -24,18 +24,18 @@ const copyUrl = async () => {
     </div>
     
     <!-- Main "Job Ticket" Container -->
-    <div class="relative z-10 max-w-2xl w-full bg-white shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] border-4 border-black transform md:rotate-1 transition-transform hover:rotate-0 duration-300 my-8 flex-shrink-0">
+    <div class="relative z-10 max-w-2xl w-full bg-[var(--obr-surface-card)] shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] border-4 border-black transform md:rotate-1 transition-transform hover:rotate-0 duration-300 my-8 flex-shrink-0">
       
       <!-- "Tape" decorations -->
       <div class="absolute -top-4 left-1/4 w-24 h-8 bg-white/50 border-2 border-gray-300/50 transform -rotate-3 z-20 backdrop-blur-sm"></div>
       <div class="absolute -bottom-4 right-1/4 w-24 h-8 bg-white/50 border-2 border-gray-300/50 transform rotate-2 z-20 backdrop-blur-sm"></div>
 
       <!-- Header Section -->
-      <div class="border-b-4 border-black bg-[#ff0055] p-0 relative overflow-hidden h-72 flex items-center justify-center group">
+      <div class="border-b-4 border-black bg-[var(--obr-brand-accent)] p-0 relative overflow-hidden h-72 flex items-center justify-center group">
          
          <!-- Background: Dynamic Rays -->
          <div class="absolute inset-0 opacity-50" 
-              style="background: repeating-conic-gradient(#ff0055 0deg 20deg, #ff3377 20deg 40deg);">
+              style="background: repeating-conic-gradient(var(--obr-brand-accent) 0deg 20deg, #ff3377 20deg 40deg);">
          </div>
          
          <!-- Dot Pattern -->
@@ -46,7 +46,7 @@ const copyUrl = async () => {
             
             <!-- The Icon (Sticker style) -->
             <div class="absolute top-6 left-6 md:left-12 transform -rotate-12 z-20 hover:scale-110 transition-transform duration-300">
-                <div class="bg-white p-2 border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,0.5)]">
+                <div class="bg-[var(--obr-surface-card)] p-2 border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,0.5)]">
                     <img src="/apple-touch-icon.png" alt="Icon" class="w-16 h-16 object-contain" />
                 </div>
                 <!-- Tape -->
@@ -62,7 +62,7 @@ const copyUrl = async () => {
                 </h1>
                 
                 <!-- FOR SHOES -->
-                <h1 class="text-6xl md:text-7xl font-black text-[#fbbf24] italic uppercase leading-[0.9] tracking-tighter drop-shadow-[8px_8px_0px_rgba(0,0,0,1)] stroke-black z-0 transform -skew-x-12 translate-x-4" 
+                <h1 class="text-6xl md:text-7xl font-black text-[var(--obr-brand-hazard)] italic uppercase leading-[0.9] tracking-tighter drop-shadow-[8px_8px_0px_rgba(0,0,0,1)] stroke-black z-0 transform -skew-x-12 translate-x-4" 
                     style="-webkit-text-stroke: 3px black; paint-order: stroke fill;">
                     FOR SHOES
                 </h1>
@@ -104,15 +104,15 @@ const copyUrl = async () => {
         <div class="space-y-4 font-bold text-gray-800">
             
             <!-- Step 1 -->
-            <div class="flex flex-col sm:flex-row border-4 border-black bg-white group hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(220,38,38,1)] transition-all">
+            <div class="flex flex-col sm:flex-row border-4 border-black bg-[var(--obr-surface-card)] group hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(220,38,38,1)] transition-all">
                 <div class="sm:w-20 bg-black text-white flex items-center justify-center font-black text-4xl py-2 sm:py-0">1</div>
                 <div class="flex-1 p-4 border-t-4 sm:border-t-0 sm:border-l-4 border-black">
                     <div class="font-black uppercase text-sm text-red-600 mb-1 tracking-wider">Secure Asset</div>
                     <div class="flex flex-col gap-3">
-                         <div class="text-2xl font-black">Copy Manifest URL</div>
+                         <div class="text-2xl font-black text-[var(--obr-text-primary)]">Copy Manifest URL</div>
                          <div class="flex gap-2">
-                            <code class="flex-1 bg-gray-100 border-2 border-dashed border-gray-400 p-3 font-mono text-sm font-bold truncate select-all">{{ url }}</code>
-                            <button @click="copyUrl" class="bg-yellow-400 border-2 border-black px-4 py-2 font-black uppercase text-sm hover:bg-yellow-300 active:bg-yellow-500 transition-colors flex items-center gap-2">
+                            <code class="flex-1 bg-[var(--obr-surface-input)] border-2 border-dashed border-gray-400 p-3 font-mono text-sm font-bold truncate select-all text-[var(--obr-text-primary)]">{{ url }}</code>
+                            <button @click="copyUrl" class="bg-[var(--obr-brand-hazard)] border-2 border-black px-4 py-2 font-black uppercase text-sm hover:bg-yellow-300 active:bg-yellow-500 transition-colors flex items-center gap-2 text-black">
                                 <span v-if="copied">✔ COPIED</span>
                                 <span v-else>COPY</span>
                             </button>
@@ -122,29 +122,29 @@ const copyUrl = async () => {
             </div>
 
             <!-- Step 2 -->
-             <div class="flex flex-col sm:flex-row border-4 border-black bg-white group hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(37,99,235,1)] transition-all">
+             <div class="flex flex-col sm:flex-row border-4 border-black bg-[var(--obr-surface-card)] group hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(37,99,235,1)] transition-all">
                 <div class="sm:w-20 bg-black text-white flex items-center justify-center font-black text-4xl py-2 sm:py-0">2</div>
                 <div class="flex-1 p-4 border-t-4 sm:border-t-0 sm:border-l-4 border-black">
                      <div class="font-black uppercase text-sm text-blue-600 mb-1 tracking-wider">Infiltrate</div>
-                     <div class="text-2xl font-black">Open <a href="https://www.owlbear.rodeo/" target="_blank" class="underline decoration-4 decoration-blue-500 hover:text-blue-600 hover:decoration-black">Owlbear Rodeo</a></div>
+                     <div class="text-2xl font-black text-[var(--obr-text-primary)]">Open <a href="https://www.owlbear.rodeo/" target="_blank" class="underline decoration-4 decoration-blue-500 hover:text-blue-600 hover:decoration-black">Owlbear Rodeo</a></div>
                 </div>
             </div>
             
             <!-- Step 3 -->
-             <div class="flex flex-col sm:flex-row border-4 border-black bg-white group hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(22,163,74,1)] transition-all">
+             <div class="flex flex-col sm:flex-row border-4 border-black bg-[var(--obr-surface-card)] group hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(22,163,74,1)] transition-all">
                 <div class="sm:w-20 bg-black text-white flex items-center justify-center font-black text-4xl py-2 sm:py-0">3</div>
                 <div class="flex-1 p-4 border-t-4 sm:border-t-0 sm:border-l-4 border-black">
                     <div class="font-black uppercase text-sm text-green-600 mb-1 tracking-wider">Locate</div>
-                    <div class="text-xl">Click <span class="bg-gray-200 px-2 border-2 border-black text-base font-black mx-1">•••</span> (Extras) → <span class="uppercase font-black">Extensions</span></div>
+                    <div class="text-xl text-[var(--obr-text-primary)]">Click <span class="bg-gray-200 px-2 border-2 border-black text-base font-black mx-1 text-black">•••</span> (Extras) → <span class="uppercase font-black">Extensions</span></div>
                 </div>
             </div>
 
              <!-- Step 4 -->
-             <div class="flex flex-col sm:flex-row border-4 border-black bg-white group hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(147,51,234,1)] transition-all">
+             <div class="flex flex-col sm:flex-row border-4 border-black bg-[var(--obr-surface-card)] group hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(147,51,234,1)] transition-all">
                 <div class="sm:w-20 bg-black text-white flex items-center justify-center font-black text-4xl py-2 sm:py-0">4</div>
                 <div class="flex-1 p-4 border-t-4 sm:border-t-0 sm:border-l-4 border-black">
                     <div class="font-black uppercase text-sm text-purple-600 mb-1 tracking-wider">Execute</div>
-                    <div class="text-xl leading-tight">Click <span class="font-black bg-black text-white px-2 py-0.5">+ Custom Extension</span> and paste the URL.</div>
+                    <div class="text-xl leading-tight text-[var(--obr-text-primary)]">Click <span class="font-black bg-black text-white px-2 py-0.5">+ Custom Extension</span> and paste the URL.</div>
                 </div>
             </div>
 

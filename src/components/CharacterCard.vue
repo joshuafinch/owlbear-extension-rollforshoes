@@ -172,12 +172,12 @@ const handleXpChange = (amount: number) => {
 
 <template>
   <div 
-    class="bg-[var(--obr-bg-paper)] backdrop-blur-xl rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] p-0 mb-4 border-2 transition-all duration-300 hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.5)] overflow-hidden"
-    :class="isActive ? 'border-[var(--obr-primary-main)] ring-2 ring-[var(--obr-primary-main)]/50' : 'border-[var(--obr-text-primary)]'"
+    class="bg-[var(--obr-surface-card)] backdrop-blur-xl rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] p-0 mb-4 border-2 transition-all duration-300 hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.5)] overflow-hidden"
+    :class="isActive ? 'border-[var(--obr-primary-main)] ring-2 ring-[var(--obr-primary-main)]/50' : 'border-[var(--obr-border-base)]'"
   >
     
     <!-- Header / Summary View -->
-    <div class="p-3 bg-gradient-to-r from-[var(--obr-bg-default)] to-[var(--obr-bg-paper)] transition-all duration-300" :class="isExpanded ? 'pb-4' : ''">
+    <div class="p-3 bg-gradient-to-r from-[var(--obr-surface-base)] to-[var(--obr-surface-card)] transition-all duration-300" :class="isExpanded ? 'pb-4' : ''">
       <div class="flex items-center justify-between gap-2">
         
         <!-- Name & Toggle -->
@@ -188,12 +188,12 @@ const handleXpChange = (amount: number) => {
           :aria-label="isExpanded ? `Collapse character sheet for ${character.name}` : `Expand character sheet for ${character.name}`"
         >
            <div 
-             class="shrink-0 flex items-center justify-center bg-[var(--obr-text-primary)] text-[var(--obr-bg-paper)] rounded-full font-black border-2 border-[var(--obr-bg-paper)] shadow-sm transform transition-all duration-300 origin-left" 
+             class="shrink-0 flex items-center justify-center bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)] rounded-full font-black border-2 border-[var(--obr-surface-card)] shadow-sm transform transition-all duration-300 origin-left" 
              :class="isExpanded ? 'w-12 h-12 scale-125' : 'w-10 h-10 group-hover:scale-110'"
              aria-hidden="true"
             >
               <img v-if="character.imageUrl" :src="character.imageUrl" class="w-full h-full object-cover" :alt="character.name" />
-              <span v-else class="text-[var(--obr-bg-paper)] font-bold" :class="isExpanded ? 'text-2xl' : 'text-lg'">{{ character.name.charAt(0) }}</span>
+              <span v-else class="text-[var(--obr-text-inverse)] font-bold" :class="isExpanded ? 'text-2xl' : 'text-lg'">{{ character.name.charAt(0) }}</span>
            </div>
            <div class="flex flex-col min-w-0 transition-all duration-300 origin-left" :class="{'translate-x-2 scale-110': isExpanded}">
               
@@ -218,7 +218,7 @@ const handleXpChange = (amount: number) => {
                       ref="editNameInput"
                       v-model="editNameValue"
                       type="text"
-                      class="bg-[var(--obr-bg-paper)] text-[var(--obr-text-primary)] font-black tracking-tight leading-none border-b-2 border-[var(--obr-primary-main)] focus:outline-none w-full min-w-[150px] text-xl"
+                      class="bg-[var(--obr-surface-input)] text-[var(--obr-text-primary)] font-black tracking-tight leading-none border-b-2 border-[var(--obr-primary-main)] focus:outline-none w-full min-w-[150px] text-xl"
                       @keyup.enter="saveNameEdit"
                       @keyup.esc="cancelNameEdit"
                       @blur="saveNameEdit"
@@ -244,8 +244,8 @@ const handleXpChange = (amount: number) => {
         
           <!-- Animated XP Widget -->
         <div 
-            class="flex shrink-0 items-center bg-[var(--obr-bg-default)] rounded border-2 border-[var(--obr-text-primary)] shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] transition-all duration-300 overflow-hidden relative group/xp"
-            :class="[isExpanded ? 'p-1 gap-1' : 'px-2 py-1 gap-0', isXpAnimating ? 'ring-2 ring-yellow-400 border-yellow-500 scale-110 shadow-[0_0_15px_rgba(250,204,21,0.5)]' : '']"
+            class="flex shrink-0 items-center bg-[var(--obr-surface-base)] rounded border-2 border-[var(--obr-border-base)] shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] transition-all duration-300 overflow-hidden relative group/xp"
+            :class="[isExpanded ? 'p-1 gap-1' : 'px-2 py-1 gap-0', isXpAnimating ? 'ring-2 ring-[var(--obr-status-warning)] border-[var(--obr-status-warning)] scale-110 shadow-[0_0_15px_rgba(250,204,21,0.5)]' : '']"
             role="group" 
             aria-label="Experience Points"
         >
@@ -253,29 +253,29 @@ const handleXpChange = (amount: number) => {
           <button 
               @click.stop="handleXpChange(-1)"
               :disabled="character.xp <= 0"
-              class="flex items-center justify-center rounded bg-[var(--obr-bg-paper)] hover:bg-red-500 hover:text-white text-[var(--obr-text-primary)] font-bold transition-all duration-300 overflow-hidden"
-              :class="isExpanded ? 'w-8 h-8 opacity-100 mr-2 border border-[var(--obr-text-disabled)]' : 'w-0 h-8 opacity-0 border-0'"
+              class="flex items-center justify-center rounded bg-[var(--obr-surface-card)] hover:bg-[var(--obr-status-danger)] hover:text-white text-[var(--obr-text-primary)] font-bold transition-all duration-300 overflow-hidden"
+              :class="isExpanded ? 'w-8 h-8 opacity-100 mr-2 border border-[var(--obr-border-subtle)]' : 'w-0 h-8 opacity-0 border-0'"
               aria-label="Decrease XP"
               :tabindex="isExpanded ? 0 : -1"
             >-</button>
 
           <!-- Label -->
-          <div class="flex flex-col items-center mr-2 border-r border-[var(--obr-text-disabled)] border-opacity-30 pr-2" aria-hidden="true">
-             <span class="text-[10px] font-black uppercase text-[var(--obr-text-secondary)] leading-none transition-colors" :class="isXpAnimating ? 'text-yellow-600' : ''">XP</span>
+          <div class="flex flex-col items-center mr-2 border-r border-[var(--obr-border-subtle)] border-opacity-30 pr-2" aria-hidden="true">
+             <span class="text-[10px] font-black uppercase text-[var(--obr-text-secondary)] leading-none transition-colors" :class="isXpAnimating ? 'text-[var(--obr-status-warning)]' : ''">XP</span>
           </div>
           
           <!-- Value -->
           <span 
               class="font-mono font-black text-xl text-[var(--obr-text-primary)] transition-all duration-300" 
-              :class="isXpAnimating ? 'text-yellow-600 scale-125' : ''"
+              :class="isXpAnimating ? 'text-[var(--obr-status-warning)] scale-125' : ''"
               aria-live="polite"
            >{{ character.xp }}</span>
 
           <!-- Increase Button -->
           <button 
               @click.stop="handleXpChange(1)"
-              class="flex items-center justify-center rounded bg-[var(--obr-bg-paper)] hover:bg-green-500 hover:text-white text-[var(--obr-text-primary)] font-bold transition-all duration-300 overflow-hidden"
-              :class="isExpanded ? 'w-8 h-8 opacity-100 ml-2 border border-[var(--obr-text-disabled)]' : 'w-0 h-8 opacity-0 border-0'"
+              class="flex items-center justify-center rounded bg-[var(--obr-surface-card)] hover:bg-[var(--obr-status-success)] hover:text-white text-[var(--obr-text-primary)] font-bold transition-all duration-300 overflow-hidden"
+              :class="isExpanded ? 'w-8 h-8 opacity-100 ml-2 border border-[var(--obr-border-subtle)]' : 'w-0 h-8 opacity-0 border-0'"
               aria-label="Increase XP"
               :tabindex="isExpanded ? 0 : -1"
             >+</button>
@@ -284,7 +284,7 @@ const handleXpChange = (amount: number) => {
             <transition name="float-up">
                 <div v-if="xpDiff !== 0" 
                      class="absolute top-0 right-0 left-0 bottom-0 pointer-events-none flex items-center justify-center font-black text-xl z-20"
-                     :class="xpDiff > 0 ? 'text-green-600' : 'text-red-500'"
+                     :class="xpDiff > 0 ? 'text-[var(--obr-status-success)]' : 'text-[var(--obr-status-danger)]'"
                 >
                     {{ xpDiff > 0 ? '+' : '' }}{{ xpDiff }}
                 </div>
@@ -295,7 +295,7 @@ const handleXpChange = (amount: number) => {
     
     <!-- Expanded Details -->
     <transition name="expand">
-      <div v-if="isExpanded" class="border-t-2 border-[var(--obr-text-primary)] bg-[var(--obr-bg-default)] bg-opacity-50 overflow-hidden">
+      <div v-if="isExpanded" class="border-t-2 border-[var(--obr-border-base)] bg-[var(--obr-surface-base)] bg-opacity-50 overflow-hidden">
         
        <!-- Actions Bar (Expanded State) -->
        <div v-if="canLink" class="px-3 pt-3 flex justify-end">
@@ -303,7 +303,7 @@ const handleXpChange = (amount: number) => {
                  <button 
                     v-if="isActive"
                     @click="emit('link', null)"
-                    class="text-xs font-bold uppercase text-[var(--obr-text-disabled)] hover:text-red-500 hover:underline flex items-center gap-1"
+                    class="text-xs font-bold uppercase text-[var(--obr-text-disabled)] hover:text-[var(--obr-status-danger)] hover:underline flex items-center gap-1"
                 >
                     <span>Unlink Token</span>
                 </button>
@@ -317,13 +317,13 @@ const handleXpChange = (amount: number) => {
       
         <!-- Skills Section -->
        <div class="p-3">
-         <div class="flex justify-between items-center mb-3 border-b-2 border-[var(--obr-text-disabled)] border-opacity-20 pb-1">
+         <div class="flex justify-between items-center mb-3 border-b-2 border-[var(--obr-border-subtle)] border-opacity-20 pb-1">
              <h4 class="text-sm font-black text-[var(--obr-text-primary)] uppercase tracking-widest">Skills</h4>
              
              <button 
                 @click="isManageMode = !isManageMode"
                 class="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded transition-colors flex items-center gap-1"
-                :class="isManageMode ? 'bg-[var(--obr-primary-main)] text-white' : 'text-[var(--obr-text-disabled)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-bg-default)]'"
+                :class="isManageMode ? 'bg-[var(--obr-primary-main)] text-white' : 'text-[var(--obr-text-disabled)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-surface-base)]'"
              >
                 <span v-if="isManageMode">Done</span>
                 <span v-else>Manage</span>
@@ -345,8 +345,8 @@ const handleXpChange = (amount: number) => {
            >
              <template #item="{ element: skill, index }">
                <div 
-                 class="relative flex items-center bg-[var(--obr-bg-paper)] p-2 rounded border transition-all mb-2 select-none overflow-hidden"
-                 :class="isManageMode ? 'border-[var(--obr-primary-main)] border-dashed bg-[var(--obr-bg-default)]' : 'border-[var(--obr-text-disabled)] border-opacity-30 hover:border-[var(--obr-text-primary)] hover:shadow-sm'"
+                 class="relative flex items-center bg-[var(--obr-surface-card)] p-2 rounded border transition-all mb-2 select-none overflow-hidden"
+                 :class="isManageMode ? 'border-[var(--obr-primary-main)] border-dashed bg-[var(--obr-surface-base)]' : 'border-[var(--obr-border-subtle)] border-opacity-30 hover:border-[var(--obr-border-base)] hover:shadow-sm'"
                >
                  <!-- Drag Handle (Only in Manage Mode) -->
                  <div 
@@ -376,7 +376,7 @@ const handleXpChange = (amount: number) => {
                          <button 
                             v-if="!isManageMode"
                             @click.stop="emit('roll', character.id, skill)"
-                            class="h-9 px-3 flex items-center gap-1.5 bg-[var(--obr-text-primary)] hover:bg-[var(--obr-primary-main)] text-[var(--obr-bg-paper)] rounded shadow-sm hover:shadow-md active:translate-y-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-[var(--obr-primary-main)]"
+                            class="h-9 px-3 flex items-center gap-1.5 bg-[var(--obr-text-primary)] hover:bg-[var(--obr-primary-main)] text-[var(--obr-text-inverse)] rounded shadow-sm hover:shadow-md active:translate-y-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-[var(--obr-primary-main)]"
                             :aria-label="`Roll ${skill.rank} dice for ${skill.name}`"
                             title="Roll Dice"
                          >
@@ -386,7 +386,7 @@ const handleXpChange = (amount: number) => {
  
                         <!-- Rank Badge -->
                         <div 
-                           class="h-9 min-w-[36px] px-1 flex flex-col items-center justify-center bg-[var(--obr-bg-default)] border-2 border-[var(--obr-text-disabled)] text-[var(--obr-text-primary)] rounded transition-colors group/rank"
+                           class="h-9 min-w-[36px] px-1 flex flex-col items-center justify-center bg-[var(--obr-surface-base)] border-2 border-[var(--obr-border-subtle)] text-[var(--obr-text-primary)] rounded transition-colors group/rank"
                            :class="isManageMode ? 'cursor-pointer hover:border-[var(--obr-primary-main)]' : ''"
                            @click="isManageMode ? startEditingSkill(index, skill) : null"
                            :title="isManageMode ? 'Click to edit rank' : ''"
@@ -400,8 +400,8 @@ const handleXpChange = (amount: number) => {
                      <div v-if="isManageMode" class="ml-2 flex justify-end shrink-0">
                         <button 
                            @click="handleRemoveSkill(index)"
-                           class="h-9 flex items-center justify-center rounded transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
-                           :class="deletingSkillIndex === index ? 'bg-red-500 text-white shadow-sm px-3 w-auto' : 'w-8 text-[var(--obr-text-disabled)] hover:text-red-500 hover:bg-red-100'"
+                           class="h-9 flex items-center justify-center rounded transition-all focus:outline-none focus:ring-2 focus:ring-[var(--obr-status-danger)]"
+                           :class="deletingSkillIndex === index ? 'bg-[var(--obr-status-danger)] text-white shadow-sm px-3 w-auto' : 'w-8 text-[var(--obr-text-disabled)] hover:text-[var(--obr-status-danger)] hover:bg-red-100'"
                            :aria-label="deletingSkillIndex === index ? 'Confirm remove skill' : `Remove skill ${skill.name}`"
                            :title="deletingSkillIndex === index ? 'Click again to confirm' : 'Remove Skill'"
                         >
@@ -413,7 +413,7 @@ const handleXpChange = (amount: number) => {
  
                  <!-- Edit Mode (Inside Manage Mode) -->
                  <template v-else>
-                     <div class="flex items-center gap-2 w-full z-10 bg-[var(--obr-bg-paper)] p-0.5 -m-0.5 rounded ring-2 ring-[var(--obr-primary-main)] shadow-lg">
+                     <div class="flex items-center gap-2 w-full z-10 bg-[var(--obr-surface-card)] p-0.5 -m-0.5 rounded ring-2 ring-[var(--obr-primary-main)] shadow-lg">
                          <input 
                            ref="editSkillInput"
                            v-model="editSkillName"
@@ -423,23 +423,23 @@ const handleXpChange = (amount: number) => {
                            @keyup.esc="cancelSkillEdit"
                            placeholder="SKILL NAME"
                          />
-                         <div class="flex flex-col items-center border-l border-[var(--obr-text-disabled)] border-opacity-30 pl-2">
+                         <div class="flex flex-col items-center border-l border-[var(--obr-border-subtle)] border-opacity-30 pl-2">
                              <label class="text-[8px] font-black uppercase text-[var(--obr-text-secondary)]">Rank</label>
                              <input 
                              v-model.number="editSkillRank"
                              type="number"
                              min="1"
                              max="10"
-                             class="w-12 bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] border border-[var(--obr-text-disabled)] rounded px-1 py-0 text-center text-sm font-bold focus:outline-none focus:border-[var(--obr-primary-main)]"
+                             class="w-12 bg-[var(--obr-surface-input)] text-[var(--obr-text-primary)] border border-[var(--obr-border-subtle)] rounded px-1 py-0 text-center text-sm font-bold focus:outline-none focus:border-[var(--obr-primary-main)]"
                              @keyup.enter="saveSkillEdit(index)"
                              />
                          </div>
-                         <div class="flex gap-1 pl-1">
-                             <button @click="saveSkillEdit(index)" class="bg-green-500 text-white w-7 h-7 rounded flex items-center justify-center hover:bg-green-600 shadow-sm text-sm font-bold" title="Save">✓</button>
-                             <button @click="cancelSkillEdit" class="bg-gray-200 text-gray-600 w-7 h-7 rounded flex items-center justify-center hover:bg-gray-300 shadow-sm text-sm font-bold" title="Cancel">✕</button>
-                         </div>
-                     </div>
-                 </template>
+                        <div class="flex gap-1 pl-1">
+                            <button @click="saveSkillEdit(index)" class="bg-[var(--obr-status-success)] text-white w-7 h-7 rounded flex items-center justify-center hover:opacity-90 shadow-sm text-sm font-bold" title="Save">✓</button>
+                            <button @click="cancelSkillEdit" class="bg-[var(--obr-surface-base)] text-[var(--obr-text-primary)] w-7 h-7 rounded flex items-center justify-center hover:text-[var(--obr-text-disabled)] shadow-sm text-sm font-bold" title="Cancel">✕</button>
+                        </div>
+                    </div>
+                </template>
                </div>
              </template>
            </draggable>
@@ -462,7 +462,7 @@ const handleXpChange = (amount: number) => {
                          type="number" 
                          min="1" 
                          max="10"
-                         class="w-16 bg-[var(--obr-bg-default)] border-2 border-[var(--obr-text-disabled)] rounded pl-8 pr-1 py-2 text-center text-sm font-bold text-[var(--obr-text-primary)] outline-none focus:border-[var(--obr-primary-main)]"
+                         class="w-16 bg-[var(--obr-surface-input)] border-2 border-[var(--obr-border-subtle)] rounded pl-8 pr-1 py-2 text-center text-sm font-bold text-[var(--obr-text-primary)] outline-none focus:border-[var(--obr-primary-main)]"
                          placeholder="#"
                      />
                   </div>
@@ -474,7 +474,7 @@ const handleXpChange = (amount: number) => {
               v-if="isGm"
               @click="handleDelete" 
               class="text-[10px] font-black uppercase px-2 py-1 rounded flex items-center gap-1 transition-all duration-200"
-              :class="isDeleting ? 'bg-red-500 text-white hover:bg-red-600 shadow-md scale-105' : 'text-red-400 hover:text-red-600 hover:bg-red-50'"
+              :class="isDeleting ? 'bg-[var(--obr-status-danger)] text-white hover:opacity-90 shadow-md scale-105' : 'text-red-400 hover:text-[var(--obr-status-danger)] hover:bg-red-50'"
            >
               <span v-if="isDeleting">CONFIRM DELETION</span>
               <span v-else>Delete File</span>
@@ -497,7 +497,7 @@ const handleXpChange = (amount: number) => {
 }
 
 .sortable-drag {
-  background: var(--obr-bg-paper);
+  background: var(--obr-surface-card);
   opacity: 1;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   transform: scale(1.02);
