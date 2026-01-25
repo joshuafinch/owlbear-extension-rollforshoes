@@ -57,7 +57,7 @@ const confirmEvolution = () => {
         </div>
 
         <!-- Dice Container (Hidden during evolution to save space/focus) -->
-        <div v-if="!isEvolving" class="flex flex-wrap justify-center gap-3 mb-8">
+        <div v-if="!isEvolving" class="flex flex-wrap justify-center gap-3 mb-8" role="status" aria-label="Dice Results">
           <div 
             v-for="(die, index) in result.dice" 
             :key="index"
@@ -66,13 +66,14 @@ const confirmEvolution = () => {
               ? 'bg-[var(--obr-primary-main)] border-black text-white scale-110 z-10' 
               : 'bg-white border-gray-300 text-gray-400'"
             :style="{ animationDelay: `${index * 50}ms` }"
+            :aria-label="`Die ${index + 1}: ${die}`"
           >
             {{ die }}
           </div>
         </div>
 
         <!-- Status Messages -->
-        <div class="mb-6 min-h-[3rem] flex items-center justify-center">
+        <div class="mb-6 min-h-[3rem] flex items-center justify-center" aria-live="polite">
           <div v-if="isEvolving" class="w-full">
              <div class="text-[#ff0055] font-black text-lg uppercase tracking-tighter italic mb-2 animate-pulse">
                 Evolution Protocol Initiated

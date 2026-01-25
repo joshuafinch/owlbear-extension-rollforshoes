@@ -74,8 +74,13 @@ const cancelSkillEdit = () => {
       <div class="flex items-center justify-between">
         
         <!-- Name & Toggle -->
-        <div class="flex items-center gap-3 cursor-pointer select-none group flex-1" @click="isExpanded = !isExpanded">
-           <div class="w-8 h-8 flex items-center justify-center bg-[var(--obr-text-primary)] text-[var(--obr-bg-paper)] rounded-full font-black border-2 border-[var(--obr-bg-paper)] shadow-sm transform transition-transform group-hover:scale-110">
+        <button 
+          class="flex items-center gap-3 cursor-pointer select-none group flex-1 text-left focus:outline-none focus:ring-2 focus:ring-[var(--obr-primary-main)] rounded p-1 -ml-1" 
+          @click="isExpanded = !isExpanded"
+          :aria-expanded="isExpanded"
+          :aria-label="isExpanded ? `Collapse character sheet for ${character.name}` : `Expand character sheet for ${character.name}`"
+        >
+           <div class="w-8 h-8 flex items-center justify-center bg-[var(--obr-text-primary)] text-[var(--obr-bg-paper)] rounded-full font-black border-2 border-[var(--obr-bg-paper)] shadow-sm transform transition-transform group-hover:scale-110" aria-hidden="true">
               <span class="text-[var(--obr-bg-paper)] text-sm">{{ character.name.charAt(0).toUpperCase() }}</span>
            </div>
            <div class="flex flex-col">
@@ -88,28 +93,31 @@ const cancelSkillEdit = () => {
                    stroke="currentColor" 
                    viewBox="0 0 24 24" 
                    xmlns="http://www.w3.org/2000/svg"
+                   aria-hidden="true"
                  >
                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M19 9l-7 7-7-7"></path>
                  </svg>
                  <span class="sr-only">{{ isExpanded ? 'Collapse' : 'Expand' }} details</span>
               </span>
            </div>
-        </div>
+        </button>
         
         <!-- XP Counter -->
-        <div class="flex items-center bg-[var(--obr-bg-default)] rounded border-2 border-[var(--obr-text-primary)] px-1 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]">
-          <div class="flex flex-col items-center mr-2 pl-1 border-r border-[var(--obr-text-disabled)] border-opacity-30 pr-2">
+        <div class="flex items-center bg-[var(--obr-bg-default)] rounded border-2 border-[var(--obr-text-primary)] px-1 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]" role="group" aria-label="Experience Points">
+          <div class="flex flex-col items-center mr-2 pl-1 border-r border-[var(--obr-text-disabled)] border-opacity-30 pr-2" aria-hidden="true">
              <span class="text-[8px] font-black uppercase text-[var(--obr-text-secondary)] leading-none">XP</span>
           </div>
           <button 
             @click="emit('addXp', character.id, -1)"
             :disabled="character.xp <= 0"
-            class="w-6 h-6 flex items-center justify-center rounded hover:bg-red-500 hover:text-white text-[var(--obr-text-primary)] font-bold transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-inherit"
+            class="w-8 h-8 flex items-center justify-center rounded hover:bg-red-500 hover:text-white text-[var(--obr-text-primary)] font-bold transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-inherit focus:outline-none focus:ring-2 focus:ring-red-500"
+            aria-label="Decrease XP"
           >-</button>
-          <span class="mx-1 font-mono font-black text-lg w-6 text-center text-[var(--obr-text-primary)]">{{ character.xp }}</span>
+          <span class="mx-1 font-mono font-black text-lg w-6 text-center text-[var(--obr-text-primary)]" aria-live="polite">{{ character.xp }}</span>
           <button 
             @click="emit('addXp', character.id, 1)"
-            class="w-6 h-6 flex items-center justify-center rounded hover:bg-green-500 hover:text-white text-[var(--obr-text-primary)] font-bold transition-colors"
+            class="w-8 h-8 flex items-center justify-center rounded hover:bg-green-500 hover:text-white text-[var(--obr-text-primary)] font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
+            aria-label="Increase XP"
           >+</button>
         </div>
       </div>
@@ -157,10 +165,11 @@ const cancelSkillEdit = () => {
                 <!-- Roll Button -->
                 <button 
                    @click.stop="emit('roll', character.id, skill)"
-                   class="mr-3 w-8 h-8 flex items-center justify-center bg-[var(--obr-text-primary)] hover:bg-[var(--obr-primary-main)] text-white font-black text-xs rounded shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] active:translate-y-0.5 active:shadow-none transition-all z-20 border border-transparent hover:border-white"
+                   class="mr-3 w-8 h-8 flex items-center justify-center bg-[var(--obr-text-primary)] hover:bg-[var(--obr-primary-main)] text-white font-black text-xs rounded shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] active:translate-y-0.5 active:shadow-none transition-all z-20 border border-transparent hover:border-white focus:outline-none focus:ring-2 focus:ring-[var(--obr-primary-main)]"
+                   :aria-label="`Roll ${skill.rank} dice for ${skill.name}`"
                    title="Roll Dice"
                 >
-                   🎲
+                   <span aria-hidden="true">🎲</span>
                 </button>
 
                 <div class="flex-1 z-10 cursor-pointer" @click="startEditingSkill(index, skill)" title="Click to edit">
@@ -169,19 +178,21 @@ const cancelSkillEdit = () => {
                 
                 <div class="flex items-center gap-2 z-10 ml-2">
                    <!-- Rank Badge -->
-                   <div 
-                      class="w-8 h-8 flex items-center justify-center bg-[var(--obr-text-primary)] text-[var(--obr-bg-paper)] font-black rounded shadow-sm cursor-pointer hover:scale-110 transition-transform border-2 border-transparent hover:border-[var(--obr-primary-main)]"
+                   <button 
+                      class="w-8 h-8 flex items-center justify-center bg-[var(--obr-text-primary)] text-[var(--obr-bg-paper)] font-black rounded shadow-sm cursor-pointer hover:scale-110 transition-transform border-2 border-transparent hover:border-[var(--obr-primary-main)] focus:outline-none focus:ring-2 focus:ring-[var(--obr-primary-main)]"
                       @click="startEditingSkill(index, skill)"
-                      title="Click to edit"
+                      title="Click to edit rank"
+                      :aria-label="`Rank ${skill.rank}. Click to edit skill.`"
                    >
                       {{ skill.rank }}
-                   </div>
+                   </button>
                    
                    <button 
                       @click="emit('removeSkill', character.id, index)"
-                      class="w-6 h-6 flex items-center justify-center text-[var(--obr-text-disabled)] hover:text-red-500 hover:bg-red-100 rounded opacity-0 group-hover:opacity-100 transition-all"
+                      class="w-8 h-8 flex items-center justify-center text-[var(--obr-text-disabled)] hover:text-red-500 hover:bg-red-100 rounded opacity-60 hover:opacity-100 transition-all focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      :aria-label="`Remove skill ${skill.name}`"
                       title="Remove Skill"
-                   >×</button>
+                   ><span aria-hidden="true">×</span></button>
                 </div>
             </template>
 

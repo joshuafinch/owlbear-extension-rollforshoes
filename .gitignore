@@ -29,3 +29,6 @@ certs/*.pem
 # Cloudflare Wrangler
 .wrangler
 .dev.vars*
+
+# opencode
+.opencode/*
