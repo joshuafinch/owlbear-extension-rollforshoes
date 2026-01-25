@@ -151,25 +151,31 @@ const handleXpChange = (amount: number) => {
   >
     
     <!-- Header / Summary View -->
-    <div class="p-3 bg-gradient-to-r from-[var(--obr-surface-base)] to-[var(--obr-surface-card)] transition-all duration-300" :class="isExpanded ? 'pb-4' : ''">
+    <div class="p-0 bg-gradient-to-r from-[var(--obr-surface-base)] to-[var(--obr-surface-card)] transition-all duration-300">
       <div class="flex items-center justify-between gap-2">
         
         <!-- Name & Toggle -->
         <button 
-          class="flex items-center gap-3 cursor-pointer select-none group flex-1 min-w-0 text-left focus:outline-none rounded p-1 -ml-1 z-10" 
+          class="flex items-center gap-3 cursor-pointer select-none group flex-1 min-w-0 text-left focus:outline-none rounded p-0 z-10" 
           @click="isExpanded = !isExpanded"
           :aria-expanded="isExpanded"
           :aria-label="isExpanded ? `Collapse character sheet for ${character.name}` : `Expand character sheet for ${character.name}`"
         >
            <div 
-             class="shrink-0 flex items-center justify-center bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)] rounded-full font-black border-2 border-[var(--obr-surface-card)] shadow-sm transform transition-all duration-300 origin-left" 
-             :class="isExpanded ? 'w-12 h-12 scale-125' : 'w-10 h-10 group-hover:scale-110'"
+             class="shrink-0 flex items-center justify-center font-black transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] overflow-hidden relative z-10 ml-1 mt-1" 
+             :class="isExpanded ? 'w-24 h-24 text-[var(--obr-text-inverse)]' : 'w-16 h-16 group-hover:scale-105'"
              aria-hidden="true"
             >
-              <img v-if="character.imageUrl" :src="character.imageUrl" class="w-full h-full object-cover" :alt="character.name" />
-              <span v-else class="text-[var(--obr-text-inverse)] font-bold" :class="isExpanded ? 'text-2xl' : 'text-lg'">{{ character.name.charAt(0) }}</span>
+              <img 
+                v-if="character.imageUrl" 
+                :src="character.imageUrl" 
+                class="w-full h-full object-cover object-top transition-transform duration-700 origin-top" 
+                :class="isExpanded ? 'scale-100' : 'scale-150'" 
+                :alt="character.name" 
+              />
+              <span v-else class="text-[var(--obr-text-inverse)] font-bold" :class="isExpanded ? 'text-5xl' : 'text-2xl'">{{ character.name.charAt(0) }}</span>
            </div>
-           <div class="flex flex-col min-w-0 transition-all duration-300 origin-left" :class="{'translate-x-2 scale-110': isExpanded}">
+          <div class="flex flex-col min-w-0 transition-all duration-300 origin-left pl-3" :class="{'translate-y-1': isExpanded}">
               
               <!-- Name Display / Edit Mode -->
               <div v-if="!isEditingName" 
@@ -179,8 +185,8 @@ const handleXpChange = (amount: number) => {
                    :title="isExpanded ? 'Click to edit name' : ''"
               >
                   <h3 
-                    class="font-black text-[var(--obr-text-primary)] tracking-tight leading-none group-hover:text-[var(--obr-primary-main)] transition-colors duration-300 truncate pr-1"
-                    :class="isExpanded ? 'text-xl' : 'text-xl'"
+                    class="font-black text-[var(--obr-text-primary)] tracking-tight leading-none group-hover:text-[var(--obr-primary-main)] transition-all duration-300 truncate pr-1 origin-left"
+                    :class="isExpanded ? 'text-3xl' : 'text-xl'"
                   >
                     {{ character.name }}
                     <span v-if="isExpanded" class="opacity-0 group-hover/name:opacity-100 text-[10px] text-[var(--obr-text-disabled)] ml-1 absolute top-0 -right-4 transition-opacity">✎</span>
@@ -217,11 +223,11 @@ const handleXpChange = (amount: number) => {
         </button>
         
           <!-- Animated XP Widget -->
-        <div 
-            class="flex shrink-0 items-center bg-[var(--obr-surface-base)] rounded border-2 border-[var(--obr-border-base)] shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] transition-all duration-300 overflow-hidden relative group/xp"
-            :class="[isExpanded ? 'p-1 gap-1' : 'px-2 py-1 gap-0', isXpAnimating ? 'ring-2 ring-[var(--obr-status-warning)] border-[var(--obr-status-warning)] scale-110 shadow-[0_0_15px_rgba(250,204,21,0.5)]' : '']"
-            role="group" 
-            aria-label="Experience Points"
+            <div 
+             class="flex shrink-0 items-center bg-[var(--obr-surface-base)] rounded border-2 border-[var(--obr-border-base)] shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] transition-all duration-300 overflow-hidden relative group/xp mr-2"
+             :class="[isExpanded ? 'p-1 gap-1' : 'px-2 py-1 gap-0', isXpAnimating ? 'ring-2 ring-[var(--obr-status-warning)] border-[var(--obr-status-warning)] scale-110 shadow-[0_0_15px_rgba(250,204,21,0.5)]' : '']"
+             role="group" 
+             aria-label="Experience Points"
         >
           <!-- Decrease Button -->
           <button 
@@ -269,10 +275,19 @@ const handleXpChange = (amount: number) => {
     
     <!-- Expanded Details -->
     <transition name="expand">
-      <div v-if="isExpanded" class="border-t-2 border-[var(--obr-border-base)] bg-[var(--obr-surface-base)] bg-opacity-50 overflow-hidden">
+      <div v-if="isExpanded" class="border-t-2 border-[var(--obr-border-base)] bg-[var(--obr-surface-base)] bg-opacity-90 overflow-hidden relative">
         
+        <!-- Background Artwork -->
+        <div v-if="character.imageUrl" class="absolute inset-0 z-0 pointer-events-none flex items-end justify-center opacity-10 grayscale">
+             <img 
+               :src="character.imageUrl" 
+               class="h-full w-full object-contain object-bottom scale-x-[-1]" 
+               alt="" 
+             />
+        </div>
+
        <!-- Actions Bar (Expanded State) -->
-       <div v-if="canLink" class="px-3 pt-3 flex justify-end">
+       <div v-if="canLink" class="px-3 pt-3 flex justify-end relative z-10">
 
                  <button 
                     v-if="isActive"
@@ -290,7 +305,7 @@ const handleXpChange = (amount: number) => {
              </div>
       
         <!-- Skills Section -->
-       <div class="p-3">
+       <div class="p-3 relative z-10">
          <div class="flex justify-between items-center mb-3 border-b-2 border-[var(--obr-border-subtle)] border-opacity-20 pb-1">
              <h4 class="text-sm font-black text-[var(--obr-text-primary)] uppercase tracking-widest">Skills</h4>
              
