@@ -19,7 +19,7 @@ export function useRollForShoes() {
 
   // Computed helper to get list as array
   const characterList = computed(() => {
-    return Object.values(characters.value).sort((a, b) => b.createdAt - a.createdAt);
+    return Object.values(characters.value).sort((a, b) => a.createdAt - b.createdAt);
   });
 
   // --- Actions ---
