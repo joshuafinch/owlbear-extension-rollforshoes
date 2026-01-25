@@ -206,7 +206,6 @@ const cancelSkillEdit = () => {
                       @keyup.enter="saveSkillEdit(index)"
                       @keyup.esc="cancelSkillEdit"
                       ref="editInput"
-                      autoFocus
                     />
                     <div class="flex flex-col items-center">
                         <label class="text-[8px] font-black uppercase text-[var(--obr-text-secondary)]">Rank</label>

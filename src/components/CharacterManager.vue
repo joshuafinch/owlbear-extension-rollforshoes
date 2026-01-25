@@ -179,7 +179,6 @@ const handleRollEvolve = (newSkillName: string) => {
             class="flex-1 bg-[var(--obr-bg-default)] border-2 border-[var(--obr-text-disabled)] rounded px-3 py-2 text-sm font-bold text-[var(--obr-text-primary)] focus:border-[var(--obr-primary-main)] outline-none uppercase"
             placeholder="CODENAME..."
             @keyup.enter="handleCreate"
-            autoFocus
           />
           <button 
             @click="handleCreate"

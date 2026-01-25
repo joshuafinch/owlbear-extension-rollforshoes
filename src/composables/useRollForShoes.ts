@@ -152,8 +152,10 @@ export function useRollForShoes() {
     rollHistory.value = newHistory;
 
     try {
+       // Strip reactivity to prevent DataCloneError
+       const cleanHistory = JSON.parse(JSON.stringify(newHistory));
        await OBR.room.setMetadata({
-        [LOGS_DATA_KEY]: newHistory
+        [LOGS_DATA_KEY]: cleanHistory
       });
     } catch (e) {
         console.error('Failed to add log entry', e);
