@@ -149,39 +149,40 @@ export function useRollForShoes() {
 
   const addXp = (id: string, amount: number) => {
     const char = characters.value[id];
-    if (!char) return;
+    if (!char) return Promise.resolve();
     const newXp = Math.max(0, char.xp + amount);
-    updateCharacter(id, { xp: newXp });
+    return updateCharacter(id, { xp: newXp });
   };
 
   const addSkill = (id: string, skill: Skill) => {
     const char = characters.value[id];
-    if (!char) return;
-    updateCharacter(id, { skills: [...char.skills, skill] });
+    if (!char) return Promise.resolve();
+    return updateCharacter(id, { skills: [...char.skills, skill] });
   };
   
   const updateSkill = (id: string, skillIndex: number, updates: Partial<Skill>) => {
     const char = characters.value[id];
-    if (!char) return;
+    if (!char) return Promise.resolve();
     const newSkills = [...char.skills];
     if (newSkills[skillIndex]) {
         newSkills[skillIndex] = { ...newSkills[skillIndex], ...updates };
-        updateCharacter(id, { skills: newSkills });
+        return updateCharacter(id, { skills: newSkills });
     }
+    return Promise.resolve();
   };
 
   const removeSkill = (id: string, skillIndex: number) => {
     const char = characters.value[id];
-    if (!char) return;
+    if (!char) return Promise.resolve();
     const newSkills = [...char.skills];
     newSkills.splice(skillIndex, 1);
-    updateCharacter(id, { skills: newSkills });
+    return updateCharacter(id, { skills: newSkills });
   };
 
   const reorderSkills = (id: string, newSkills: Skill[]) => {
     const char = characters.value[id];
-    if (!char) return;
-    updateCharacter(id, { skills: newSkills });
+    if (!char) return Promise.resolve();
+    return updateCharacter(id, { skills: newSkills });
   };
 
   const linkSelectionToCharacter = async (characterId: string | null) => {

@@ -83,31 +83,37 @@ const handleRoll = (characterId: string, skill: Skill) => {
     });
 };
 
-const handleRollTakeXp = (logId: string) => {
+const handleRollTakeXp = async (logId: string) => {
     if (currentRoll.value) {
-        addXp(currentRoll.value.characterId, 1);
-        markLogAction(logId, 'xp');
+        await addXp(currentRoll.value.characterId, 1);
+        await markLogAction(logId, 'xp');
         OBR.notification.show(`${currentRoll.value.characterName} gains 1 XP from failure.`);
+        // Remove: currentRoll.value = null; // Don't close immediately so user sees "Success" or "Evolve" options disabled, or better yet, keep modal open but in 'result' state
+        // Actually, for better UX, we can keep it open or close it. 
+        // If we keep it open, we need to update the UI to show XP was taken.
+        // But the MissionReport is a prop-driven component.
+        // Let's close it for now as per original behavior, but ensure the XP add finished first? 
+        // addXp is async now but we don't await it here because the UI is optimistic.
         currentRoll.value = null;
     }
 };
 
-const handleRollEvolve = (logId: string, newSkillName: string, xpCost: number) => {
+const handleRollEvolve = async (logId: string, newSkillName: string, xpCost: number) => {
     if (currentRoll.value && newSkillName) {
-         addSkill(currentRoll.value.characterId, {
+         await addSkill(currentRoll.value.characterId, {
             name: newSkillName,
             rank: currentRoll.value.rank + 1
          });
          
          // Deduct XP cost
          if (xpCost > 0) {
-             addXp(currentRoll.value.characterId, -xpCost);
+             await addXp(currentRoll.value.characterId, -xpCost);
          }
 
-         markLogAction(logId, 'advance');
+         await markLogAction(logId, 'advance');
 
          // Add SKILL Log
-         addLogEntry({
+         await addLogEntry({
             type: 'SKILL',
             id: crypto.randomUUID(),
             characterId: currentRoll.value.characterId,
@@ -124,9 +130,9 @@ const handleRollEvolve = (logId: string, newSkillName: string, xpCost: number) =
     }
 };
 
-const handleLogTakeXp = (logId: string, characterId: string) => {
-    addXp(characterId, 1);
-    markLogAction(logId, 'xp');
+const handleLogTakeXp = async (logId: string, characterId: string) => {
+    await addXp(characterId, 1);
+    await markLogAction(logId, 'xp');
     
     // Get updated character for notification
     const char = characterList.value.find(c => c.id === characterId);
@@ -137,7 +143,7 @@ const handleLogTakeXp = (logId: string, characterId: string) => {
     }
 };
 
-const handleLogDelete = (logId: string) => {
+const handleLogDelete = async (logId: string) => {
     // Check if it's a SKILL entry with revert info
     const entry = rollHistory.value.find(e => e.id === logId);
     if (!entry) return;
@@ -168,7 +174,7 @@ const handleLogDelete = (logId: string) => {
             }
 
             if (skillIndex !== -1) {
-                removeSkill(entry.characterId, skillIndex);
+                await removeSkill(entry.characterId, skillIndex);
             } else {
                 console.warn(`[Revert] Could not find skill to revert. Available skills:`, JSON.parse(JSON.stringify(char.skills)));
                 OBR.notification.show("Skill not found (already deleted?), but XP was refunded.", "WARNING");
@@ -176,43 +182,43 @@ const handleLogDelete = (logId: string) => {
 
             // 2. Refund XP
             if (entry.cost > 0) {
-                addXp(entry.characterId, entry.cost);
+                await addXp(entry.characterId, entry.cost);
             }
         }
 
         // 3. Unmark the "advance" action on the source roll so it can be used again
-        unmarkLogAction(entry.sourceRollId, 'advance');
+        await unmarkLogAction(entry.sourceRollId, 'advance');
 
         // 4. Delete the log entry
-        deleteLogEntry(logId);
+        await deleteLogEntry(logId);
         OBR.notification.show("Advancement reverted.");
     } else {
         // Standard delete for other logs (Rolls, or Skills without source info)
-        deleteLogEntry(logId);
+        await deleteLogEntry(logId);
     }
 };
 
-const handleLogEvolve = (logId: string, characterId: string, rank: number, newSkillName: string, xpCost: number) => {
+const handleLogEvolve = async (logId: string, characterId: string, rank: number, newSkillName: string, xpCost: number) => {
     // 1. Add the skill to the character
-    addSkill(characterId, {
+    await addSkill(characterId, {
         name: newSkillName,
         rank: rank + 1
     });
 
     // 2. Deduct XP cost
     if (xpCost > 0) {
-        addXp(characterId, -xpCost);
+        await addXp(characterId, -xpCost);
     }
     
     // 3. Mark the roll log as 'advanced'
-    markLogAction(logId, 'advance');
+    await markLogAction(logId, 'advance');
 
     // Find character name for log
     const char = characterList.value.find(c => c.id === characterId);
     const charName = char ? char.name : 'Unknown';
 
     // 4. Add SKILL Log
-    addLogEntry({
+    await addLogEntry({
         type: 'SKILL',
         id: crypto.randomUUID(),
         characterId: characterId,
@@ -226,12 +232,12 @@ const handleLogEvolve = (logId: string, characterId: string, rank: number, newSk
 
     OBR.notification.show(`Character acquired new skill: ${newSkillName} (Rank ${rank + 1})`, "SUCCESS");
 };
-const handleRollSucceeded = (logId: string) => {
-    markLogAction(logId, 'succeeded');
+const handleRollSucceeded = async (logId: string) => {
+    await markLogAction(logId, 'succeeded');
     currentRoll.value = null;
 };
-const handleLogSucceeded = (logId: string) => {
-    markLogAction(logId, 'succeeded');
+const handleLogSucceeded = async (logId: string) => {
+    await markLogAction(logId, 'succeeded');
     OBR.notification.show(`Roll marked as Succeeded.`);
 };
 </script>
