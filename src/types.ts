@@ -9,6 +9,7 @@ export interface Character {
   xp: number;
   skills: Skill[];
   createdAt: number;
+  imageUrl?: string;
 }
 
 export interface CharacterLink {

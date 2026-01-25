@@ -21,6 +21,7 @@ const {
   reorderSkills,
   linkSelectionToCharacter, 
   deleteCharacter,
+  activeCharacterId
 } = useRollForShoes();
 
 const isCreating = ref(false);
@@ -68,6 +69,7 @@ const onRoll = (characterId: string, skill: Skill) => {
              :character="char"
              :selectedTokenIds="selectedItems"
              :role="role"
+             :isActive="activeCharacterId === char.id"
              @addXp="addXp"
              @addSkill="addSkill"
              @updateSkill="updateSkill"

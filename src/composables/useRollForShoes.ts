@@ -17,6 +17,8 @@ export function useRollForShoes() {
   // Room metadata key for storing roll logs
   const LOGS_DATA_KEY = getPluginId('logs');
 
+  const activeCharacterId = ref<string | null>(null);
+
   // Computed helper to get list as array
   const characterList = computed(() => {
     return Object.values(characters.value).sort((a, b) => a.createdAt - b.createdAt);
@@ -136,16 +138,54 @@ export function useRollForShoes() {
     updateCharacter(id, { skills: newSkills });
   };
 
-  const linkSelectionToCharacter = async (characterId: string) => {
+  const linkSelectionToCharacter = async (characterId: string | null) => {
     if (selectedItems.value.length === 0) return;
     
     try {
+      // Create a plain array copy to remove Vue reactivity
+      const itemIds = [...selectedItems.value];
+
+      if (characterId === null) {
+          // Unlink
+          await OBR.scene.items.updateItems(itemIds, (items) => {
+            for (const item of items) {
+              delete item.metadata[LINK_KEY];
+            }
+          });
+          
+          // Optimistic Update: Clear active character immediately
+          activeCharacterId.value = null;
+          
+          OBR.notification.show(`Unlinked ${selectedItems.value.length} token(s).`);
+          return;
+      }
+      
       const metadata: CharacterLink = { characterId };
-      await OBR.scene.items.updateItems(selectedItems.value, (items) => {
+      
+      // Get the items to extract image URL
+      const items = await OBR.scene.items.getItems(itemIds);
+      let imageUrl: string | undefined;
+      
+      // Try to find an image in the selection
+      const imageItem = items.find(i => i.type === 'IMAGE');
+      if (imageItem && 'image' in imageItem) {
+          imageUrl = (imageItem as any).image.url;
+      }
+
+      await OBR.scene.items.updateItems(itemIds, (items) => {
         for (const item of items) {
           item.metadata[LINK_KEY] = metadata;
         }
       });
+      
+      // Update character with image if found
+      if (imageUrl) {
+          updateCharacter(characterId, { imageUrl });
+      }
+
+      // Optimistic Update: Immediately set activeCharacterId so the UI refreshes
+      activeCharacterId.value = characterId;
+
       OBR.notification.show(`Linked ${selectedItems.value.length} token(s) to character.`);
     } catch (e) {
       console.error('Failed to link tokens', e);
@@ -278,9 +318,22 @@ export function useRollForShoes() {
       });
 
       // Listen for selection changes and role changes
-      unsubscribeSelection.value = OBR.player.onChange((player) => {
+      unsubscribeSelection.value = OBR.player.onChange(async (player) => {
         selectedItems.value = player.selection || [];
         role.value = player.role;
+        
+        // Check for linked character in selection
+        if (selectedItems.value.length === 1) {
+            const items = await OBR.scene.items.getItems([selectedItems.value[0]]);
+            if (items.length > 0) {
+                const metadata = items[0].metadata[LINK_KEY] as CharacterLink | undefined;
+                if (metadata && metadata.characterId) {
+                    activeCharacterId.value = metadata.characterId;
+                    return;
+                }
+            }
+        }
+        activeCharacterId.value = null;
       });
     });
   });
@@ -308,7 +361,8 @@ export function useRollForShoes() {
     rollDice,
     rollHistory,
     addLogEntry,
-    debugMode
+    debugMode,
+    activeCharacterId
   };
 }
 

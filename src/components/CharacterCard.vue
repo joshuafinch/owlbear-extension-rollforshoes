@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import draggable from 'vuedraggable';
 import type { Character, Skill } from '../types';
 import CreationRow from './common/CreationRow.vue';
@@ -8,6 +8,7 @@ const props = defineProps<{
   character: Character;
   selectedTokenIds: string[];
   role: string;
+  isActive?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -16,12 +17,20 @@ const emit = defineEmits<{
   (e: 'updateSkill', id: string, index: number, skill: Partial<Skill>): void;
   (e: 'removeSkill', id: string, index: number): void;
   (e: 'reorderSkills', id: string, skills: Skill[]): void;
-  (e: 'link', id: string): void;
+  (e: 'link', id: string | null): void;
   (e: 'delete', id: string): void;
   (e: 'roll', id: string, skill: Skill): void;
 }>();
 
 const isExpanded = ref(false);
+
+// Auto-expand when active
+watch(() => props.isActive, (active) => {
+    if (active) {
+        isExpanded.value = true;
+    }
+});
+
 const newSkillRank = ref(2);
 
 // Track editing state for each skill by index
@@ -104,7 +113,10 @@ const cancelSkillEdit = () => {
 </script>
 
 <template>
-  <div class="bg-[var(--obr-bg-paper)] backdrop-blur-xl rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] p-0 mb-4 border-2 border-[var(--obr-text-primary)] transition-all duration-300 hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.5)] overflow-hidden">
+  <div 
+    class="bg-[var(--obr-bg-paper)] backdrop-blur-xl rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] p-0 mb-4 border-2 transition-all duration-300 hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.5)] overflow-hidden"
+    :class="isActive ? 'border-[var(--obr-primary-main)] ring-2 ring-[var(--obr-primary-main)]/50' : 'border-[var(--obr-text-primary)]'"
+  >
     
     <!-- Header / Summary View -->
     <div class="p-3 bg-gradient-to-r from-[var(--obr-bg-default)] to-[var(--obr-bg-paper)]">
@@ -117,11 +129,12 @@ const cancelSkillEdit = () => {
           :aria-expanded="isExpanded"
           :aria-label="isExpanded ? `Collapse character sheet for ${character.name}` : `Expand character sheet for ${character.name}`"
         >
-           <div class="w-8 h-8 flex items-center justify-center bg-[var(--obr-text-primary)] text-[var(--obr-bg-paper)] rounded-full font-black border-2 border-[var(--obr-bg-paper)] shadow-sm transform transition-transform group-hover:scale-110" aria-hidden="true">
-              <span class="text-[var(--obr-bg-paper)] text-base font-bold">{{ character.name.charAt(0).toUpperCase() }}</span>
+           <div class="w-10 h-10 shrink-0 flex items-center justify-center bg-[var(--obr-text-primary)] text-[var(--obr-bg-paper)] rounded-full font-black border-2 border-[var(--obr-bg-paper)] shadow-sm transform transition-transform group-hover:scale-110 overflow-hidden" aria-hidden="true">
+              <img v-if="character.imageUrl" :src="character.imageUrl" class="w-full h-full object-cover" :alt="character.name" />
+              <span v-else class="text-[var(--obr-bg-paper)] text-lg font-bold">{{ character.name.charAt(0).toUpperCase() }}</span>
            </div>
-           <div class="flex flex-col">
-              <h3 class="font-black text-xl text-[var(--obr-text-primary)] uppercase tracking-tight leading-none group-hover:text-[var(--obr-primary-main)] transition-colors">{{ character.name }}</h3>
+           <div class="flex flex-col min-w-0">
+              <h3 class="font-black text-xl text-[var(--obr-text-primary)] uppercase tracking-tight leading-none group-hover:text-[var(--obr-primary-main)] transition-colors truncate">{{ character.name }}</h3>
               <span class="text-xs font-bold text-[var(--obr-text-disabled)] uppercase tracking-wider flex items-center gap-1 group-hover:text-[var(--obr-text-secondary)] transition-colors">
                  <svg 
                    class="w-4 h-4 transform transition-transform duration-300 text-[var(--obr-text-primary)]"
@@ -179,13 +192,21 @@ const cancelSkillEdit = () => {
             <h4 class="text-sm font-black text-[var(--obr-text-primary)] uppercase tracking-widest border-b-2 border-[var(--obr-primary-main)] inline-block">Skills</h4>
             
             <!-- Link Action (Expanded) -->
-             <button 
-                v-if="canLink"
-                @click="emit('link', character.id)"
-                class="text-xs font-bold uppercase text-[var(--obr-primary-main)] hover:underline flex items-center gap-1"
-            >
-                <span>🔗 Link Token</span>
-            </button>
+             <div v-if="canLink" class="flex gap-2">
+                 <button 
+                    v-if="isActive"
+                    @click="emit('link', null)"
+                    class="text-xs font-bold uppercase text-[var(--obr-text-disabled)] hover:text-red-500 hover:underline flex items-center gap-1"
+                >
+                    <span>Unlink Token</span>
+                </button>
+                 <button 
+                    @click="emit('link', character.id)"
+                    class="text-xs font-bold uppercase text-[var(--obr-primary-main)] hover:underline flex items-center gap-1"
+                >
+                    <span>{{ isActive ? '🔄 Update Link' : '🔗 Link Token' }}</span>
+                </button>
+             </div>
         </div>
         
         <div class="space-y-2 mb-4">
