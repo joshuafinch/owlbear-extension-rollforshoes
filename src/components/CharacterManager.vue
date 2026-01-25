@@ -197,22 +197,25 @@ const handleLogDelete = (logId: string) => {
 };
 
 const handleLogEvolve = (logId: string, characterId: string, rank: number, newSkillName: string, xpCost: number) => {
+    // 1. Add the skill to the character
     addSkill(characterId, {
         name: newSkillName,
         rank: rank + 1
     });
 
+    // 2. Deduct XP cost
     if (xpCost > 0) {
         addXp(characterId, -xpCost);
     }
     
+    // 3. Mark the roll log as 'advanced'
     markLogAction(logId, 'advance');
 
     // Find character name for log
     const char = characterList.value.find(c => c.id === characterId);
     const charName = char ? char.name : 'Unknown';
 
-    // Add SKILL Log
+    // 4. Add SKILL Log
     addLogEntry({
         type: 'SKILL',
         id: crypto.randomUUID(),
