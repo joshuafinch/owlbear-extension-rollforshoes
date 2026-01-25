@@ -52,10 +52,33 @@ const handleAddSkill = () => {
   newSkillRank.value = 2; // Reset to 2 as it's the most common next step
 };
 
+const isDeleting = ref(false);
+
 const handleDelete = () => {
-  if (confirm(`Are you sure you want to delete ${props.character.name}? This cannot be undone.`)) {
+  if (isDeleting.value) {
     emit('delete', props.character.id);
+  } else {
+    isDeleting.value = true;
+    setTimeout(() => {
+        isDeleting.value = false;
+    }, 3000);
   }
+};
+
+const deletingSkillIndex = ref<number | null>(null);
+
+const handleRemoveSkill = (index: number) => {
+    if (deletingSkillIndex.value === index) {
+        emit('removeSkill', props.character.id, index);
+        deletingSkillIndex.value = null;
+    } else {
+        deletingSkillIndex.value = index;
+        setTimeout(() => {
+            if (deletingSkillIndex.value === index) {
+                deletingSkillIndex.value = null;
+            }
+        }, 3000);
+    }
 };
 
 const startEditingSkill = (index: number, skill: Skill) => {
@@ -217,11 +240,15 @@ const cancelSkillEdit = () => {
                        </button>
                        
                        <button 
-                          @click="emit('removeSkill', character.id, index)"
-                          class="w-8 h-8 flex items-center justify-center text-[var(--obr-text-disabled)] hover:text-red-500 hover:bg-red-100 rounded opacity-60 hover:opacity-100 transition-all focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-500 text-lg"
-                          :aria-label="`Remove skill ${skill.name}`"
-                          title="Remove Skill"
-                       ><span aria-hidden="true">×</span></button>
+                          @click="handleRemoveSkill(index)"
+                          class="w-8 h-8 flex items-center justify-center rounded transition-all focus:outline-none focus:ring-2 focus:ring-red-500 text-lg"
+                          :class="deletingSkillIndex === index ? 'bg-red-500 text-white opacity-100 shadow-sm w-auto px-2' : 'text-[var(--obr-text-disabled)] hover:text-red-500 hover:bg-red-100 opacity-60 hover:opacity-100'"
+                          :aria-label="deletingSkillIndex === index ? 'Confirm remove skill' : `Remove skill ${skill.name}`"
+                          :title="deletingSkillIndex === index ? 'Click again to confirm' : 'Remove Skill'"
+                       >
+                          <span v-if="deletingSkillIndex === index" aria-hidden="true" class="text-xs font-bold uppercase whitespace-nowrap">Confirm Delete</span>
+                          <span v-else aria-hidden="true">×</span>
+                       </button>
                     </div>
                 </template>
 
@@ -286,9 +313,11 @@ const cancelSkillEdit = () => {
            <button 
               v-if="isGm"
               @click="handleDelete" 
-              class="text-[10px] font-black uppercase text-red-400 hover:text-red-600 hover:bg-red-50 px-2 py-1 rounded flex items-center gap-1 transition-colors"
+              class="text-[10px] font-black uppercase px-2 py-1 rounded flex items-center gap-1 transition-all duration-200"
+              :class="isDeleting ? 'bg-red-500 text-white hover:bg-red-600 shadow-md scale-105' : 'text-red-400 hover:text-red-600 hover:bg-red-50'"
            >
-              <span>🗑 Delete File</span>
+              <span v-if="isDeleting">CONFIRM DELETION</span>
+              <span v-else>Delete File</span>
            </button>
         </div>
       </div>

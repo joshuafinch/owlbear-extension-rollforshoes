@@ -63,21 +63,23 @@ const onRoll = (characterId: string, skill: Skill) => {
           </div>
 
           <!-- Character List -->
-          <CharacterCard
-            v-for="char in characterList"
-            :key="char.id"
-            :character="char"
-            :selectedTokenIds="selectedItems"
-            :role="role"
-            @addXp="addXp"
-            @addSkill="addSkill"
-            @updateSkill="updateSkill"
-            @removeSkill="removeSkill"
-            @reorderSkills="reorderSkills"
-            @link="linkSelectionToCharacter"
-            @delete="deleteCharacter"
-            @roll="onRoll"
-          />
+          <div class="px-2">
+           <CharacterCard
+             v-for="char in characterList"
+             :key="char.id"
+             :character="char"
+             :selectedTokenIds="selectedItems"
+             :role="role"
+             @addXp="addXp"
+             @addSkill="addSkill"
+             @updateSkill="updateSkill"
+             @removeSkill="removeSkill"
+             @reorderSkills="reorderSkills"
+             @link="linkSelectionToCharacter"
+             @delete="deleteCharacter"
+             @roll="onRoll"
+           />
+          </div>
            
            <!-- Create Form (Moved to bottom) -->
            <div v-if="isCreating" class="mx-2 mt-4 bg-[var(--obr-bg-paper)] p-4 rounded-lg border-2 border-[var(--obr-text-primary)] shadow-lg animate-fade-in-up shrink-0">

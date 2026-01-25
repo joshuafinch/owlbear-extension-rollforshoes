@@ -186,23 +186,3 @@ const handleRollEvolve = (newSkillName: string) => {
   background: var(--obr-primary-main);
 }
 </style>
-
-<style scoped>
-/* Custom Scrollbar Styling */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--obr-text-disabled);
-  border-radius: 3px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--obr-primary-main);
-}
-</style>

@@ -135,7 +135,7 @@ const confirmEvolution = () => {
             <div v-if="!isAllSixes" class="grid grid-cols-2 gap-2">
               <button 
                 @click="emit('takeXp')"
-                class="w-full bg-[var(--obr-bg-default)] hover:bg-gray-100 text-[var(--obr-text-primary)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-3 text-sm flex items-center justify-center gap-1 group"
+                class="w-full bg-[var(--obr-bg-default)] hover:bg-gray-100 text-[var(--obr-text-primary)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-3 text-sm flex items-center justify-center gap-1 group shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
               >
                 <span class="text-red-500 group-hover:text-red-600 text-lg">⚠</span> FAILED (+1 XP)
               </button>
@@ -148,6 +148,15 @@ const confirmEvolution = () => {
             </div>
             
             <button 
+              v-if="!isEvolving && isAllSixes"
+               @click="emit('close')"
+               class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] hover:bg-gray-100 font-bold uppercase text-xs tracking-widest py-4 mt-2 rounded border border-transparent hover:border-gray-300 transition-colors"
+            >
+               Dismiss Report
+            </button>
+            
+            <button 
+              v-if="!isEvolving && !isAllSixes"
               @click="emit('close')"
               class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] hover:bg-gray-100 font-bold uppercase text-xs tracking-widest py-4 mt-2 rounded border border-transparent hover:border-gray-300 transition-colors"
             >
