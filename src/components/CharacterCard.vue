@@ -151,74 +151,59 @@ const handleXpChange = (amount: number) => {
   >
     
     <!-- Header / Summary View -->
-    <div class="p-0 bg-gradient-to-r from-[var(--obr-surface-base)] to-[var(--obr-surface-card)] transition-all duration-300">
+    <div class="p-0 bg-gradient-to-r from-[var(--obr-surface-base)] to-[var(--obr-surface-card)] transition-all duration-300 relative z-20">
       <div class="flex items-center justify-between gap-2">
         
         <!-- Name & Toggle -->
         <button 
           class="flex items-center gap-3 cursor-pointer select-none group flex-1 min-w-0 text-left focus:outline-none rounded p-0 z-10" 
+          :class="{ 'min-h-[4.5rem]': !character.imageUrl }"
           @click="isExpanded = !isExpanded"
           :aria-expanded="isExpanded"
           :aria-label="isExpanded ? `Collapse character sheet for ${character.name}` : `Expand character sheet for ${character.name}`"
         >
            <div 
+             v-if="character.imageUrl"
              class="shrink-0 flex items-center justify-center font-black transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] overflow-hidden relative z-10 ml-1 mt-1" 
              :class="isExpanded ? 'w-24 h-24 text-[var(--obr-text-inverse)]' : 'w-16 h-16 group-hover:scale-105'"
              aria-hidden="true"
             >
               <img 
-                v-if="character.imageUrl" 
                 :src="character.imageUrl" 
                 class="w-full h-full object-cover object-top transition-transform duration-700 origin-top" 
                 :class="isExpanded ? 'scale-100' : 'scale-150'" 
                 :alt="character.name" 
               />
-              <span v-else class="text-[var(--obr-text-inverse)] font-bold" :class="isExpanded ? 'text-5xl' : 'text-2xl'">{{ character.name.charAt(0) }}</span>
            </div>
-          <div class="flex flex-col min-w-0 transition-all duration-300 origin-left pl-3" :class="{'translate-y-1': isExpanded}">
-              
-              <!-- Name Display / Edit Mode -->
-              <div v-if="!isEditingName" 
-                   @click.stop="isExpanded ? startEditingName() : null" 
-                   class="group/name relative"
-                   :class="isExpanded ? 'cursor-pointer' : ''"
-                   :title="isExpanded ? 'Click to edit name' : ''"
-              >
-                  <h3 
-                    class="font-black text-[var(--obr-text-primary)] tracking-tight leading-none group-hover:text-[var(--obr-primary-main)] transition-all duration-300 truncate pr-1 origin-left"
-                    :class="isExpanded ? 'text-3xl' : 'text-xl'"
-                  >
-                    {{ character.name }}
-                    <span v-if="isExpanded" class="opacity-0 group-hover/name:opacity-100 text-[10px] text-[var(--obr-text-disabled)] ml-1 absolute top-0 -right-4 transition-opacity">✎</span>
-                  </h3>
-              </div>
-              
-              <div v-else class="flex items-center" @click.stop>
-                   <input 
-                      ref="editNameInput"
-                      v-model="editNameValue"
-                      type="text"
-                      class="bg-[var(--obr-surface-input)] text-[var(--obr-text-primary)] font-black tracking-tight leading-none border-b-2 border-[var(--obr-primary-main)] focus:outline-none w-full min-w-[150px] text-xl"
-                      @keyup.enter="saveNameEdit"
-                      @keyup.esc="cancelNameEdit"
-                      @blur="saveNameEdit"
-                    />
-              </div>
+           <div class="flex flex-col justify-center min-w-0 transition-all duration-300 origin-left pl-3">
+               
+               <!-- Name Display / Edit Mode (Collapsed State Only) -->
+               <transition name="name-slide-header">
+                 <div v-if="!isExpanded" class="absolute top-0 bottom-0 flex items-center z-20" :class="character.imageUrl ? 'left-[5.5rem]' : 'left-4'">
+                     <div v-if="!isEditingName" 
+                          class="group/name relative"
+                     >
+                         <div 
+                             @click.stop="isExpanded = true" 
+                             class="cursor-pointer"
+                             title="Click to expand"
+                          >
+                             <h3 
+                               class="font-black text-[var(--obr-text-primary)] tracking-tight leading-none group-hover:text-[var(--obr-primary-main)] transition-all duration-300 truncate pr-1 origin-left text-2xl pb-1"
+                             >
+                               {{ character.name }}
+                             </h3>
+                         </div>
+                     </div>
+                 </div>
+               </transition>
 
-              <span class="text-xs font-bold text-[var(--obr-text-disabled)] uppercase tracking-wider flex items-center gap-1 group-hover:text-[var(--obr-text-secondary)] transition-colors">
-                 <svg 
-                   class="w-4 h-4 transform transition-transform duration-300 text-[var(--obr-text-primary)]"
-                   :class="{ 'rotate-180': isExpanded }"
-                   fill="none" 
-                   stroke="currentColor" 
-                   viewBox="0 0 24 24" 
-                   xmlns="http://www.w3.org/2000/svg"
-                   aria-hidden="true"
-                 >
-                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M19 9l-7 7-7-7"></path>
-                 </svg>
-                 <span class="sr-only">{{ isExpanded ? 'Collapse' : 'Expand' }} details</span>
-              </span>
+               <!-- Chevron (Collapsed Only) -->
+               <transition name="fade">
+                <span v-if="!isExpanded" class="text-xs font-bold text-[var(--obr-text-disabled)] uppercase tracking-wider flex items-center gap-1 group-hover:text-[var(--obr-text-secondary)] transition-colors absolute bottom-2" :class="character.imageUrl ? 'left-[5.5rem]' : 'left-4'">
+                    <span class="text-[10px]">CLICK TO EXPAND</span>
+                </span>
+               </transition>
            </div>
         </button>
         
@@ -287,8 +272,39 @@ const handleXpChange = (amount: number) => {
         </div>
 
        <!-- Actions Bar (Expanded State) -->
-       <div v-if="canLink" class="px-3 pt-3 flex justify-end relative z-10">
+       <div class="px-3 pt-3 flex justify-between items-center relative z-10 min-h-[48px]">
+            <!-- Name (Expanded Mode Only) -->
+            <transition name="name-slide-expanded">
+                <div v-if="isExpanded" 
+                   class="group/name relative cursor-pointer flex-1"
+                >
+                    <div 
+                       v-if="!isEditingName"
+                       @click.stop="startEditingName()" 
+                       title="Click to edit name"
+                    >
+                        <h3 class="font-black text-[var(--obr-text-primary)] tracking-tight leading-none group-hover:text-[var(--obr-primary-main)] transition-colors duration-300 text-3xl pb-1">
+                            {{ character.name }}
+                            <span class="opacity-0 group-hover/name:opacity-100 text-[10px] text-[var(--obr-text-disabled)] ml-1 absolute top-0 -right-4 transition-opacity">✎</span>
+                        </h3>
+                    </div>
+                    <div v-else class="flex items-center" @click.stop>
+                       <input 
+                          ref="editNameInput"
+                          v-model="editNameValue"
+                          type="text"
+                          class="bg-[var(--obr-surface-input)] text-[var(--obr-text-primary)] font-black tracking-tight leading-none border-b-2 border-[var(--obr-primary-main)] focus:outline-none w-full min-w-[150px] text-3xl"
+                          @keyup.enter="saveNameEdit"
+                          @keyup.esc="cancelNameEdit"
+                          @blur="saveNameEdit"
+                        />
+                    </div>
+                </div>
+            </transition>
+            
+            <div v-if="!isExpanded" class="flex-1"></div>
 
+            <div v-if="canLink" class="flex gap-2">
                  <button 
                     v-if="isActive"
                     @click="emit('link', null)"
@@ -302,7 +318,8 @@ const handleXpChange = (amount: number) => {
                 >
                     <span>{{ isActive ? '🔄 Update Link' : '🔗 Link Token' }}</span>
                 </button>
-             </div>
+            </div>
+       </div>
       
         <!-- Skills Section -->
        <div class="p-3 relative z-10">
@@ -441,5 +458,39 @@ const handleXpChange = (amount: number) => {
 .float-up-leave-to {
   opacity: 0;
   transform: translateY(-20px) scale(1);
+}
+
+/* Name Slide Animations */
+/* Header Name: Exits by sliding DOWN into the body */
+.name-slide-header-enter-active,
+.name-slide-header-leave-active {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.name-slide-header-enter-from,
+.name-slide-header-leave-to {
+  opacity: 0;
+  transform: translateY(20px); 
+}
+
+/* Expanded Name: Enters by sliding UP from the header position */
+.name-slide-expanded-enter-active,
+.name-slide-expanded-leave-active {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition-delay: 0.1s; /* Slight delay to let the card expand first */
+}
+.name-slide-expanded-enter-from,
+.name-slide-expanded-leave-to {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
