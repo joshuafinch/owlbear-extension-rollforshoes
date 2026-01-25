@@ -111,7 +111,7 @@ const handleRollEvolve = (newSkillName: string) => {
 </script>
 
 <template>
-  <div class="h-screen flex flex-col overflow-hidden bg-[var(--obr-bg-default)]">
+  <div class="h-full flex flex-col overflow-hidden bg-[var(--obr-bg-paper)]">
     
     <!-- Mission Report Overlay -->
     <MissionReport 
@@ -156,19 +156,19 @@ const handleRollEvolve = (newSkillName: string) => {
           </button>
        </div>
 
-      <!-- Action Bar (Dispatch Tab Only) -->
-      <div v-if="activeTab === 'DISPATCH'" class="flex justify-between items-center py-4 px-3">
-         <h2 class="text-2xl font-black text-[var(--obr-text-primary)] uppercase tracking-tighter italic leading-none">
-            Personnel
-         </h2>
-         <button 
-           v-if="!isCreating"
-           @click="isCreating = true"
-           class="bg-[var(--obr-primary-main)] hover:bg-[var(--obr-primary-dark)] text-[var(--obr-primary-contrast)] text-xs font-black uppercase tracking-widest py-3 px-4 rounded shadow-[3px_3px_0px_0px_rgba(0,0,0,0.5)] active:translate-y-1 active:shadow-none transition-all border-2 border-[var(--obr-text-primary)]"
-         >
-           + New Recruit
-         </button>
-      </div>
+       <!-- Action Bar (Dispatch Tab Only) -->
+       <div v-if="activeTab === 'DISPATCH'" class="flex justify-between items-center py-4 px-3">
+          <h2 class="text-2xl font-black text-[var(--obr-text-primary)] uppercase tracking-tighter italic leading-none">
+             Personnel
+          </h2>
+          <button 
+            v-if="!isCreating"
+            @click="isCreating = true"
+            class="bg-[var(--obr-primary-main)] hover:bg-[var(--obr-primary-dark)] text-[var(--obr-primary-contrast)] text-xs font-black uppercase tracking-widest py-3 px-4 rounded shadow-[3px_3px_0px_0px_rgba(0,0,0,0.5)] active:translate-y-1 active:shadow-none transition-colors border-2 border-[var(--obr-text-primary)]"
+          >
+            + New Recruit
+          </button>
+       </div>
       
       <!-- Create Form (Dispatch Tab Only) -->
       <div v-if="activeTab === 'DISPATCH' && isCreating" class="mx-2 mb-2 bg-[var(--obr-bg-paper)] p-3 rounded-lg border-2 border-[var(--obr-text-primary)] shadow-lg animate-fade-in-down">

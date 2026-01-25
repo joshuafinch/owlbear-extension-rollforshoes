@@ -3,9 +3,11 @@
 :root {
   --obr-bg-default: #ffffff;
   --obr-bg-paper: #f3f4f6;
-  --obr-text-primary: #111827;
+  --obr-text-primary: #374151; /* Gray-700 instead of black */
   --obr-text-secondary: #6b7280;
   --obr-primary-main: #6366f1;
+  --obr-primary-dark: #4338ca;
+  --obr-primary-contrast: #ffffff;
 
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
