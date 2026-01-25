@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import type { LogEntry, RollLogEntry, Character } from '../types';
 import MissionReport from './MissionReport.vue';
+import { LOG_TYPE_ROLL, LOG_TYPE_SKILL } from '../constants';
 
 const props = defineProps<{
   history: LogEntry[];
@@ -14,7 +15,7 @@ const latestRollIds = computed(() => {
     
     // History is presumably sorted newest first
     for (const entry of props.history) {
-        if (entry.type === 'ROLL') {
+        if (entry.type === LOG_TYPE_ROLL) {
             if (!seenChars.has(entry.characterId)) {
                 ids.add(entry.id);
                 seenChars.add(entry.characterId);
@@ -126,7 +127,7 @@ const handleDeleteClick = (id: string) => {
         <template v-for="(entry) in history" :key="entry.id">
             <!-- ROLL ENTRY -->
             <div 
-                v-if="entry.type === 'ROLL'"
+                v-if="entry.type === LOG_TYPE_ROLL"
                 class="relative bg-[var(--obr-surface-card)] p-3 shadow-md border-l-4 font-mono text-sm group transition-all hover:-translate-x-1"
                 :class="isCritical(entry.dice) ? 'border-[var(--obr-status-critical)]' : 'border-[var(--obr-border-base)]'"
             >
@@ -250,7 +251,7 @@ const handleDeleteClick = (id: string) => {
 
             <!-- SKILL ENTRY -->
             <div 
-                v-else-if="entry.type === 'SKILL'"
+                v-else-if="entry.type === LOG_TYPE_SKILL"
                 class="relative bg-[var(--obr-surface-card)] p-3 shadow-md border-l-4 border-[var(--obr-primary-main)] font-mono text-sm my-2 group transition-all hover:-translate-x-1"
             >
                 <!-- Header: Character Name + Time -->

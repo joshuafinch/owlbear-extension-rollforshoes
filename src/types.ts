@@ -1,3 +1,5 @@
+import { LOG_TYPE_ROLL } from './constants';
+
 export interface Skill {
   name: string;
   rank: number;
@@ -31,7 +33,7 @@ export interface LegacyRollEntry {
 }
 
 export interface RollLogEntry {
-  type: 'ROLL';
+  type: typeof LOG_TYPE_ROLL;
   id: string;
   characterId: string;
   characterName: string;

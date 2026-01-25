@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { ROLE_GM } from '../constants';
 
 const props = defineProps<{
   role: string;
@@ -13,7 +14,7 @@ const emit = defineEmits<{
   (e: 'clearLogs'): void;
 }>();
 
-const isGm = computed(() => props.role === 'GM');
+const isGm = computed(() => props.role === ROLE_GM);
 const confirmClearLogs = ref(false);
 
 const handleClearLogs = () => {

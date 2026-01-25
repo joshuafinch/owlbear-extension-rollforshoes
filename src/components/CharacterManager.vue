@@ -7,6 +7,13 @@ import MissionReport, { type RollResult } from './MissionReport.vue';
 import MissionLog from './MissionLog.vue';
 import type { Skill } from '../types';
 import OBR from '@owlbear-rodeo/sdk';
+import { 
+  TAB_DISPATCH, 
+  TAB_LOGS, 
+  TAB_SYSTEMS, 
+  LOG_TYPE_ROLL, 
+  LOG_TYPE_SKILL 
+} from '../constants';
 
 const { 
   characterList, 
@@ -27,7 +34,7 @@ const {
 } = useRollForShoes();
 
 // Tabs: 'DISPATCH' (list) | 'LOGS' (history) | 'SYSTEMS' (admin)
-const activeTab = ref<'DISPATCH' | 'LOGS' | 'SYSTEMS'>('DISPATCH');
+const activeTab = ref<typeof TAB_DISPATCH | typeof TAB_LOGS | typeof TAB_SYSTEMS>(TAB_DISPATCH);
 
 // Rolling State
 const currentRoll = ref<RollResult | null>(null);
@@ -71,7 +78,7 @@ const handleRoll = (characterId: string, skill: Skill) => {
 
     // Add to shared log
     addLogEntry({
-        type: 'ROLL',
+        type: LOG_TYPE_ROLL,
         id: rollId,
         characterId,
         characterName: character.name,
@@ -114,7 +121,7 @@ const handleRollEvolve = async (logId: string, newSkillName: string, xpCost: num
 
          // Add SKILL Log
          await addLogEntry({
-            type: 'SKILL',
+            type: LOG_TYPE_SKILL,
             id: crypto.randomUUID(),
             characterId: currentRoll.value.characterId,
             characterName: currentRoll.value.characterName,
@@ -148,7 +155,7 @@ const handleLogDelete = async (logId: string) => {
     const entry = rollHistory.value.find(e => e.id === logId);
     if (!entry) return;
 
-    if (entry.type === 'SKILL' && entry.sourceRollId) {
+    if (entry.type === LOG_TYPE_SKILL && entry.sourceRollId) {
         // 1. Remove the skill from the character
         // We need to find the skill index. This is tricky since we only store name/rank.
         // Assumption: The most recent skill with this name/rank is the one we want.
@@ -219,7 +226,7 @@ const handleLogEvolve = async (logId: string, characterId: string, rank: number,
 
     // 4. Add SKILL Log
     await addLogEntry({
-        type: 'SKILL',
+        type: LOG_TYPE_SKILL,
         id: crypto.randomUUID(),
         characterId: characterId,
         characterName: charName,
@@ -262,27 +269,27 @@ const handleLogSucceeded = async (logId: string) => {
        <!-- Top Tabs -->
        <div class="flex items-end gap-1 mb-0 border-b-4 border-[var(--obr-border-base)] pl-2">
           <button 
-            @click="activeTab = 'DISPATCH'"
+            @click="activeTab = TAB_DISPATCH"
             class="px-5 py-3 font-black uppercase tracking-wider text-sm rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-border-base)] transition-all relative top-[2px]"
-            :class="activeTab === 'DISPATCH' 
+            :class="activeTab === TAB_DISPATCH 
               ? 'bg-[var(--obr-surface-base)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-surface-base)] z-10 -mb-[4px] pt-4 pb-4' 
               : 'bg-[var(--obr-surface-card)] text-[var(--obr-text-disabled)] hover:bg-[var(--obr-surface-hover)] hover:text-[var(--obr-text-secondary)]'"
           >
             Dispatch
           </button>
           <button 
-            @click="activeTab = 'LOGS'"
+            @click="activeTab = TAB_LOGS"
             class="px-5 py-3 font-black uppercase tracking-wider text-sm rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-border-base)] transition-all relative top-[2px]"
-            :class="activeTab === 'LOGS' 
+            :class="activeTab === TAB_LOGS 
               ? 'bg-[var(--obr-surface-base)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-surface-base)] z-10 -mb-[4px] pt-4 pb-4' 
               : 'bg-[var(--obr-surface-card)] text-[var(--obr-text-disabled)] hover:bg-[var(--obr-surface-hover)] hover:text-[var(--obr-text-secondary)]'"
           >
             Logs
           </button>
           <button 
-            @click="activeTab = 'SYSTEMS'"
+            @click="activeTab = TAB_SYSTEMS"
             class="px-5 py-3 font-black uppercase tracking-wider text-sm rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-border-base)] transition-all relative top-[2px]"
-            :class="activeTab === 'SYSTEMS' 
+            :class="activeTab === TAB_SYSTEMS 
               ? 'bg-[var(--obr-surface-base)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-surface-base)] z-10 -mb-[4px] pt-4 pb-4' 
               : 'bg-[var(--obr-surface-card)] text-[var(--obr-text-disabled)] hover:bg-[var(--obr-surface-base)] hover:text-[var(--obr-text-secondary)]'"
           >
@@ -295,12 +302,12 @@ const handleLogSucceeded = async (logId: string) => {
     <div class="flex-1 overflow-y-auto px-4 pb-4 space-y-4 custom-scrollbar pt-2">
       
       <!-- DISPATCH TAB CONTENT -->
-      <div v-if="activeTab === 'DISPATCH'">
+      <div v-if="activeTab === TAB_DISPATCH">
           <DispatchConsole @roll="handleRoll" />
       </div>
 
       <!-- LOGS TAB CONTENT -->
-      <div v-if="activeTab === 'LOGS'" class="h-full pb-4">
+      <div v-if="activeTab === TAB_LOGS" class="h-full pb-4">
           <MissionLog 
             :history="rollHistory" 
             :characters="characterList"
@@ -312,7 +319,7 @@ const handleLogSucceeded = async (logId: string) => {
       </div>
 
       <!-- SYSTEMS TAB CONTENT -->
-      <div v-if="activeTab === 'SYSTEMS'" class="h-full pb-4">
+      <div v-if="activeTab === TAB_SYSTEMS" class="h-full pb-4">
           <SystemTerminal 
             :role="role"
             :isDebug="debugMode"
