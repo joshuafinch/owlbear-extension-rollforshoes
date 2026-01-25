@@ -18,6 +18,7 @@ const {
   rollDice,
   addLogEntry,
   markLogAction,
+  clearLogs,
   debugMode,
   exportData
 } = useRollForShoes();
@@ -109,7 +110,14 @@ const handleRollEvolve = (logId: string, newSkillName: string, xpCost: number) =
 const handleLogTakeXp = (logId: string, characterId: string) => {
     addXp(characterId, 1);
     markLogAction(logId, 'xp');
-    OBR.notification.show(`Character gains 1 XP from archived failure.`);
+    
+    // Get updated character for notification
+    const char = characterList.value.find(c => c.id === characterId);
+    if (char) {
+        OBR.notification.show(`${char.name} gains 1 XP (Total: ${char.xp}).`);
+    } else {
+        OBR.notification.show(`Character gains 1 XP from archived failure.`);
+    }
 };
 
 const handleLogEvolve = (logId: string, characterId: string, rank: number, newSkillName: string, xpCost: number) => {
@@ -125,6 +133,14 @@ const handleLogEvolve = (logId: string, characterId: string, rank: number, newSk
     markLogAction(logId, 'advance');
     OBR.notification.show(`Character acquired new skill: ${newSkillName} (Rank ${rank + 1})`, "SUCCESS");
 };
+const handleRollSucceeded = (logId: string) => {
+    markLogAction(logId, 'succeeded');
+    currentRoll.value = null;
+};
+const handleLogSucceeded = (logId: string) => {
+    markLogAction(logId, 'succeeded');
+    OBR.notification.show(`Roll marked as Succeeded.`);
+};
 </script>
 
 <template>
@@ -138,6 +154,7 @@ const handleLogEvolve = (logId: string, characterId: string, rank: number, newSk
         @close="currentRoll = null"
         @takeXp="handleRollTakeXp"
         @confirmEvolve="handleRollEvolve"
+        @succeeded="handleRollSucceeded"
     />
 
     <!-- Fixed Header -->
@@ -190,6 +207,7 @@ const handleLogEvolve = (logId: string, characterId: string, rank: number, newSk
             :characters="characterList"
             @takeXp="handleLogTakeXp"
             @evolve="handleLogEvolve"
+            @succeeded="handleLogSucceeded"
           />
       </div>
 
@@ -200,6 +218,7 @@ const handleLogEvolve = (logId: string, characterId: string, rank: number, newSk
             :isDebug="debugMode"
             @export="exportData"
             @import="handleImport"
+            @clearLogs="clearLogs"
             @toggleDebug="debugMode = !debugMode"
           />
       </div>

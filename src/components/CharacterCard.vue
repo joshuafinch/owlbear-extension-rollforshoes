@@ -140,6 +140,34 @@ const saveSkillEdit = (index: number) => {
 const cancelSkillEdit = () => {
     editingSkillIndex.value = null;
 };
+
+// XP Animation Logic
+const isXpAnimating = ref(false);
+const xpDiff = ref(0);
+
+// Watch for external XP changes (e.g. from rolls)
+watch(() => props.character.xp, (newVal, oldVal) => {
+    const diff = newVal - oldVal;
+    if (diff !== 0) {
+        triggerXpAnimation(diff);
+    }
+});
+
+const triggerXpAnimation = (diff: number) => {
+    xpDiff.value = diff;
+    isXpAnimating.value = true;
+    
+    // Clear animation after delay
+    setTimeout(() => {
+        isXpAnimating.value = false;
+        xpDiff.value = 0;
+    }, 1000);
+};
+
+const handleXpChange = (amount: number) => {
+    emit('addXp', props.character.id, amount);
+    // Animation is handled by the watcher
+};
 </script>
 
 <template>
@@ -214,16 +242,16 @@ const cancelSkillEdit = () => {
            </div>
         </button>
         
-        <!-- Animated XP Widget -->
+          <!-- Animated XP Widget -->
         <div 
-            class="flex shrink-0 items-center bg-[var(--obr-bg-default)] rounded border-2 border-[var(--obr-text-primary)] shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] transition-all duration-300 overflow-hidden"
-            :class="isExpanded ? 'p-1 gap-1' : 'px-2 py-1 gap-0'"
+            class="flex shrink-0 items-center bg-[var(--obr-bg-default)] rounded border-2 border-[var(--obr-text-primary)] shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] transition-all duration-300 overflow-hidden relative group/xp"
+            :class="[isExpanded ? 'p-1 gap-1' : 'px-2 py-1 gap-0', isXpAnimating ? 'ring-2 ring-yellow-400 border-yellow-500 scale-110 shadow-[0_0_15px_rgba(250,204,21,0.5)]' : '']"
             role="group" 
             aria-label="Experience Points"
         >
           <!-- Decrease Button -->
           <button 
-              @click.stop="emit('addXp', character.id, -1)"
+              @click.stop="handleXpChange(-1)"
               :disabled="character.xp <= 0"
               class="flex items-center justify-center rounded bg-[var(--obr-bg-paper)] hover:bg-red-500 hover:text-white text-[var(--obr-text-primary)] font-bold transition-all duration-300 overflow-hidden"
               :class="isExpanded ? 'w-8 h-8 opacity-100 mr-2 border border-[var(--obr-text-disabled)]' : 'w-0 h-8 opacity-0 border-0'"
@@ -233,20 +261,34 @@ const cancelSkillEdit = () => {
 
           <!-- Label -->
           <div class="flex flex-col items-center mr-2 border-r border-[var(--obr-text-disabled)] border-opacity-30 pr-2" aria-hidden="true">
-             <span class="text-[10px] font-black uppercase text-[var(--obr-text-secondary)] leading-none">XP</span>
+             <span class="text-[10px] font-black uppercase text-[var(--obr-text-secondary)] leading-none transition-colors" :class="isXpAnimating ? 'text-yellow-600' : ''">XP</span>
           </div>
           
           <!-- Value -->
-          <span class="font-mono font-black text-xl text-[var(--obr-text-primary)]" aria-live="polite">{{ character.xp }}</span>
+          <span 
+              class="font-mono font-black text-xl text-[var(--obr-text-primary)] transition-all duration-300" 
+              :class="isXpAnimating ? 'text-yellow-600 scale-125' : ''"
+              aria-live="polite"
+           >{{ character.xp }}</span>
 
           <!-- Increase Button -->
           <button 
-              @click.stop="emit('addXp', character.id, 1)"
+              @click.stop="handleXpChange(1)"
               class="flex items-center justify-center rounded bg-[var(--obr-bg-paper)] hover:bg-green-500 hover:text-white text-[var(--obr-text-primary)] font-bold transition-all duration-300 overflow-hidden"
               :class="isExpanded ? 'w-8 h-8 opacity-100 ml-2 border border-[var(--obr-text-disabled)]' : 'w-0 h-8 opacity-0 border-0'"
               aria-label="Increase XP"
               :tabindex="isExpanded ? 0 : -1"
             >+</button>
+
+            <!-- Floating XP Gain Animation -->
+            <transition name="float-up">
+                <div v-if="xpDiff !== 0" 
+                     class="absolute top-0 right-0 left-0 bottom-0 pointer-events-none flex items-center justify-center font-black text-xl z-20"
+                     :class="xpDiff > 0 ? 'text-green-600' : 'text-red-500'"
+                >
+                    {{ xpDiff > 0 ? '+' : '' }}{{ xpDiff }}
+                </div>
+            </transition>
         </div>
       </div>
     </div>
@@ -476,5 +518,26 @@ const cancelSkillEdit = () => {
   opacity: 0;
   transform: translateY(-10px) scaleY(0.95);
   max-height: 0;
+}
+
+/* XP Float Animation */
+.float-up-enter-active {
+  transition: all 0.5s ease-out;
+}
+.float-up-leave-active {
+  transition: all 0.5s ease-in;
+  opacity: 0;
+}
+.float-up-enter-from {
+  opacity: 0;
+  transform: translateY(10px) scale(0.5);
+}
+.float-up-enter-to {
+  opacity: 1;
+  transform: translateY(0) scale(1.5);
+}
+.float-up-leave-to {
+  opacity: 0;
+  transform: translateY(-20px) scale(1);
 }
 </style>

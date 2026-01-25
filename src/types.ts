@@ -27,5 +27,5 @@ export interface RollEntry {
   rank: number;
   dice: number[];
   timestamp: number;
-  actionsTaken?: ('xp' | 'advance')[]; // Track if XP was taken or skill evolved
+  actionsTaken?: ('xp' | 'advance' | 'succeeded')[]; // Track if XP was taken, skill evolved, or marked as succeeded
 }

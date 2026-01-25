@@ -11,6 +11,7 @@ const props = defineProps<{
 const emit = defineEmits<{
     (e: 'takeXp', logId: string, characterId: string): void;
     (e: 'evolve', logId: string, characterId: string, rank: number, newSkillName: string, xpCost: number): void;
+    (e: 'succeeded', logId: string): void;
 }>();
 
 const formatTime = (timestamp: number) => {
@@ -120,19 +121,26 @@ const canAffordAdvance = (entry: RollEntry) => {
                          <template v-if="!isCritical(entry.dice)">
                              <button 
                                 @click="emit('takeXp', entry.id, entry.characterId)"
-                                class="text-[10px] bg-gray-100 hover:bg-gray-200 border border-gray-300 px-2 py-1 font-bold uppercase text-gray-600"
-                                title="Claim 1 XP"
+                                class="text-[10px] bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-1 font-bold uppercase text-red-600"
+                                title="Claim 1 XP for Failure"
                             >
-                                +1 XP
-                             </button>
-                             <button 
+                                FAIL (+1 XP)
+                            </button>
+                            <button 
                                 v-if="canAffordAdvance(entry)"
                                 @click="startRetroEvolution(entry)"
                                 class="text-[10px] bg-[var(--obr-primary-main)] text-white hover:opacity-90 border border-black px-2 py-1 font-bold uppercase animate-pulse"
                                 title="Spend XP to Advance"
                             >
                                 Advance!
-                             </button>
+                            </button>
+                             <button 
+                                @click="emit('succeeded', entry.id)"
+                                class="text-[10px] bg-green-50 hover:bg-green-100 border border-green-200 px-2 py-1 font-bold uppercase text-green-600"
+                                title="Mark as Succeeded"
+                            >
+                                SUCCESS
+                            </button>
                          </template>
                          <template v-else>
                             <button 
@@ -146,6 +154,7 @@ const canAffordAdvance = (entry: RollEntry) => {
                     <div v-else class="text-[10px] text-gray-400 uppercase font-bold italic">
                         <span v-if="entry.actionsTaken.includes('advance')">Evolved</span>
                         <span v-else-if="entry.actionsTaken.includes('xp')">XP Claimed</span>
+                        <span v-else-if="entry.actionsTaken.includes('succeeded')">Succeeded</span>
                     </div>
 
                     <div class="flex justify-end ml-auto">

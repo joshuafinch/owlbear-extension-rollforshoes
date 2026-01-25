@@ -254,7 +254,7 @@ export function useRollForShoes() {
     }
   };
 
-  const markLogAction = async (logId: string, action: 'xp' | 'advance') => {
+  const markLogAction = async (logId: string, action: 'xp' | 'advance' | 'succeeded') => {
       const logIndex = rollHistory.value.findIndex(l => l.id === logId);
       if (logIndex === -1) return;
 
@@ -274,6 +274,21 @@ export function useRollForShoes() {
       } catch (e) {
           console.error('Failed to mark log action', e);
       }
+  };
+
+  const clearLogs = async () => {
+    // Optimistic
+    rollHistory.value = [];
+    
+    try {
+        await OBR.room.setMetadata({
+            [LOGS_DATA_KEY]: []
+        });
+        OBR.notification.show('Mission logs have been purged.', 'SUCCESS');
+    } catch (e) {
+        console.error('Failed to clear logs', e);
+        OBR.notification.show('Failed to purge logs.', 'ERROR');
+    }
   };
 
   const exportData = () => {
@@ -431,6 +446,7 @@ export function useRollForShoes() {
     rollHistory,
     addLogEntry,
     markLogAction,
+    clearLogs,
     debugMode,
     activeCharacterId,
     reorderCharacters
@@ -439,8 +455,8 @@ export function useRollForShoes() {
 
 function rollDice(count: number, debug = false): number[] {
     if (debug) {
-        // High chance of 6s for testing
-        return Array.from({ length: count }, () => Math.random() > 0.3 ? 6 : Math.floor(Math.random() * 6) + 1);
+        // High chance of failure (1s and 2s) for testing XP gain
+        return Array.from({ length: count }, () => Math.random() > 0.5 ? 1 : Math.floor(Math.random() * 5) + 1);
     }
     return Array.from({ length: count }, () => Math.floor(Math.random() * 6) + 1);
 }

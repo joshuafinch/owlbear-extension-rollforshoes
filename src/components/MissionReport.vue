@@ -20,6 +20,7 @@ const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'takeXp', id: string): void;
   (e: 'confirmEvolve', id: string, skillName: string, xpCost: number): void;
+  (e: 'succeeded', id: string): void;
 }>();
 
 const isEvolving = ref(false);
@@ -90,7 +91,7 @@ const confirmEvolution = () => {
         </div>
 
         <!-- Status Messages -->
-        <div class="mb-6 min-h-[3rem] flex items-center justify-center" aria-live="polite">
+        <div class="mb-4 min-h-[3rem] flex items-center justify-center" aria-live="polite">
           <div v-if="isEvolving" class="w-full">
              <div class="text-[#ff0055] font-black text-xl uppercase tracking-tighter italic mb-2 animate-pulse">
                 Evolution Protocol Initiated
@@ -106,6 +107,14 @@ const confirmEvolution = () => {
           <div v-else class="text-[var(--obr-text-disabled)] font-bold uppercase tracking-widest text-lg">
             Standard Execution
           </div>
+        </div>
+
+        <!-- Current XP Display -->
+        <div v-if="!isAllSixes && !isEvolving" class="flex items-center justify-center gap-2 mb-4">
+             <span class="text-xs font-bold uppercase text-[var(--obr-text-secondary)] tracking-widest">Current Status:</span>
+             <div class="bg-black text-white px-2 py-0.5 rounded text-sm font-mono font-bold">
+                 {{ currentXp }} XP
+             </div>
         </div>
 
         <!-- Actions -->
@@ -153,50 +162,46 @@ const confirmEvolution = () => {
             <!-- Failure Options -->
             <div v-if="!isAllSixes" class="flex flex-col gap-2">
                 
-              <!-- Option A: Standard Fail -->
+              <!-- Option C: Succeeded (Mark as Success) -->
               <button 
-                @click="emit('takeXp', result.id)"
-                class="w-full bg-[var(--obr-bg-default)] hover:bg-gray-100 text-[var(--obr-text-primary)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-3 text-sm flex items-center justify-center gap-1 group shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
+                @click="emit('succeeded', result.id)"
+                class="w-full bg-green-600 hover:bg-green-700 text-white border-2 border-black font-bold uppercase py-3 text-sm flex items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
               >
-                <span class="text-red-500 group-hover:text-red-600 text-lg">⚠</span> FAILED (+1 XP)
+                <span class="text-lg">✓</span> SUCCEEDED
               </button>
-              
-              <!-- Option B: Advance on Fail (If Eligible) -->
-              <button 
-                v-if="canAdvanceOnFail"
-                @click="startEvolution"
-                class="w-full bg-[var(--obr-primary-main)] hover:opacity-90 text-[var(--obr-primary-contrast)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-3 text-sm flex items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
-              >
-                <span>⚡</span> ADVANCE (Spend {{ nonSixesCount }} XP)
-              </button>
-              <div v-else-if="nonSixesCount > 0" class="text-center text-[10px] text-[var(--obr-text-disabled)] uppercase font-bold tracking-widest mt-1">
-                 Need {{ nonSixesCount }} XP to advance (Have {{ currentXp + 1 }})
-              </div>
 
-              <!-- Option C: Succeeded (No Reward) -->
-              <button 
-                v-if="successCount > 0"
-                @click="emit('close')"
-                class="w-full bg-green-600 hover:opacity-90 text-white border-2 border-black font-bold uppercase py-3 text-sm flex items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5 mt-2"
-              >
-                <span class="text-lg">✓</span> SUCCEEDED ({{ successCount }} Sixes)
-              </button>
+              <div class="flex gap-2">
+                <!-- Option A: Standard Fail -->
+                <button 
+                    @click="emit('takeXp', result.id)"
+                    class="flex-1 bg-[var(--obr-bg-default)] hover:bg-gray-100 text-[var(--obr-text-primary)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-3 text-sm flex flex-col items-center justify-center gap-1 group shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
+                >
+                    <span class="text-red-500 group-hover:text-red-600 text-lg leading-none">⚠</span> 
+                    <span class="leading-none">FAIL (+1 XP)</span>
+                </button>
+                
+                <!-- Option B: Advance on Fail (If Eligible) -->
+                <button 
+                    v-if="canAdvanceOnFail"
+                    @click="startEvolution"
+                    class="flex-1 bg-[var(--obr-primary-main)] hover:opacity-90 text-[var(--obr-primary-contrast)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-3 text-sm flex flex-col items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
+                >
+                    <span class="text-lg leading-none">⚡</span> 
+                    <span class="leading-none">ADVANCE (-{{ nonSixesCount }} XP)</span>
+                </button>
+                 <div v-else class="flex-1 flex items-center justify-center bg-gray-100 border-2 border-dashed border-gray-300 text-gray-400 font-bold text-xs uppercase text-center p-1 cursor-not-allowed select-none">
+                     Need {{ nonSixesCount }} XP to advance
+                 </div>
+              </div>
             </div>
             
+            <!-- Dismiss Button (Only show if all sixes because others are handled above) -->
             <button 
-              v-if="!isEvolving && isAllSixes"
+              v-if="!isEvolving"
                @click="emit('close')"
                class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] hover:bg-gray-100 font-bold uppercase text-xs tracking-widest py-4 mt-2 rounded border border-transparent hover:border-gray-300 transition-colors"
             >
-               Dismiss Report
-            </button>
-            
-            <button 
-              v-if="!isEvolving && !isAllSixes"
-              @click="emit('close')"
-              class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] hover:bg-gray-100 font-bold uppercase text-xs tracking-widest py-4 mt-2 rounded border border-transparent hover:border-gray-300 transition-colors"
-            >
-              Dismiss Report
+               Dismiss Report (Decide Later)
             </button>
           </div>
         </div>

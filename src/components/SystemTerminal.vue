@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 const props = defineProps<{
   role: string;
@@ -10,9 +10,23 @@ const emit = defineEmits<{
   (e: 'export'): void;
   (e: 'import', event: Event): void;
   (e: 'toggleDebug'): void;
+  (e: 'clearLogs'): void;
 }>();
 
 const isGm = computed(() => props.role === 'GM');
+const confirmClearLogs = ref(false);
+
+const handleClearLogs = () => {
+    if (confirmClearLogs.value) {
+        emit('clearLogs');
+        confirmClearLogs.value = false;
+    } else {
+        confirmClearLogs.value = true;
+        setTimeout(() => {
+            confirmClearLogs.value = false;
+        }, 4000);
+    }
+};
 </script>
 
 <template>
@@ -95,6 +109,21 @@ const isGm = computed(() => props.role === 'GM');
                             {{ isDebug ? 'ACTIVE' : 'OFFLINE' }}
                         </div>
                     </button>
+
+                    <!-- Clear Logs -->
+                    <button 
+                       @click="handleClearLogs"
+                       class="w-full text-left p-3 rounded transition-all flex items-center justify-between group mt-2 border border-dashed border-gray-800"
+                       :class="confirmClearLogs ? 'bg-red-900/40 hover:bg-red-900/60 border-red-500' : 'hover:bg-yellow-900/30'"
+                   >
+                       <div>
+                            <p class="text-base font-bold" :class="confirmClearLogs ? 'text-red-500 animate-pulse' : 'text-gray-500'">
+                              <span class="mr-2">💣</span> PURGE_LOG_ARCHIVES()
+                           </p>
+                           <p v-if="confirmClearLogs" class="text-xs text-red-400 pl-6 mt-1 font-bold">⚠️ CONFIRM DELETION? CLICK AGAIN.</p>
+                           <p v-else class="text-xs text-gray-500 pl-6 mt-1">Permanently erase all mission logs.</p>
+                       </div>
+                   </button>
                 </div>
              </div>
         </div>
