@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, nextTick } from 'vue';
+import type { Character } from '../types';
 
 export interface RollResult {
+  id: string; // Add ID to track specific roll
   characterId: string;
   characterName: string;
   skillName: string;
@@ -11,12 +13,13 @@ export interface RollResult {
 
 const props = defineProps<{
   result: RollResult;
+  character?: Character;
 }>();
 
 const emit = defineEmits<{
   (e: 'close'): void;
-  (e: 'takeXp'): void;
-  (e: 'confirmEvolve', skillName: string): void;
+  (e: 'takeXp', id: string): void;
+  (e: 'confirmEvolve', id: string, skillName: string, xpCost: number): void;
 }>();
 
 const isEvolving = ref(false);
@@ -25,6 +28,18 @@ const skillInput = ref<HTMLInputElement | null>(null);
 
 const isAllSixes = computed(() => props.result.dice.length > 0 && props.result.dice.every(d => d === 6));
 const successCount = computed(() => props.result.dice.filter(d => d === 6).length);
+
+// Advancement Logic
+const nonSixesCount = computed(() => props.result.dice.length - successCount.value);
+const currentXp = computed(() => props.character?.xp || 0);
+
+// Can advance if: (Current XP + 1 from this failure) >= Cost (non-sixes)
+const canAdvanceOnFail = computed(() => {
+    if (isAllSixes.value) return false;
+    // XP available including the potential +1 from this failure
+    const availableXp = currentXp.value + 1;
+    return availableXp >= nonSixesCount.value;
+});
 
 const startEvolution = () => {
   isEvolving.value = true;
@@ -35,13 +50,15 @@ const startEvolution = () => {
 
 const confirmEvolution = () => {
   if (newSkillName.value.trim()) {
-    emit('confirmEvolve', newSkillName.value.trim().toUpperCase());
+    // If it was all sixes, cost is 0. If it was a fail, cost is nonSixesCount
+    const cost = isAllSixes.value ? 0 : nonSixesCount.value;
+    emit('confirmEvolve', props.result.id, newSkillName.value.trim().toUpperCase(), cost);
   }
 };
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in" aria-modal="true" role="dialog">
     <div class="w-full max-w-sm bg-[var(--obr-bg-paper)] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden transform transition-all scale-100">
       
       <!-- Top Secret Striped Header -->
@@ -124,7 +141,7 @@ const confirmEvolution = () => {
 
           <!-- Normal Actions -->
           <div v-else>
-            <!-- Advancement Option -->
+            <!-- Advancement Option (Success) -->
             <button 
               v-if="isAllSixes"
               @click="startEvolution"
@@ -133,19 +150,36 @@ const confirmEvolution = () => {
               <span>★</span> Evolve New Skill
             </button>
 
-            <!-- Failure / Success Options -->
-            <div v-if="!isAllSixes" class="grid grid-cols-2 gap-2">
+            <!-- Failure Options -->
+            <div v-if="!isAllSixes" class="flex flex-col gap-2">
+                
+              <!-- Option A: Standard Fail -->
               <button 
-                @click="emit('takeXp')"
+                @click="emit('takeXp', result.id)"
                 class="w-full bg-[var(--obr-bg-default)] hover:bg-gray-100 text-[var(--obr-text-primary)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-3 text-sm flex items-center justify-center gap-1 group shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
               >
                 <span class="text-red-500 group-hover:text-red-600 text-lg">⚠</span> FAILED (+1 XP)
               </button>
+              
+              <!-- Option B: Advance on Fail (If Eligible) -->
               <button 
-                @click="emit('close')"
+                v-if="canAdvanceOnFail"
+                @click="startEvolution"
                 class="w-full bg-[var(--obr-primary-main)] hover:opacity-90 text-[var(--obr-primary-contrast)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-3 text-sm flex items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
               >
-                <span class="text-lg">✓</span> SUCCEEDED
+                <span>⚡</span> ADVANCE (Spend {{ nonSixesCount }} XP)
+              </button>
+              <div v-else-if="nonSixesCount > 0" class="text-center text-[10px] text-[var(--obr-text-disabled)] uppercase font-bold tracking-widest mt-1">
+                 Need {{ nonSixesCount }} XP to advance (Have {{ currentXp + 1 }})
+              </div>
+
+              <!-- Option C: Succeeded (No Reward) -->
+              <button 
+                v-if="successCount > 0"
+                @click="emit('close')"
+                class="w-full bg-green-600 hover:opacity-90 text-white border-2 border-black font-bold uppercase py-3 text-sm flex items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5 mt-2"
+              >
+                <span class="text-lg">✓</span> SUCCEEDED ({{ successCount }} Sixes)
               </button>
             </div>
             

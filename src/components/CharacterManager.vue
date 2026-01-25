@@ -17,6 +17,7 @@ const {
   importData,
   rollDice,
   addLogEntry,
+  markLogAction,
   debugMode,
   exportData
 } = useRollForShoes();
@@ -52,8 +53,11 @@ const handleRoll = (characterId: string, skill: Skill) => {
 
     const dice = rollDice(skill.rank, debugMode.value);
     
+    const rollId = crypto.randomUUID();
+
     // Create local roll result for modal
     currentRoll.value = {
+        id: rollId,
         characterId,
         characterName: character.name,
         skillName: skill.name,
@@ -63,33 +67,63 @@ const handleRoll = (characterId: string, skill: Skill) => {
 
     // Add to shared log
     addLogEntry({
-        id: crypto.randomUUID(),
+        id: rollId,
+        characterId,
         characterName: character.name,
         skillName: skill.name,
         rank: skill.rank,
         dice,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        actionsTaken: []
     });
 };
 
-const handleRollTakeXp = () => {
+const handleRollTakeXp = (logId: string) => {
     if (currentRoll.value) {
         addXp(currentRoll.value.characterId, 1);
+        markLogAction(logId, 'xp');
         OBR.notification.show(`${currentRoll.value.characterName} gains 1 XP from failure.`);
         currentRoll.value = null;
     }
 };
 
-const handleRollEvolve = (newSkillName: string) => {
+const handleRollEvolve = (logId: string, newSkillName: string, xpCost: number) => {
     if (currentRoll.value && newSkillName) {
          addSkill(currentRoll.value.characterId, {
             name: newSkillName,
             rank: currentRoll.value.rank + 1
          });
          
+         // Deduct XP cost
+         if (xpCost > 0) {
+             addXp(currentRoll.value.characterId, -xpCost);
+         }
+
+         markLogAction(logId, 'advance');
+         
          OBR.notification.show(`${currentRoll.value.characterName} acquired new skill: ${newSkillName} (Rank ${currentRoll.value.rank + 1})`, "SUCCESS");
          currentRoll.value = null;
     }
+};
+
+const handleLogTakeXp = (logId: string, characterId: string) => {
+    addXp(characterId, 1);
+    markLogAction(logId, 'xp');
+    OBR.notification.show(`Character gains 1 XP from archived failure.`);
+};
+
+const handleLogEvolve = (logId: string, characterId: string, rank: number, newSkillName: string, xpCost: number) => {
+    addSkill(characterId, {
+        name: newSkillName,
+        rank: rank + 1
+    });
+
+    if (xpCost > 0) {
+        addXp(characterId, -xpCost);
+    }
+    
+    markLogAction(logId, 'advance');
+    OBR.notification.show(`Character acquired new skill: ${newSkillName} (Rank ${rank + 1})`, "SUCCESS");
 };
 </script>
 
@@ -100,6 +134,7 @@ const handleRollEvolve = (newSkillName: string) => {
     <MissionReport 
         v-if="currentRoll" 
         :result="currentRoll"
+        :character="characterList.find(c => c.id === currentRoll?.characterId)"
         @close="currentRoll = null"
         @takeXp="handleRollTakeXp"
         @confirmEvolve="handleRollEvolve"
@@ -150,7 +185,12 @@ const handleRollEvolve = (newSkillName: string) => {
 
       <!-- LOGS TAB CONTENT -->
       <div v-if="activeTab === 'LOGS'" class="h-full pb-4">
-          <MissionLog :history="rollHistory" />
+          <MissionLog 
+            :history="rollHistory" 
+            :characters="characterList"
+            @takeXp="handleLogTakeXp"
+            @evolve="handleLogEvolve"
+          />
       </div>
 
       <!-- SYSTEMS TAB CONTENT -->

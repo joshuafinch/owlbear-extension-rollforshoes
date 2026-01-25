@@ -1,8 +1,16 @@
 <script setup lang="ts">
-import type { RollEntry } from '../types';
+import { ref } from 'vue';
+import type { RollEntry, Character } from '../types';
+import MissionReport from './MissionReport.vue';
 
 const props = defineProps<{
   history: RollEntry[];
+  characters: Character[];
+}>();
+
+const emit = defineEmits<{
+    (e: 'takeXp', logId: string, characterId: string): void;
+    (e: 'evolve', logId: string, characterId: string, rank: number, newSkillName: string, xpCost: number): void;
 }>();
 
 const formatTime = (timestamp: number) => {
@@ -11,11 +19,54 @@ const formatTime = (timestamp: number) => {
 
 const isCritical = (dice: number[]) => dice.length > 0 && dice.every(d => d === 6);
 const countSuccesses = (dice: number[]) => dice.filter(d => d === 6).length;
+
+// Manage Retroactive Evolution
+const activeEvolutionEntry = ref<RollEntry | null>(null);
+
+const startRetroEvolution = (entry: RollEntry) => {
+    activeEvolutionEntry.value = entry;
+};
+
+const handleRetroEvolve = (logId: string, newSkillName: string, xpCost: number) => {
+    if (activeEvolutionEntry.value) {
+        emit('evolve', logId, activeEvolutionEntry.value.characterId, activeEvolutionEntry.value.rank, newSkillName, xpCost);
+        activeEvolutionEntry.value = null;
+    }
+};
+
+// Helper to check if a specific entry can afford advancement
+const canAffordAdvance = (entry: RollEntry) => {
+    const char = props.characters.find(c => c.id === entry.characterId);
+    if (!char) return false;
+    
+    const successes = countSuccesses(entry.dice);
+    const nonSixes = entry.dice.length - successes;
+    
+    // XP + 1 (from this failure) >= Cost
+    return (char.xp + 1) >= nonSixes;
+};
 </script>
 
 <template>
-  <div class="h-full flex flex-col bg-[#f0f0f0] border-t-4 border-[var(--obr-text-primary)]">
+  <div class="h-full flex flex-col bg-[#f0f0f0] border-t-4 border-[var(--obr-text-primary)] relative">
     
+    <!-- Reuse Mission Report for Retroactive Evolution -->
+    <MissionReport 
+        v-if="activeEvolutionEntry"
+        :result="{
+            id: activeEvolutionEntry.id,
+            characterId: activeEvolutionEntry.characterId,
+            characterName: activeEvolutionEntry.characterName,
+            skillName: activeEvolutionEntry.skillName,
+            rank: activeEvolutionEntry.rank,
+            dice: activeEvolutionEntry.dice
+        }"
+        :character="characters.find(c => c.id === activeEvolutionEntry?.characterId)"
+        @close="activeEvolutionEntry = null"
+        @takeXp="(id) => { emit('takeXp', id, activeEvolutionEntry!.characterId); activeEvolutionEntry = null; }"
+        @confirmEvolve="handleRetroEvolve"
+    />
+
     <!-- Tape Header -->
     <div class="bg-[var(--obr-text-primary)] text-[var(--obr-bg-paper)] px-4 py-2 text-xs font-black uppercase tracking-widest flex justify-between items-center">
         <span>// MISSION LOG // ARCHIVE</span>
@@ -63,16 +114,51 @@ const countSuccesses = (dice: number[]) => dice.filter(d => d === 6).length;
                 </div>
 
                 <!-- Result Tag -->
-                <div class="mt-2 flex justify-end">
-                    <span v-if="isCritical(entry.dice)" class="text-[#ff0055] font-black text-xs uppercase border-2 border-[#ff0055] px-1 transform -rotate-2">
-                        ★ CRITICAL ★
-                    </span>
-                    <span v-else-if="countSuccesses(entry.dice) > 0" class="text-[var(--obr-primary-main)] font-bold text-xs uppercase">
-                        {{ countSuccesses(entry.dice) }} Successes
-                    </span>
-                    <span v-else class="text-gray-400 font-bold text-xs uppercase">
-                        Standard
-                    </span>
+                <div class="mt-2 flex justify-between items-center">
+                    <!-- Retroactive Actions -->
+                    <div v-if="!entry.actionsTaken?.length" class="flex gap-2">
+                         <template v-if="!isCritical(entry.dice)">
+                             <button 
+                                @click="emit('takeXp', entry.id, entry.characterId)"
+                                class="text-[10px] bg-gray-100 hover:bg-gray-200 border border-gray-300 px-2 py-1 font-bold uppercase text-gray-600"
+                                title="Claim 1 XP"
+                            >
+                                +1 XP
+                             </button>
+                             <button 
+                                v-if="canAffordAdvance(entry)"
+                                @click="startRetroEvolution(entry)"
+                                class="text-[10px] bg-[var(--obr-primary-main)] text-white hover:opacity-90 border border-black px-2 py-1 font-bold uppercase animate-pulse"
+                                title="Spend XP to Advance"
+                            >
+                                Advance!
+                             </button>
+                         </template>
+                         <template v-else>
+                            <button 
+                                @click="startRetroEvolution(entry)"
+                                class="text-[10px] bg-[#ff0055] text-white hover:bg-[#d40045] border border-black px-2 py-1 font-bold uppercase animate-pulse"
+                            >
+                                Evolve!
+                            </button>
+                         </template>
+                    </div>
+                    <div v-else class="text-[10px] text-gray-400 uppercase font-bold italic">
+                        <span v-if="entry.actionsTaken.includes('advance')">Evolved</span>
+                        <span v-else-if="entry.actionsTaken.includes('xp')">XP Claimed</span>
+                    </div>
+
+                    <div class="flex justify-end ml-auto">
+                        <span v-if="isCritical(entry.dice)" class="text-[#ff0055] font-black text-xs uppercase border-2 border-[#ff0055] px-1 transform -rotate-2">
+                            ★ CRITICAL ★
+                        </span>
+                        <span v-else-if="countSuccesses(entry.dice) > 0" class="text-[var(--obr-primary-main)] font-bold text-xs uppercase">
+                            {{ countSuccesses(entry.dice) }} Successes
+                        </span>
+                        <span v-else class="text-gray-400 font-bold text-xs uppercase">
+                            Standard
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>

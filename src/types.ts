@@ -21,9 +21,11 @@ export type CharacterData = Record<string, Character>;
 
 export interface RollEntry {
   id: string;
+  characterId: string;
   characterName: string;
   skillName: string;
   rank: number;
   dice: number[];
   timestamp: number;
+  actionsTaken?: ('xp' | 'advance')[]; // Track if XP was taken or skill evolved
 }

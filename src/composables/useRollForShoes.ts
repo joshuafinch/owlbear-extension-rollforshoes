@@ -254,6 +254,28 @@ export function useRollForShoes() {
     }
   };
 
+  const markLogAction = async (logId: string, action: 'xp' | 'advance') => {
+      const logIndex = rollHistory.value.findIndex(l => l.id === logId);
+      if (logIndex === -1) return;
+
+      const entry = rollHistory.value[logIndex];
+      const newActions = [...(entry.actionsTaken || []), action];
+      
+      // Optimistic update
+      const newHistory = [...rollHistory.value];
+      newHistory[logIndex] = { ...entry, actionsTaken: newActions };
+      rollHistory.value = newHistory;
+
+      try {
+        const cleanHistory = JSON.parse(JSON.stringify(newHistory));
+        await OBR.room.setMetadata({
+            [LOGS_DATA_KEY]: cleanHistory
+        });
+      } catch (e) {
+          console.error('Failed to mark log action', e);
+      }
+  };
+
   const exportData = () => {
     try {
       const dataStr = JSON.stringify(characters.value, null, 2);
@@ -408,6 +430,7 @@ export function useRollForShoes() {
     rollDice,
     rollHistory,
     addLogEntry,
+    markLogAction,
     debugMode,
     activeCharacterId,
     reorderCharacters
