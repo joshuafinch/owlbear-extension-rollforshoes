@@ -156,10 +156,12 @@ const handleXpChange = (amount: number) => {
 
 <template>
   <div 
-    class="bg-[var(--obr-surface-card)] backdrop-blur-xl rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] p-0 mb-4 border-2 transition-all duration-300 hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.5)] overflow-hidden relative"
-    :class="isActive ? 'ring-2 ring-opacity-50' : ''"
+    class="bg-[var(--obr-surface-card)] backdrop-blur-xl rounded-xl p-0 mb-4 border-2 transition-all duration-300 hover:-translate-y-1 overflow-hidden relative"
+    :class="isActive ? 'ring-2 ring-opacity-50 shadow-[0_0_25px_-5px_var(--card-shadow-hover)]' : 'shadow-[0_8px_16px_-6px_var(--card-shadow)] hover:shadow-[0_12px_24px_-6px_var(--card-shadow-hover)]'"
     :style="{ 
         '--card-accent': cardColor,
+        '--card-shadow': `${cardColor}40`,
+        '--card-shadow-hover': `${cardColor}80`,
         'borderColor': isActive ? cardColor : `${cardColor}66`,
         '--tw-ring-color': cardColor
     }"

@@ -64,7 +64,7 @@ const confirmEvolution = () => {
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in" aria-modal="true" role="dialog">
     <div 
         class="w-full max-w-sm bg-[var(--obr-surface-card)] border-4 border-[var(--obr-border-base)] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden transform transition-all scale-100"
-        :style="color ? { borderColor: color } : {}"
+        :style="color ? { borderColor: color, boxShadow: `8px 8px 0px 0px ${color}` } : {}"
     >
       
       <!-- Top Secret Striped Header -->
