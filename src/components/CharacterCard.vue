@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import draggable from 'vuedraggable';
 import type { Character, Skill } from '../types';
+import CreationRow from './common/CreationRow.vue';
 
 const props = defineProps<{
   character: Character;
@@ -21,7 +22,6 @@ const emit = defineEmits<{
 }>();
 
 const isExpanded = ref(false);
-const newSkillName = ref('');
 const newSkillRank = ref(2);
 
 // Track editing state for each skill by index
@@ -42,14 +42,16 @@ const draggableSkills = computed({
   }
 });
 
-const handleAddSkill = () => {
-  if (!newSkillName.value.trim()) return;
+const isAddingSkill = ref(false);
+
+const handleAddSkill = (name: string) => {
+  if (!name.trim()) return;
   emit('addSkill', props.character.id, {
-    name: newSkillName.value.toUpperCase(),
+    name: name.toUpperCase(),
     rank: newSkillRank.value
   });
-  newSkillName.value = '';
   newSkillRank.value = 2; // Reset to 2 as it's the most common next step
+  isAddingSkill.value = false;
 };
 
 const isDeleting = ref(false);
@@ -286,28 +288,28 @@ const cancelSkillEdit = () => {
         </div>
 
         <!-- Add Skill Form -->
-        <div class="flex gap-2 items-center bg-[var(--obr-bg-paper)] p-2 rounded-lg border border-dashed border-[var(--obr-text-disabled)] hover:border-[var(--obr-primary-main)] transition-colors">
-          <div class="w-6 h-6 flex items-center justify-center rounded-full bg-[var(--obr-primary-main)] text-white font-bold text-sm shrink-0 shadow-sm">+</div>
-          <input 
-            v-model="newSkillName" 
-            type="text" 
+        <CreationRow
+            :active="isAddingSkill"
             placeholder="ADD NEW SKILL..."
-            class="flex-1 bg-transparent outline-none px-1 py-1 text-sm font-bold text-[var(--obr-text-primary)] placeholder-[var(--obr-text-disabled)] uppercase tracking-wide"
-            @keyup.enter="handleAddSkill"
-          />
-          <input 
-            v-model.number="newSkillRank" 
-            type="number" 
-            min="1" 
-            max="10"
-            class="w-10 bg-[var(--obr-bg-default)] border border-[var(--obr-text-disabled)] border-opacity-30 rounded px-1 py-1 text-center text-sm font-bold text-[var(--obr-text-primary)] outline-none focus:border-[var(--obr-primary-main)]"
-            @keyup.enter="handleAddSkill"
-          />
-          <button 
-            @click="handleAddSkill"
-            class="text-[var(--obr-primary-main)] hover:bg-[var(--obr-primary-main)] hover:text-white rounded px-2 py-1 text-xs font-black uppercase transition-colors"
-          >Save</button>
-        </div>
+            buttonText="Add New Skill"
+            @submit="handleAddSkill"
+            @cancel="isAddingSkill = false"
+            @activate="isAddingSkill = true"
+        >
+            <template #extra-fields>
+                 <div class="relative flex items-center" title="Initial Rank">
+                    <span class="absolute left-2 text-[10px] font-black text-[var(--obr-text-disabled)] select-none">RK</span>
+                    <input 
+                        v-model.number="newSkillRank" 
+                        type="number" 
+                        min="1" 
+                        max="10"
+                        class="w-16 bg-[var(--obr-bg-default)] border-2 border-[var(--obr-text-disabled)] rounded pl-8 pr-1 py-2 text-center text-sm font-bold text-[var(--obr-text-primary)] outline-none focus:border-[var(--obr-primary-main)]"
+                        placeholder="#"
+                    />
+                 </div>
+            </template>
+        </CreationRow>
 
         <div class="mt-4 pt-2 flex justify-end">
            <button 

@@ -100,6 +100,8 @@ const confirmEvolution = () => {
                 ref="skillInput"
                 v-model="newSkillName"
                 type="text"
+                autocomplete="off"
+                data-1p-ignore
                 class="w-full bg-black text-white border-2 border-[#ff0055] p-3 font-bold uppercase text-center mb-2 focus:outline-none focus:shadow-[0_0_10px_#ff0055]"
                 placeholder="NEW SKILL NAME..."
                 @keyup.enter="confirmEvolution"

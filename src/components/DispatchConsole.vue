@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { useRollForShoes } from '../composables/useRollForShoes';
 import CharacterCard from './CharacterCard.vue';
+import CreationRow from './common/CreationRow.vue';
 import type { Skill } from '../types';
 
 const emit = defineEmits<{
@@ -22,13 +23,10 @@ const {
   deleteCharacter,
 } = useRollForShoes();
 
-const newCharName = ref('');
 const isCreating = ref(false);
 
-const handleCreate = async () => {
-  if (!newCharName.value.trim()) return;
-  await createCharacter(newCharName.value);
-  newCharName.value = '';
+const handleCreate = async (name: string) => {
+  await createCharacter(name);
   isCreating.value = false;
 };
 
@@ -81,39 +79,16 @@ const onRoll = (characterId: string, skill: Skill) => {
            />
           </div>
            
-           <!-- Create Form (Moved to bottom) -->
-           <div v-if="isCreating" class="mx-2 mt-4 bg-[var(--obr-bg-paper)] p-4 rounded-lg border-2 border-[var(--obr-text-primary)] shadow-lg animate-fade-in-up shrink-0">
-                <label class="block text-[10px] font-black text-[var(--obr-text-secondary)] uppercase mb-2 tracking-widest">New Recruit Codename</label>
-                <div class="flex gap-2">
-                <input 
-                    v-model="newCharName"
-                    type="text" 
-                    class="flex-1 bg-[var(--obr-bg-default)] border-2 border-[var(--obr-text-disabled)] rounded px-3 py-3 text-base font-bold text-[var(--obr-text-primary)] focus:border-[var(--obr-primary-main)] outline-none uppercase tracking-wide"
-                    placeholder="ENTER NAME..."
-                    @keyup.enter="handleCreate"
-                    autoFocus
-                />
-                <button 
-                    @click="handleCreate"
-                    class="bg-[var(--obr-primary-main)] text-[var(--obr-primary-contrast)] font-black px-6 rounded text-sm uppercase border-2 border-[var(--obr-text-primary)] shadow-[3px_3px_0px_0px_rgba(0,0,0,0.5)] active:translate-y-0.5 active:shadow-none hover:brightness-110 transition-all"
-                >Save</button>
-                <button 
-                    @click="isCreating = false"
-                    class="text-[var(--obr-text-secondary)] hover:text-red-500 font-bold px-3 transition-colors"
-                >✕</button>
-                </div>
-           </div>
-
-           <!-- Add Button at bottom of list -->
-           <div v-if="characterList.length > 0 && !isCreating" class="mt-4 px-2 flex justify-center">
-              <button 
-                @click="isCreating = true"
-                class="w-full py-4 border-2 border-dashed border-[var(--obr-text-disabled)] rounded-lg text-[var(--obr-text-disabled)] hover:text-[var(--obr-primary-main)] hover:border-[var(--obr-primary-main)] hover:bg-[var(--obr-primary-main)]/5 font-black uppercase tracking-widest transition-all group flex flex-col items-center gap-1"
-              >
-                 <span class="text-2xl group-hover:scale-110 transition-transform">+</span>
-                 <span class="text-xs">Add New Recruit</span>
-              </button>
-           </div>
+           <!-- Reusable Create Component -->
+           <CreationRow
+              v-if="characterList.length > 0 || isCreating"
+              :active="isCreating"
+              placeholder="NEW RECRUIT CODENAME"
+              buttonText="Add New Recruit"
+              @submit="handleCreate"
+              @cancel="isCreating = false"
+              @activate="isCreating = true"
+           />
            
            <div class="h-10"></div>
       </div>
