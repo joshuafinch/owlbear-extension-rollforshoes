@@ -1,11 +1,11 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import OBR from '@owlbear-rodeo/sdk';
 import getPluginId from '../utils/getPluginId';
-import type { Character, CharacterData, Skill, CharacterLink, RollEntry } from '../types';
+import type { Character, CharacterData, Skill, CharacterLink, LogEntry, RollLogEntry } from '../types';
 
 export function useRollForShoes() {
   const characters = ref<CharacterData>({});
-  const rollHistory = ref<RollEntry[]>([]);
+  const rollHistory = ref<LogEntry[]>([]);
   const selectedItems = ref<string[]>([]);
   const role = ref<string>('PLAYER');
   const debugMode = ref<boolean>(false);
@@ -238,7 +238,7 @@ export function useRollForShoes() {
     }
   };
 
-  const addLogEntry = async (entry: RollEntry) => {
+  const addLogEntry = async (entry: LogEntry) => {
     // Optimistic
     const newHistory = [entry, ...rollHistory.value].slice(0, 50); // Keep last 50
     rollHistory.value = newHistory;
@@ -255,10 +255,13 @@ export function useRollForShoes() {
   };
 
   const markLogAction = async (logId: string, action: 'xp' | 'advance' | 'succeeded') => {
-      const logIndex = rollHistory.value.findIndex(l => l.id === logId);
+      const logIndex = rollHistory.value.findIndex(l => l.type === 'ROLL' && l.id === logId);
       if (logIndex === -1) return;
 
       const entry = rollHistory.value[logIndex];
+      // Type guard already happened in findIndex, but TS might need help
+      if (entry.type !== 'ROLL') return;
+
       const newActions = [...(entry.actionsTaken || []), action];
       
       // Optimistic update
@@ -372,7 +375,15 @@ export function useRollForShoes() {
       // Load initial data
       const metadata = await OBR.room.getMetadata();
       characters.value = (metadata[ROOM_DATA_KEY] as CharacterData) || {};
-      rollHistory.value = (metadata[LOGS_DATA_KEY] as RollEntry[]) || [];
+      const rawLogs = (metadata[LOGS_DATA_KEY] as any[]) || [];
+      
+      // Migration: Ensure logs have a type
+      rollHistory.value = rawLogs.map(log => {
+        if (!log.type) {
+            return { ...log, type: 'ROLL' } as RollLogEntry;
+        }
+        return log as LogEntry;
+      });
 
       // Load initial role
       role.value = await OBR.player.getRole();
@@ -380,7 +391,7 @@ export function useRollForShoes() {
       // Listen for room data changes
       unsubscribeRoom.value = OBR.room.onMetadataChange((newMetadata) => {
         const newData = newMetadata[ROOM_DATA_KEY] as CharacterData;
-        const newLogs = newMetadata[LOGS_DATA_KEY] as RollEntry[];
+        const newLogs = newMetadata[LOGS_DATA_KEY] as any[];
         
         // IMPORTANT: When a character is deleted, newData might be undefined or missing the key
         // We must handle the case where newData is undefined (if the entire key was removed)
@@ -396,7 +407,12 @@ export function useRollForShoes() {
         }
 
         if (newLogs) {
-            rollHistory.value = newLogs;
+            rollHistory.value = newLogs.map(log => {
+              if (!log.type) {
+                  return { ...log, type: 'ROLL' } as RollLogEntry;
+              }
+              return log as LogEntry;
+            });
         }
       });
 

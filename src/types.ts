@@ -19,7 +19,7 @@ export interface CharacterLink {
 
 export type CharacterData = Record<string, Character>;
 
-export interface RollEntry {
+export interface LegacyRollEntry {
   id: string;
   characterId: string;
   characterName: string;
@@ -27,5 +27,28 @@ export interface RollEntry {
   rank: number;
   dice: number[];
   timestamp: number;
-  actionsTaken?: ('xp' | 'advance' | 'succeeded')[]; // Track if XP was taken, skill evolved, or marked as succeeded
+  actionsTaken?: ('xp' | 'advance' | 'succeeded')[];
 }
+
+export interface RollLogEntry {
+  type: 'ROLL';
+  id: string;
+  characterId: string;
+  characterName: string;
+  skillName: string;
+  rank: number;
+  dice: number[];
+  timestamp: number;
+  actionsTaken?: ('xp' | 'advance' | 'succeeded')[];
+}
+
+export interface SkillLogEntry {
+  type: 'SKILL';
+  characterName: string;
+  newSkillName: string;
+  rank: number;
+  timestamp: number;
+  cost: number;
+}
+
+export type LogEntry = RollLogEntry | SkillLogEntry;

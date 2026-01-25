@@ -68,6 +68,7 @@ const handleRoll = (characterId: string, skill: Skill) => {
 
     // Add to shared log
     addLogEntry({
+        type: 'ROLL',
         id: rollId,
         characterId,
         characterName: character.name,
@@ -101,6 +102,16 @@ const handleRollEvolve = (logId: string, newSkillName: string, xpCost: number) =
          }
 
          markLogAction(logId, 'advance');
+
+         // Add SKILL Log
+         addLogEntry({
+            type: 'SKILL',
+            characterName: currentRoll.value.characterName,
+            newSkillName: newSkillName,
+            rank: currentRoll.value.rank + 1,
+            timestamp: Date.now(),
+            cost: xpCost
+         });
          
          OBR.notification.show(`${currentRoll.value.characterName} acquired new skill: ${newSkillName} (Rank ${currentRoll.value.rank + 1})`, "SUCCESS");
          currentRoll.value = null;
@@ -131,6 +142,21 @@ const handleLogEvolve = (logId: string, characterId: string, rank: number, newSk
     }
     
     markLogAction(logId, 'advance');
+
+    // Find character name for log
+    const char = characterList.value.find(c => c.id === characterId);
+    const charName = char ? char.name : 'Unknown';
+
+    // Add SKILL Log
+    addLogEntry({
+        type: 'SKILL',
+        characterName: charName,
+        newSkillName: newSkillName,
+        rank: rank + 1,
+        timestamp: Date.now(),
+        cost: xpCost
+    });
+
     OBR.notification.show(`Character acquired new skill: ${newSkillName} (Rank ${rank + 1})`, "SUCCESS");
 };
 const handleRollSucceeded = (logId: string) => {
