@@ -16,6 +16,7 @@ const emit = defineEmits<{
   (e: 'addSkill', id: string, skill: Skill): void;
   (e: 'updateSkill', id: string, index: number, skill: Partial<Skill>): void;
   (e: 'removeSkill', id: string, index: number): void;
+  (e: 'updateName', id: string, name: string): void;
   (e: 'reorderSkills', id: string, skills: Skill[]): void;
   (e: 'link', id: string | null): void;
   (e: 'delete', id: string): void;
@@ -37,6 +38,27 @@ const newSkillRank = ref(2);
 const editingSkillIndex = ref<number | null>(null);
 const editSkillName = ref('');
 const editSkillRank = ref(1);
+
+const isEditingName = ref(false);
+const editNameValue = ref('');
+
+const startEditingName = () => {
+    editNameValue.value = props.character.name;
+    isEditingName.value = true;
+};
+
+const saveNameEdit = () => {
+    if (!editNameValue.value.trim()) {
+        isEditingName.value = false;
+        return;
+    }
+    emit('updateName', props.character.id, editNameValue.value);
+    isEditingName.value = false;
+};
+
+const cancelNameEdit = () => {
+    isEditingName.value = false;
+};
 
 const canLink = computed(() => props.selectedTokenIds.length > 0);
 const isGm = computed(() => props.role === 'GM');
@@ -138,10 +160,35 @@ const cancelSkillEdit = () => {
               <span v-else class="text-[var(--obr-bg-paper)] font-bold" :class="isExpanded ? 'text-2xl' : 'text-lg'">{{ character.name.charAt(0).toUpperCase() }}</span>
            </div>
            <div class="flex flex-col min-w-0 transition-all duration-300 origin-left" :class="{'translate-x-2 scale-110': isExpanded}">
-              <h3 
-                class="font-black text-[var(--obr-text-primary)] uppercase tracking-tight leading-none group-hover:text-[var(--obr-primary-main)] transition-colors duration-300 truncate pr-1"
-                :class="isExpanded ? 'text-xl' : 'text-xl'"
-              >{{ character.name }}</h3>
+              
+              <!-- Name Display / Edit Mode -->
+              <div v-if="!isEditingName" 
+                   @click.stop="isExpanded ? startEditingName() : null" 
+                   class="group/name relative"
+                   :class="isExpanded ? 'cursor-pointer' : ''"
+                   :title="isExpanded ? 'Click to edit name' : ''"
+              >
+                  <h3 
+                    class="font-black text-[var(--obr-text-primary)] uppercase tracking-tight leading-none group-hover:text-[var(--obr-primary-main)] transition-colors duration-300 truncate pr-1"
+                    :class="isExpanded ? 'text-xl' : 'text-xl'"
+                  >
+                    {{ character.name }}
+                    <span v-if="isExpanded" class="opacity-0 group-hover/name:opacity-100 text-[10px] text-[var(--obr-text-disabled)] ml-1 absolute top-0 -right-4 transition-opacity">✎</span>
+                  </h3>
+              </div>
+              
+              <div v-else class="flex items-center" @click.stop>
+                   <input 
+                      v-model="editNameValue"
+                      type="text"
+                      class="bg-[var(--obr-bg-paper)] text-[var(--obr-text-primary)] font-black uppercase tracking-tight leading-none border-b-2 border-[var(--obr-primary-main)] focus:outline-none w-full min-w-[150px] text-xl"
+                      @keyup.enter="saveNameEdit"
+                      @keyup.esc="cancelNameEdit"
+                      @blur="saveNameEdit"
+                      autoFocus
+                    />
+              </div>
+
               <span class="text-xs font-bold text-[var(--obr-text-disabled)] uppercase tracking-wider flex items-center gap-1 group-hover:text-[var(--obr-text-secondary)] transition-colors">
                  <svg 
                    class="w-4 h-4 transform transition-transform duration-300 text-[var(--obr-text-primary)]"

@@ -395,6 +395,7 @@ export function useRollForShoes() {
     selectedItems,
     role,
     createCharacter,
+    updateCharacter,
     deleteCharacter,
     addXp,
     addSkill,

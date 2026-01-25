@@ -21,6 +21,7 @@ const {
   removeSkill,
   reorderSkills,
   linkSelectionToCharacter, 
+  updateCharacter, 
   deleteCharacter,
   activeCharacterId,
   reorderCharacters
@@ -39,6 +40,10 @@ const draggableCharacters = computed({
 const handleCreate = async (name: string) => {
   await createCharacter(name);
   isCreating.value = false;
+};
+
+const handleUpdateName = (id: string, name: string) => {
+    updateCharacter(id, { name });
 };
 
 const onRoll = (characterId: string, skill: Skill) => {
@@ -108,6 +113,7 @@ const onDragEnd = () => {
                    @removeSkill="removeSkill"
                    @reorderSkills="reorderSkills"
                    @link="linkSelectionToCharacter"
+                   @updateName="handleUpdateName"
                    @delete="deleteCharacter"
                    @roll="onRoll"
                  />
