@@ -13,6 +13,7 @@ export interface Character {
   createdAt: number;
   imageUrl?: string;
   order?: number; // Added order field
+  color?: string; // Character specific accent color
 }
 
 export interface CharacterLink {

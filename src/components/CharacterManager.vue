@@ -257,6 +257,7 @@ const handleLogSucceeded = async (logId: string) => {
         v-if="currentRoll" 
         :result="currentRoll"
         :character="characterList.find(c => c.id === currentRoll?.characterId)"
+        :color="characterList.find(c => c.id === currentRoll?.characterId)?.color"
         @close="currentRoll = null"
         @takeXp="handleRollTakeXp"
         @confirmEvolve="handleRollEvolve"

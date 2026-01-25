@@ -4,7 +4,7 @@ import draggable from 'vuedraggable';
 import type { Character, Skill } from '../types';
 import CreationRow from './common/CreationRow.vue';
 import SkillItem from './SkillItem.vue';
-import { ROLE_GM, DEFAULT_NEW_SKILL_RANK } from '../constants';
+import { ROLE_GM, DEFAULT_NEW_SKILL_RANK, TACTICAL_PALETTE } from '../constants';
 
 const props = defineProps<{
   character: Character;
@@ -23,6 +23,7 @@ const emit = defineEmits<{
   (e: 'link', id: string | null): void;
   (e: 'delete', id: string): void;
   (e: 'roll', id: string, skill: Skill): void;
+  (e: 'updateColor', id: string, color: string): void;
 }>();
 
 const isExpanded = ref(false);
@@ -39,6 +40,10 @@ const newSkillRank = ref(DEFAULT_NEW_SKILL_RANK);
 const isEditingName = ref(false);
 const editNameValue = ref('');
 const editNameInput = ref<HTMLInputElement | null>(null);
+
+// Color Picker State
+const showColorPicker = ref(false);
+const cardColor = computed(() => props.character.color || TACTICAL_PALETTE[0]);
 
 const startEditingName = async () => {
     editNameValue.value = props.character.name;
@@ -58,6 +63,11 @@ const saveNameEdit = () => {
 
 const cancelNameEdit = () => {
     isEditingName.value = false;
+};
+
+const handleColorSelect = (color: string) => {
+    emit('updateColor', props.character.id, color);
+    showColorPicker.value = false;
 };
 
 const canLink = computed(() => props.selectedTokenIds.length > 0);
@@ -146,10 +156,20 @@ const handleXpChange = (amount: number) => {
 
 <template>
   <div 
-    class="bg-[var(--obr-surface-card)] backdrop-blur-xl rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] p-0 mb-4 border-2 transition-all duration-300 hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.5)] overflow-hidden"
-    :class="isActive ? 'border-[var(--obr-primary-main)] ring-2 ring-[var(--obr-primary-main)]/50' : 'border-[var(--obr-border-base)]'"
+    class="bg-[var(--obr-surface-card)] backdrop-blur-xl rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] p-0 mb-4 border-2 transition-all duration-300 hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.5)] overflow-hidden relative"
+    :class="isActive ? 'ring-2 ring-opacity-50' : ''"
+    :style="{ 
+        '--card-accent': cardColor,
+        'borderColor': isActive ? cardColor : 'var(--obr-border-base)',
+        '--tw-ring-color': cardColor
+    }"
   >
-    
+    <!-- Background Tint (Subtle) -->
+    <div 
+        class="absolute inset-0 pointer-events-none opacity-5 transition-colors duration-500"
+        :style="{ backgroundColor: cardColor }"
+    ></div>
+
     <!-- Header / Summary View -->
     <div class="p-0 bg-gradient-to-r from-[var(--obr-surface-base)] to-[var(--obr-surface-card)] transition-all duration-300 relative z-20">
       <div class="flex items-center justify-between gap-2">
@@ -189,7 +209,7 @@ const handleXpChange = (amount: number) => {
                              title="Click to expand"
                           >
                              <h3 
-                               class="font-black text-[var(--obr-text-primary)] tracking-tight leading-none group-hover:text-[var(--obr-primary-main)] transition-all duration-300 truncate pr-1 origin-left text-2xl pb-1"
+                               class="font-black text-[var(--obr-text-primary)] tracking-tight leading-none group-hover:text-[var(--card-accent)] transition-all duration-300 truncate pr-1 origin-left text-2xl pb-1"
                              >
                                {{ character.name }}
                              </h3>
@@ -283,7 +303,9 @@ const handleXpChange = (amount: number) => {
                        @click.stop="startEditingName()" 
                        title="Click to edit name"
                     >
-                        <h3 class="font-black text-[var(--obr-text-primary)] tracking-tight leading-none group-hover:text-[var(--obr-primary-main)] transition-colors duration-300 text-3xl pb-1">
+                        <h3 
+                            class="font-black text-[var(--obr-text-primary)] tracking-tight leading-none group-hover:text-[var(--card-accent)] transition-colors duration-300 text-3xl pb-1"
+                        >
                             {{ character.name }}
                             <span class="opacity-0 group-hover/name:opacity-100 text-[10px] text-[var(--obr-text-disabled)] ml-1 absolute top-0 -right-4 transition-opacity">✎</span>
                         </h3>
@@ -293,7 +315,8 @@ const handleXpChange = (amount: number) => {
                           ref="editNameInput"
                           v-model="editNameValue"
                           type="text"
-                          class="bg-[var(--obr-surface-input)] text-[var(--obr-text-primary)] font-black tracking-tight leading-none border-b-2 border-[var(--obr-primary-main)] focus:outline-none w-full min-w-[150px] text-3xl"
+                          class="bg-[var(--obr-surface-input)] text-[var(--obr-text-primary)] font-black tracking-tight leading-none border-b-2 focus:outline-none w-full min-w-[150px] text-3xl"
+                          :style="{ borderColor: cardColor }"
                           @keyup.enter="saveNameEdit"
                           @keyup.esc="cancelNameEdit"
                           @blur="saveNameEdit"
@@ -304,22 +327,55 @@ const handleXpChange = (amount: number) => {
             
             <div v-if="!isExpanded" class="flex-1"></div>
 
-            <div v-if="canLink" class="flex gap-2">
-                 <button 
-                    v-if="isActive"
-                    @click="emit('link', null)"
-                    class="text-xs font-bold uppercase text-[var(--obr-text-disabled)] hover:text-[var(--obr-status-danger)] hover:underline flex items-center gap-1"
-                >
-                    <span>Unlink Token</span>
-                </button>
-                 <button 
-                    @click="emit('link', character.id)"
-                    class="text-xs font-bold uppercase text-[var(--obr-primary-main)] hover:underline flex items-center gap-1"
-                >
-                    <span>{{ isActive ? '🔄 Update Link' : '🔗 Link Token' }}</span>
-                </button>
+            <div class="flex gap-2 items-center">
+                <!-- Color Picker Toggle -->
+                 <div class="relative">
+                    <button 
+                        v-if="isExpanded"
+                        @click.stop="showColorPicker = !showColorPicker"
+                        class="w-6 h-6 rounded border border-[var(--obr-border-subtle)] shadow-sm hover:scale-110 transition-transform flex items-center justify-center overflow-hidden bg-[var(--obr-surface-card)]"
+                        title="Set Tactical Color"
+                        :class="{ 'ring-2 ring-[var(--obr-primary-main)]': showColorPicker }"
+                    >
+                        <div class="w-full h-full opacity-80" :style="{ backgroundColor: cardColor }"></div>
+                    </button>
+                 </div>
+
+                 <!-- Link Buttons -->
+                 <div v-if="canLink" class="flex gap-2">
+                    <button 
+                        v-if="isActive"
+                        @click="emit('link', null)"
+                        class="text-xs font-bold uppercase text-[var(--obr-text-disabled)] hover:text-[var(--obr-status-danger)] hover:underline flex items-center gap-1"
+                    >
+                        <span>Unlink Token</span>
+                    </button>
+                    <button 
+                        @click="emit('link', character.id)"
+                        class="text-xs font-bold uppercase hover:underline flex items-center gap-1 transition-colors"
+                        :style="{ color: cardColor }"
+                    >
+                        <span>{{ isActive ? '🔄 Update Link' : '🔗 Link Token' }}</span>
+                    </button>
+                </div>
             </div>
        </div>
+
+       <!-- Color Picker Drawer (Inline) -->
+       <transition name="expand">
+        <div v-if="showColorPicker && isExpanded" class="bg-[var(--obr-surface-base)] border-y border-[var(--obr-border-subtle)] border-dashed py-2 px-3 flex flex-wrap gap-2 justify-end relative z-10 shadow-inner">
+             <div class="w-full text-[10px] font-black uppercase text-[var(--obr-text-disabled)] text-right mb-1">Select Tactical Color</div>
+             <button 
+                v-for="color in TACTICAL_PALETTE" 
+                :key="color"
+                @click.stop="handleColorSelect(color)"
+                class="w-6 h-6 rounded-sm border border-transparent hover:scale-125 transition-transform"
+                :class="{ 'ring-2 ring-offset-1 ring-[var(--obr-text-primary)]': color === cardColor }"
+                :style="{ backgroundColor: color }"
+                :aria-label="`Select color ${color}`"
+            ></button>
+        </div>
+       </transition>
       
         <!-- Skills Section -->
        <div class="p-3 relative z-10">
@@ -350,16 +406,17 @@ const handleXpChange = (amount: number) => {
              :fallback-on-body="true"
             >
               <template #item="{ element: skill, index }">
-                <div>
-                  <SkillItem
-                     :skill="skill"
-                     :isManageMode="isManageMode"
-                     :isDeleting="deletingSkillIndex === index"
-                     @roll="(s) => emit('roll', character.id, s)"
-                     @remove="handleRemoveSkill(index)"
-                     @update="(updates) => handleUpdateSkill(index, updates)"
-                  />
-                </div>
+                 <div>
+                   <SkillItem
+                      :skill="skill"
+                      :isManageMode="isManageMode"
+                      :isDeleting="deletingSkillIndex === index"
+                      :color="cardColor"
+                      @roll="(s) => emit('roll', character.id, s)"
+                      @remove="handleRemoveSkill(index)"
+                      @update="(updates) => handleUpdateSkill(index, updates)"
+                   />
+                 </div>
               </template>
             </draggable>
          </div>

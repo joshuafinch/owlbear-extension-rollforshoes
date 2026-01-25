@@ -72,6 +72,11 @@ const canAffordAdvance = (entry: RollLogEntry) => {
 const deletingLogId = ref<string | null>(null);
 const deleteTimeout = ref<number | null>(null);
 
+const getCharacterColor = (characterId: string) => {
+    const char = props.characters.find(c => c.id === characterId);
+    return char?.color || 'var(--obr-border-base)';
+};
+
 const handleDeleteClick = (id: string) => {
     if (deletingLogId.value === id) {
         // Confirmed
@@ -129,7 +134,8 @@ const handleDeleteClick = (id: string) => {
             <div 
                 v-if="entry.type === LOG_TYPE_ROLL"
                 class="relative bg-[var(--obr-surface-card)] p-3 shadow-md border-l-4 font-mono text-sm group transition-all hover:-translate-x-1"
-                :class="isCritical(entry.dice) ? 'border-[var(--obr-status-critical)]' : 'border-[var(--obr-border-base)]'"
+                :class="isCritical(entry.dice) ? 'border-[var(--obr-status-critical)]' : ''"
+                :style="!isCritical(entry.dice) ? { borderLeftColor: getCharacterColor(entry.characterId) } : {}"
             >
                 <!-- Timestamp Badge -->
                 <div class="absolute -right-2 -top-2 bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)] px-2 py-0.5 text-[10px] font-bold transform rotate-3 group-hover:rotate-0 transition-transform">
@@ -252,7 +258,8 @@ const handleDeleteClick = (id: string) => {
             <!-- SKILL ENTRY -->
             <div 
                 v-else-if="entry.type === LOG_TYPE_SKILL"
-                class="relative bg-[var(--obr-surface-card)] p-3 shadow-md border-l-4 border-[var(--obr-primary-main)] font-mono text-sm my-2 group transition-all hover:-translate-x-1"
+                class="relative bg-[var(--obr-surface-card)] p-3 shadow-md border-l-4 font-mono text-sm my-2 group transition-all hover:-translate-x-1"
+                :style="{ borderLeftColor: getCharacterColor(entry.characterId) }"
             >
                 <!-- Header: Character Name + Time -->
                 <div class="flex justify-between items-baseline border-b border-dashed border-[var(--obr-border-subtle)] pb-1 mb-2">

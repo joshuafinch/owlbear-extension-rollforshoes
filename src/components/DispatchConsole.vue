@@ -116,6 +116,7 @@ const onDragEnd = () => {
                    @updateName="handleUpdateName"
                    @delete="deleteCharacter"
                    @roll="onRoll"
+                   @updateColor="(id, color) => updateCharacter(id, { color })"
                  />
                  
                  <!-- Drag Handle (positioned absolutely to overlay the card edge) -->

@@ -6,6 +6,7 @@ const props = defineProps<{
   skill: Skill;
   isManageMode: boolean;
   isDeleting: boolean;
+  color?: string;
 }>();
 
 const emit = defineEmits<{
@@ -45,8 +46,9 @@ const cancelEdit = () => {
 
 <template>
   <div 
-    class="relative flex items-center bg-[var(--obr-surface-card)] p-2 rounded border transition-all mb-2 select-none overflow-hidden"
-    :class="isManageMode ? 'border-[var(--obr-primary-main)] border-dashed bg-[var(--obr-surface-base)]' : 'border-[var(--obr-border-subtle)] border-opacity-30 hover:border-[var(--obr-border-base)] hover:shadow-sm'"
+    class="relative flex items-center bg-[var(--obr-surface-card)] p-2 rounded border transition-all mb-2 select-none overflow-hidden skill-item-root"
+    :class="isManageMode ? 'border-[var(--obr-primary-main)] border-dashed bg-[var(--obr-surface-base)]' : 'border-[var(--obr-border-subtle)] border-opacity-30 hover:shadow-sm'"
+    :style="!isManageMode && color ? { '--hover-border-color': color } : {}"
   >
     <!-- Drag Handle (Only in Manage Mode) -->
     <div 
@@ -111,7 +113,6 @@ const cancelEdit = () => {
         </div>
     </template>
 
-    <!-- Edit Mode (Inside Manage Mode) -->
     <template v-else>
         <div class="flex items-center gap-2 w-full z-10 bg-[var(--obr-surface-card)] p-0.5 -m-0.5 rounded ring-2 ring-[var(--obr-primary-main)] shadow-lg">
             <input 
@@ -139,6 +140,12 @@ const cancelEdit = () => {
                <button @click="cancelEdit" class="bg-[var(--obr-surface-base)] text-[var(--obr-text-primary)] w-7 h-7 rounded flex items-center justify-center hover:text-[var(--obr-text-disabled)] shadow-sm text-sm font-bold" title="Cancel">✕</button>
            </div>
        </div>
-   </template>
+    </template>
   </div>
 </template>
+
+<style scoped>
+.skill-item-root:hover {
+    border-color: var(--hover-border-color, var(--obr-border-base));
+}
+</style>
