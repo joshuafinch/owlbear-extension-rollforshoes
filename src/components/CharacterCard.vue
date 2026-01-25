@@ -192,11 +192,10 @@ const handleXpChange = (amount: number) => {
              aria-hidden="true"
             >
               <img 
-                :src="character.imageUrl" 
-                class="w-full h-full object-cover object-top transition-transform duration-700 origin-top" 
-                :class="isExpanded ? 'scale-100' : 'scale-150'" 
-                :alt="character.name" 
-              />
+                 :src="character.imageUrl" 
+                 class="w-full h-full object-cover object-top transition-transform duration-700 origin-top min-w-full min-h-full scale-100" 
+                 :alt="character.name" 
+               />
            </div>
            <div class="flex flex-col justify-center min-w-0 transition-all duration-300 origin-left pl-3">
                
@@ -373,7 +372,7 @@ const handleXpChange = (amount: number) => {
                 v-for="color in TACTICAL_PALETTE" 
                 :key="color"
                 @click.stop="handleColorSelect(color)"
-                class="w-6 h-6 rounded-sm border border-transparent hover:scale-125 transition-transform"
+                class="w-6 h-6 rounded-sm border border-transparent hover:scale-125 focus:scale-125 focus:outline-none focus:ring-2 focus:ring-[var(--obr-text-primary)] focus:z-10 transition-transform"
                 :class="{ 'ring-2 ring-offset-1 ring-[var(--obr-text-primary)]': color === cardColor }"
                 :style="{ backgroundColor: color }"
                 :aria-label="`Select color ${color}`"

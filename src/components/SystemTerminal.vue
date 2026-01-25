@@ -31,99 +31,105 @@ const handleClearLogs = () => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-black p-4 font-mono text-green-500 overflow-hidden border-2 border-gray-800 shadow-inner rounded-lg relative">
+  <div class="flex flex-col h-full bg-[var(--obr-surface-card)] p-4 font-mono text-[var(--obr-text-primary)] overflow-hidden border-2 border-[var(--obr-border-base)] shadow-lg rounded-xl relative transition-colors duration-300">
     
-    <!-- CRT Screen Effect Overlay -->
-    <div class="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-10 bg-[length:100%_2px,3px_100%]"></div>
-    <div class="absolute inset-0 pointer-events-none shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] z-20"></div>
-
     <!-- Header -->
-    <div class="border-b border-green-800 pb-3 mb-4 flex justify-between items-center z-0 relative">
-        <span class="text-sm font-bold tracking-widest">root@AGENCY-HQ:~$ SYS_ADMIN</span>
+    <div class="border-b border-[var(--obr-border-subtle)] pb-3 mb-4 flex justify-between items-center z-10 relative">
+        <span class="text-sm font-bold tracking-widest text-[var(--obr-text-secondary)]">SYSTEM_ADMIN</span>
         <div class="flex gap-2">
-            <div class="w-4 h-4 rounded-full bg-red-500 animate-pulse"></div>
-            <div class="w-4 h-4 rounded-full bg-yellow-500"></div>
-            <div class="w-4 h-4 rounded-full bg-green-500"></div>
+            <div class="w-3 h-3 rounded-full bg-[var(--obr-status-danger)]"></div>
+            <div class="w-3 h-3 rounded-full bg-[var(--obr-status-warning)]"></div>
+            <div class="w-3 h-3 rounded-full bg-[var(--obr-status-success)]"></div>
         </div>
     </div>
 
     <!-- Content -->
-    <div class="flex-1 overflow-y-auto space-y-6 relative z-0">
+    <div class="flex-1 overflow-y-auto space-y-6 relative z-10">
         
         <!-- Welcome Message -->
         <div class="text-sm space-y-2 mb-6 opacity-80">
-            <p>> CONNECTING TO SECURE MAINFRAME...</p>
-            <p>> ESTABLISHING ENCRYPTED UPLINK...</p>
-            <p>> ACCESS LEVEL: <span :class="isGm ? 'text-green-400 font-bold' : 'text-red-500 font-bold'">{{ role }}</span></p>
-            <p class="text-xs text-gray-500">----------------------------------------</p>
+            <p class="flex items-center gap-2"><span class="text-[var(--obr-status-success)]">●</span> SYSTEM READY</p>
+            <p class="flex items-center gap-2"><span class="text-[var(--obr-status-success)]">●</span> CONNECTION SECURE</p>
+            <p class="flex items-center gap-2 text-[var(--obr-text-primary)]">
+                <span>ACCESS LEVEL:</span> 
+                <span :class="isGm ? 'text-[var(--obr-status-success)] font-black bg-[var(--obr-status-success)]/10 px-2 py-0.5 rounded' : 'text-[var(--obr-status-danger)] font-black bg-[var(--obr-status-danger)]/10 px-2 py-0.5 rounded'">{{ role }}</span>
+            </p>
+            <div class="h-px bg-[var(--obr-border-subtle)] opacity-50 my-4"></div>
         </div>
 
         <!-- GM Controls -->
         <div v-if="isGm" class="space-y-8 animate-fade-in">
              <div>
-                <p class="text-sm mb-3 text-green-400 font-bold">> AVAILABLE COMMANDS:</p>
+                <p class="text-xs font-black uppercase tracking-wider mb-3 text-[var(--obr-text-secondary)]">Data Management</p>
                 
-                <div class="grid gap-4 pl-2 border-l-2 border-green-900 ml-1">
+                <div class="grid gap-3">
                     <!-- Export -->
                     <button 
                         @click="emit('export')"
-                        class="group text-left hover:bg-green-900/30 p-3 rounded transition-colors w-full"
+                        class="group text-left bg-[var(--obr-surface-base)] hover:bg-[var(--obr-surface-hover)] border border-[var(--obr-border-subtle)] p-3 rounded-lg transition-all w-full flex items-center justify-between"
                     >
-                        <p class="text-base font-bold text-white group-hover:text-green-300">
-                           <span class="text-green-600 mr-2">➜</span> EXECUTE_EXPORT_PROTOCOL()
-                        </p>
-                        <p class="text-xs text-gray-500 pl-6 mt-1">Dump current database to local JSON storage.</p>
+                        <div>
+                            <p class="text-sm font-bold text-[var(--obr-text-primary)]">
+                               Execute Export
+                            </p>
+                            <p class="text-xs text-[var(--obr-text-disabled)] mt-0.5">Download current state as JSON</p>
+                        </div>
+                        <span class="text-[var(--obr-primary-main)] opacity-0 group-hover:opacity-100 transition-opacity">↓</span>
                     </button>
 
                     <!-- Import -->
-                    <label class="group text-left hover:bg-green-900/30 p-3 rounded transition-colors cursor-pointer block w-full">
-                         <p class="text-base font-bold text-white group-hover:text-green-300">
-                           <span class="text-green-600 mr-2">➜</span> EXECUTE_IMPORT_OVERRIDE()
-                        </p>
-                        <p class="text-xs text-gray-500 pl-6 mt-1">Overwrite mainframe with external backup.</p>
+                    <label class="group text-left bg-[var(--obr-surface-base)] hover:bg-[var(--obr-surface-hover)] border border-[var(--obr-border-subtle)] p-3 rounded-lg transition-all cursor-pointer w-full flex items-center justify-between">
+                         <div>
+                            <p class="text-sm font-bold text-[var(--obr-text-primary)]">
+                               Import Override
+                            </p>
+                            <p class="text-xs text-[var(--obr-text-disabled)] mt-0.5">Restore from backup file</p>
+                         </div>
+                        <span class="text-[var(--obr-primary-main)] opacity-0 group-hover:opacity-100 transition-opacity">↑</span>
                         <input type="file" class="hidden" accept=".json" @change="(e) => emit('import', e)" />
                     </label>
                 </div>
              </div>
 
-             <div class="mt-8 border-t border-dashed border-green-900 pt-4">
-                <p class="text-xs text-red-400 bg-red-900/20 p-3 border border-red-900/50 leading-relaxed">
-                    ⚠ WARNING: IMPORT_OVERRIDE is a destructive operation. Previous session data will be purged immediately. Proceed with caution.
+             <div class="mt-8 border-l-4 border-[var(--obr-status-warning)] bg-[var(--obr-status-warning)]/5 p-4 rounded-r-lg">
+                <p class="text-xs font-bold text-[var(--obr-status-warning)] uppercase mb-1">Warning</p>
+                <p class="text-xs text-[var(--obr-text-secondary)] leading-relaxed">
+                    Importing data will immediately overwrite the current session. This action cannot be undone.
                 </p>
              </div>
 
              <!-- DEBUG TOOLS -->
              <div class="mt-6">
-                <p class="text-sm mb-3 text-yellow-500 font-bold">> DEBUG_PROTOCOLS:</p>
-                <div class="pl-2 border-l-2 border-yellow-900 ml-1">
+                <p class="text-xs font-black uppercase tracking-wider mb-3 text-[var(--obr-text-secondary)]">Debug Tools</p>
+                <div class="space-y-3">
                      <button 
                         @click="emit('toggleDebug')"
-                        class="w-full text-left hover:bg-yellow-900/30 p-3 rounded transition-colors flex items-center justify-between group"
+                        class="w-full text-left bg-[var(--obr-surface-base)] hover:bg-[var(--obr-surface-hover)] border border-[var(--obr-border-subtle)] p-3 rounded-lg transition-colors flex items-center justify-between group"
                     >
                         <div>
-                             <p class="text-base font-bold" :class="isDebug ? 'text-yellow-400 animate-pulse' : 'text-gray-500'">
-                               <span class="mr-2">⚡</span> FORCE_LUCK_MODE()
+                             <p class="text-sm font-bold flex items-center gap-2" :class="isDebug ? 'text-[var(--obr-status-warning)]' : 'text-[var(--obr-text-primary)]'">
+                               <span v-if="isDebug">⚡</span> Force Luck Mode
                             </p>
-                            <p class="text-xs text-gray-500 pl-6 mt-1">Reroute entropy. Bias RNG towards success.</p>
+                            <p class="text-xs text-[var(--obr-text-disabled)] mt-0.5">Bias RNG towards success</p>
                         </div>
-                        <div class="text-xs font-black px-3 py-1 border" :class="isDebug ? 'border-yellow-500 text-yellow-500 bg-yellow-900/20' : 'border-gray-700 text-gray-700'">
-                            {{ isDebug ? 'ACTIVE' : 'OFFLINE' }}
+                        <div class="text-[10px] font-black px-2 py-1 rounded" :class="isDebug ? 'bg-[var(--obr-status-warning)] text-white' : 'bg-[var(--obr-text-disabled)] text-white'">
+                            {{ isDebug ? 'ON' : 'OFF' }}
                         </div>
                     </button>
 
                     <!-- Clear Logs -->
                     <button 
                        @click="handleClearLogs"
-                       class="w-full text-left p-3 rounded transition-all flex items-center justify-between group mt-2 border border-dashed border-gray-800"
-                       :class="confirmClearLogs ? 'bg-red-900/40 hover:bg-red-900/60 border-red-500' : 'hover:bg-yellow-900/30'"
+                       class="w-full text-left p-3 rounded-lg transition-all flex items-center justify-between group mt-2 border"
+                       :class="confirmClearLogs ? 'bg-[var(--obr-status-danger)] text-white border-[var(--obr-status-danger)]' : 'bg-[var(--obr-surface-base)] border-[var(--obr-border-subtle)] hover:border-[var(--obr-status-danger)] hover:text-[var(--obr-status-danger)]'"
                    >
                        <div>
-                            <p class="text-base font-bold" :class="confirmClearLogs ? 'text-red-500 animate-pulse' : 'text-gray-500'">
-                              <span class="mr-2">💣</span> PURGE_LOG_ARCHIVES()
+                            <p class="text-sm font-bold flex items-center gap-2">
+                              <span>🗑️</span> Purge Logs
                            </p>
-                           <p v-if="confirmClearLogs" class="text-xs text-red-400 pl-6 mt-1 font-bold">⚠️ CONFIRM DELETION? CLICK AGAIN.</p>
-                           <p v-else class="text-xs text-gray-500 pl-6 mt-1">Permanently erase all mission logs.</p>
+                           <p v-if="!confirmClearLogs" class="text-xs opacity-70 mt-0.5">Clear all mission history</p>
                        </div>
+                       <span v-if="confirmClearLogs" class="text-xs font-black uppercase animate-pulse">Confirm?</span>
                    </button>
                 </div>
              </div>
@@ -131,17 +137,16 @@ const handleClearLogs = () => {
 
         <!-- Player View (Access Denied) -->
         <div v-else class="h-64 flex flex-col items-center justify-center text-center space-y-4 opacity-50">
-            <div class="text-6xl">🔒</div>
-            <p class="text-2xl text-red-500 font-black tracking-widest blink">ACCESS DENIED</p>
-            <p class="text-sm">Administrative privileges required.</p>
+            <div class="text-6xl grayscale opacity-20">🔒</div>
+            <p class="text-lg font-black tracking-widest text-[var(--obr-text-disabled)]">RESTRICTED</p>
+            <p class="text-xs text-[var(--obr-text-disabled)]">Administrative privileges required.</p>
         </div>
 
     </div>
 
     <!-- Footer -->
-    <div class="mt-auto pt-4 text-xs text-gray-600 flex justify-between font-mono relative z-0">
+    <div class="mt-auto pt-4 text-[10px] text-[var(--obr-text-disabled)] flex justify-between font-mono border-t border-[var(--obr-border-subtle)] relative z-10">
         <span>V.1.0.4-BETA</span>
-        <span class="animate-pulse">_</span>
     </div>
 
   </div>
