@@ -181,7 +181,7 @@ const confirmEvolution = () => {
                 <button 
                     v-if="!isRetroactive"
                     @click="emit('takeXp', result.id)"
-                    class="flex-1 bg-[var(--obr-bg-default)] hover:bg-gray-100 text-[var(--obr-text-primary)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-3 text-sm flex flex-col items-center justify-center gap-1 group shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
+                    class="flex-1 bg-[var(--obr-bg-default)] hover:bg-[var(--obr-text-primary)] text-[var(--obr-text-primary)] hover:text-[var(--obr-bg-default)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-3 text-sm flex flex-col items-center justify-center gap-1 group shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
                 >
                     <span class="text-red-500 group-hover:text-red-600 text-lg leading-none">⚠</span> 
                     <span class="leading-none">FAIL (+1 XP)</span>
@@ -206,7 +206,7 @@ const confirmEvolution = () => {
             <button 
               v-if="!isEvolving"
                @click="emit('close')"
-               class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] hover:bg-gray-100 font-bold uppercase text-xs tracking-widest py-4 mt-2 rounded border border-transparent hover:border-gray-300 transition-colors"
+               class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-bg-default)] font-bold uppercase text-xs tracking-widest py-4 mt-2 rounded border border-transparent hover:border-[var(--obr-text-disabled)] transition-colors"
             >
                Dismiss Report (Decide Later)
             </button>

@@ -66,6 +66,26 @@ const canAffordAdvance = (entry: RollLogEntry) => {
     // Which is the desired behavior for strict accounting.
     return char.xp >= nonSixes;
 };
+
+// -- Delete Handling (No Alerts) --
+const deletingLogId = ref<string | null>(null);
+const deleteTimeout = ref<number | null>(null);
+
+const handleDeleteClick = (id: string) => {
+    if (deletingLogId.value === id) {
+        // Confirmed
+        emit('deleteLog', id);
+        deletingLogId.value = null;
+        if (deleteTimeout.value) window.clearTimeout(deleteTimeout.value);
+    } else {
+        // First Click
+        deletingLogId.value = id;
+        if (deleteTimeout.value) window.clearTimeout(deleteTimeout.value);
+        deleteTimeout.value = window.setTimeout(() => {
+            deletingLogId.value = null;
+        }, 3000); // 3s reset
+    }
+};
 </script>
 
 <template>
@@ -96,11 +116,11 @@ const canAffordAdvance = (entry: RollLogEntry) => {
     </div>
 
     <!-- Scrollable Logs -->
-    <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC4wNSIvPjwvc3ZnPg==')]">
+    <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-[var(--obr-bg-default)]">
         
         <div v-if="history.length === 0" class="text-center py-10 opacity-40">
              <div class="text-5xl mb-2 grayscale">📇</div>
-             <p class="font-black uppercase text-base">Log Empty</p>
+             <p class="font-black uppercase text-base text-[var(--obr-text-primary)]">Log Empty</p>
         </div>
 
         <template v-for="(entry) in history" :key="entry.id">
@@ -216,11 +236,12 @@ const canAffordAdvance = (entry: RollLogEntry) => {
                             
                             <!-- Delete Button (Only on Hover) -->
                             <button 
-                                @click="emit('deleteLog', entry.id)"
-                                class="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-600 font-bold ml-2 px-1"
-                                title="Delete Log Entry"
+                                @click="handleDeleteClick(entry.id)"
+                                class="opacity-0 group-hover:opacity-100 transition-opacity font-bold ml-2 px-1 rounded text-xs"
+                                :class="deletingLogId === entry.id ? 'bg-red-600 text-white opacity-100' : 'text-gray-400 hover:text-red-600'"
+                                :title="deletingLogId === entry.id ? 'Click again to confirm delete' : 'Delete Log Entry'"
                             >
-                                ✕
+                                {{ deletingLogId === entry.id ? 'CONFIRM?' : '✕' }}
                             </button>
                         </div>
                     </div>
@@ -261,11 +282,12 @@ const canAffordAdvance = (entry: RollLogEntry) => {
                     <!-- Delete Button (Only on Hover) -->
                     <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                          <button 
-                            @click="emit('deleteLog', entry.id)"
-                            class="text-gray-400 hover:text-red-600 font-bold px-1 text-xs"
-                            title="Delete Log Entry"
+                            @click="handleDeleteClick(entry.id)"
+                            class="font-bold px-1 text-xs rounded"
+                            :class="deletingLogId === entry.id ? 'bg-red-600 text-white opacity-100' : 'text-gray-400 hover:text-red-600'"
+                            :title="deletingLogId === entry.id ? 'Click again to confirm delete' : 'Delete Log Entry'"
                         >
-                            ✕
+                            {{ deletingLogId === entry.id ? 'CONFIRM?' : '✕' }}
                         </button>
                     </div>
                 </div>

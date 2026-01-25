@@ -376,7 +376,7 @@ const handleXpChange = (amount: number) => {
                          <button 
                             v-if="!isManageMode"
                             @click.stop="emit('roll', character.id, skill)"
-                            class="h-9 px-3 flex items-center gap-1.5 bg-[var(--obr-text-primary)] hover:bg-[var(--obr-primary-main)] text-white rounded shadow-sm hover:shadow-md active:translate-y-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-[var(--obr-primary-main)]"
+                            class="h-9 px-3 flex items-center gap-1.5 bg-[var(--obr-text-primary)] hover:bg-[var(--obr-primary-main)] text-[var(--obr-bg-paper)] rounded shadow-sm hover:shadow-md active:translate-y-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-[var(--obr-primary-main)]"
                             :aria-label="`Roll ${skill.rank} dice for ${skill.name}`"
                             title="Roll Dice"
                          >

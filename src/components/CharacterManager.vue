@@ -143,56 +143,52 @@ const handleLogDelete = (logId: string) => {
     if (!entry) return;
 
     if (entry.type === 'SKILL' && entry.sourceRollId) {
-        if (confirm('Undo this skill advancement? This will remove the skill and refund XP.')) {
-            // 1. Remove the skill from the character
-            // We need to find the skill index. This is tricky since we only store name/rank.
-            // Assumption: The most recent skill with this name/rank is the one we want.
-            const char = characterList.value.find(c => c.id === entry.characterId);
-            if (char) {
-                // Find index of skill matching name and rank
-                // Search from end to find most recent
-                let skillIndex = -1;
-                
-                // Debug logging for reversion
-                console.log(`[Revert] Looking for skill: "${entry.newSkillName}" (Rank ${entry.rank}) on character "${char.name}"`);
+        // 1. Remove the skill from the character
+        // We need to find the skill index. This is tricky since we only store name/rank.
+        // Assumption: The most recent skill with this name/rank is the one we want.
+        const char = characterList.value.find(c => c.id === entry.characterId);
+        if (char) {
+            // Find index of skill matching name and rank
+            // Search from end to find most recent
+            let skillIndex = -1;
+            
+            // Debug logging for reversion
+            console.log(`[Revert] Looking for skill: "${entry.newSkillName}" (Rank ${entry.rank}) on character "${char.name}"`);
 
-                for (let i = char.skills.length - 1; i >= 0; i--) {
-                    const skill = char.skills[i];
-                    // Robust comparison: Case-insensitive name, loose equality for rank
-                    const nameMatch = (skill.name || "").trim().toLowerCase() === (entry.newSkillName || "").trim().toLowerCase();
-                    const rankMatch = skill.rank == entry.rank;
+            for (let i = char.skills.length - 1; i >= 0; i--) {
+                const skill = char.skills[i];
+                // Robust comparison: Case-insensitive name, loose equality for rank
+                const nameMatch = (skill.name || "").trim().toLowerCase() === (entry.newSkillName || "").trim().toLowerCase();
+                const rankMatch = skill.rank == entry.rank;
 
-                    if (nameMatch && rankMatch) {
-                        skillIndex = i;
-                        break;
-                    }
-                }
-
-                if (skillIndex !== -1) {
-                    removeSkill(entry.characterId, skillIndex);
-                } else {
-                    console.warn(`[Revert] Could not find skill to revert. Available skills:`, JSON.parse(JSON.stringify(char.skills)));
-                    OBR.notification.show("Skill not found (already deleted?), but XP was refunded.", "WARNING");
-                }
-
-                // 2. Refund XP
-                if (entry.cost > 0) {
-                    addXp(entry.characterId, entry.cost);
+                if (nameMatch && rankMatch) {
+                    skillIndex = i;
+                    break;
                 }
             }
 
-            // 3. Unmark the "advance" action on the source roll so it can be used again
-            unmarkLogAction(entry.sourceRollId, 'advance');
+            if (skillIndex !== -1) {
+                removeSkill(entry.characterId, skillIndex);
+            } else {
+                console.warn(`[Revert] Could not find skill to revert. Available skills:`, JSON.parse(JSON.stringify(char.skills)));
+                OBR.notification.show("Skill not found (already deleted?), but XP was refunded.", "WARNING");
+            }
 
-            // 4. Delete the log entry
-            deleteLogEntry(logId);
-            OBR.notification.show("Advancement reverted.");
+            // 2. Refund XP
+            if (entry.cost > 0) {
+                addXp(entry.characterId, entry.cost);
+            }
         }
+
+        // 3. Unmark the "advance" action on the source roll so it can be used again
+        unmarkLogAction(entry.sourceRollId, 'advance');
+
+        // 4. Delete the log entry
+        deleteLogEntry(logId);
+        OBR.notification.show("Advancement reverted.");
     } else {
         // Standard delete for other logs (Rolls, or Skills without source info)
-        if (confirm('Are you sure you want to delete this log entry? This cannot be undone.')) {
-            deleteLogEntry(logId);
-        }
+        deleteLogEntry(logId);
     }
 };
 
