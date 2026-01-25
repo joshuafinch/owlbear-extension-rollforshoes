@@ -118,8 +118,8 @@ const onDragEnd = () => {
                    class="character-drag-handle absolute left-0 top-0 bottom-4 w-6 -ml-2 z-10 flex items-center justify-center opacity-0 group-hover/card:opacity-100 cursor-grab active:cursor-grabbing transition-opacity"
                    title="Drag to reorder"
                  >
-                   <div class="h-8 w-4 bg-[var(--obr-text-disabled)]/20 hover:bg-[var(--obr-primary-main)]/50 rounded-r flex items-center justify-center backdrop-blur-sm">
-                     <span class="text-[8px] text-[var(--obr-text-primary)] font-black leading-none transform -rotate-90">::</span>
+                   <div class="h-8 w-4 bg-[var(--obr-bg-default)] border border-[var(--obr-text-disabled)] rounded-r flex items-center justify-center shadow-md hover:bg-[var(--obr-primary-main)] hover:border-[var(--obr-primary-main)] group-hover/handle:text-white transition-colors">
+                     <span class="text-[8px] text-[var(--obr-text-primary)] group-hover/handle:text-[var(--obr-primary-contrast)] font-black leading-none transform -rotate-90">::</span>
                    </div>
                  </div>
                </div>

@@ -119,22 +119,29 @@ const cancelSkillEdit = () => {
   >
     
     <!-- Header / Summary View -->
-    <div class="p-3 bg-gradient-to-r from-[var(--obr-bg-default)] to-[var(--obr-bg-paper)]">
-      <div class="flex items-center justify-between">
+    <div class="p-3 bg-gradient-to-r from-[var(--obr-bg-default)] to-[var(--obr-bg-paper)] transition-all duration-300" :class="isExpanded ? 'pb-4' : ''">
+      <div class="flex items-center justify-between gap-2">
         
         <!-- Name & Toggle -->
         <button 
-          class="flex items-center gap-3 cursor-pointer select-none group flex-1 text-left focus:outline-none focus:ring-2 focus:ring-[var(--obr-primary-main)] rounded p-1 -ml-1" 
+          class="flex items-center gap-3 cursor-pointer select-none group flex-1 min-w-0 text-left focus:outline-none rounded p-1 -ml-1 z-10" 
           @click="isExpanded = !isExpanded"
           :aria-expanded="isExpanded"
           :aria-label="isExpanded ? `Collapse character sheet for ${character.name}` : `Expand character sheet for ${character.name}`"
         >
-           <div class="w-10 h-10 shrink-0 flex items-center justify-center bg-[var(--obr-text-primary)] text-[var(--obr-bg-paper)] rounded-full font-black border-2 border-[var(--obr-bg-paper)] shadow-sm transform transition-transform group-hover:scale-110 overflow-hidden" aria-hidden="true">
+           <div 
+             class="shrink-0 flex items-center justify-center bg-[var(--obr-text-primary)] text-[var(--obr-bg-paper)] rounded-full font-black border-2 border-[var(--obr-bg-paper)] shadow-sm transform transition-all duration-300 origin-left" 
+             :class="isExpanded ? 'w-12 h-12 scale-125' : 'w-10 h-10 group-hover:scale-110'"
+             aria-hidden="true"
+            >
               <img v-if="character.imageUrl" :src="character.imageUrl" class="w-full h-full object-cover" :alt="character.name" />
-              <span v-else class="text-[var(--obr-bg-paper)] text-lg font-bold">{{ character.name.charAt(0).toUpperCase() }}</span>
+              <span v-else class="text-[var(--obr-bg-paper)] font-bold" :class="isExpanded ? 'text-2xl' : 'text-lg'">{{ character.name.charAt(0).toUpperCase() }}</span>
            </div>
-           <div class="flex flex-col min-w-0">
-              <h3 class="font-black text-xl text-[var(--obr-text-primary)] uppercase tracking-tight leading-none group-hover:text-[var(--obr-primary-main)] transition-colors truncate">{{ character.name }}</h3>
+           <div class="flex flex-col min-w-0 transition-all duration-300 origin-left" :class="{'translate-x-2 scale-110': isExpanded}">
+              <h3 
+                class="font-black text-[var(--obr-text-primary)] uppercase tracking-tight leading-none group-hover:text-[var(--obr-primary-main)] transition-colors duration-300 truncate pr-1"
+                :class="isExpanded ? 'text-xl' : 'text-xl'"
+              >{{ character.name }}</h3>
               <span class="text-xs font-bold text-[var(--obr-text-disabled)] uppercase tracking-wider flex items-center gap-1 group-hover:text-[var(--obr-text-secondary)] transition-colors">
                  <svg 
                    class="w-4 h-4 transform transition-transform duration-300 text-[var(--obr-text-primary)]"
@@ -152,47 +159,50 @@ const cancelSkillEdit = () => {
            </div>
         </button>
         
-        <!-- XP Counter -->
-        <div class="flex items-center bg-[var(--obr-bg-default)] rounded border-2 border-[var(--obr-text-primary)] px-1 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]" role="group" aria-label="Experience Points">
-          <div class="flex flex-col items-center mr-2 pl-1 border-r border-[var(--obr-text-disabled)] border-opacity-30 pr-2" aria-hidden="true">
+        <!-- Animated XP Widget -->
+        <div 
+            class="flex shrink-0 items-center bg-[var(--obr-bg-default)] rounded border-2 border-[var(--obr-text-primary)] shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] transition-all duration-300 overflow-hidden"
+            :class="isExpanded ? 'p-1 gap-1' : 'px-2 py-1 gap-0'"
+            role="group" 
+            aria-label="Experience Points"
+        >
+          <!-- Decrease Button -->
+          <button 
+              @click.stop="emit('addXp', character.id, -1)"
+              :disabled="character.xp <= 0"
+              class="flex items-center justify-center rounded bg-[var(--obr-bg-paper)] hover:bg-red-500 hover:text-white text-[var(--obr-text-primary)] font-bold transition-all duration-300 overflow-hidden"
+              :class="isExpanded ? 'w-8 h-8 opacity-100 mr-2 border border-[var(--obr-text-disabled)]' : 'w-0 h-8 opacity-0 border-0'"
+              aria-label="Decrease XP"
+              :tabindex="isExpanded ? 0 : -1"
+            >-</button>
+
+          <!-- Label -->
+          <div class="flex flex-col items-center mr-2 border-r border-[var(--obr-text-disabled)] border-opacity-30 pr-2" aria-hidden="true">
              <span class="text-[10px] font-black uppercase text-[var(--obr-text-secondary)] leading-none">XP</span>
           </div>
+          
+          <!-- Value -->
+          <span class="font-mono font-black text-xl text-[var(--obr-text-primary)]" aria-live="polite">{{ character.xp }}</span>
+
+          <!-- Increase Button -->
           <button 
-            @click="emit('addXp', character.id, -1)"
-            :disabled="character.xp <= 0"
-            class="w-8 h-8 flex items-center justify-center rounded hover:bg-red-500 hover:text-white text-[var(--obr-text-primary)] font-bold transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-inherit focus:outline-none focus:ring-2 focus:ring-red-500 text-lg"
-            aria-label="Decrease XP"
-          >-</button>
-          <span class="mx-1 font-mono font-black text-xl w-8 text-center text-[var(--obr-text-primary)]" aria-live="polite">{{ character.xp }}</span>
-          <button 
-            @click="emit('addXp', character.id, 1)"
-            class="w-8 h-8 flex items-center justify-center rounded hover:bg-green-500 hover:text-white text-[var(--obr-text-primary)] font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 text-lg"
-            aria-label="Increase XP"
-          >+</button>
+              @click.stop="emit('addXp', character.id, 1)"
+              class="flex items-center justify-center rounded bg-[var(--obr-bg-paper)] hover:bg-green-500 hover:text-white text-[var(--obr-text-primary)] font-bold transition-all duration-300 overflow-hidden"
+              :class="isExpanded ? 'w-8 h-8 opacity-100 ml-2 border border-[var(--obr-text-disabled)]' : 'w-0 h-8 opacity-0 border-0'"
+              aria-label="Increase XP"
+              :tabindex="isExpanded ? 0 : -1"
+            >+</button>
         </div>
       </div>
     </div>
-
-    <!-- Actions Bar (Collapsed State) -->
-     <div v-if="!isExpanded && canLink" class="px-3 pb-3 flex justify-end">
-        <button 
-            @click.stop="emit('link', character.id)"
-            class="text-xs font-bold uppercase bg-[var(--obr-primary-main)] text-[var(--obr-primary-contrast)] hover:opacity-90 px-3 py-1.5 rounded shadow-sm flex items-center gap-1"
-        >
-            <span>🔗 Link Token</span>
-        </button>
-     </div>
-
+    
     <!-- Expanded Details -->
-    <div v-if="isExpanded" class="border-t-2 border-[var(--obr-text-primary)] bg-[var(--obr-bg-default)] bg-opacity-50">
-      
-      <!-- Skills Section -->
-      <div class="p-3">
-        <div class="flex justify-between items-end mb-2">
-            <h4 class="text-sm font-black text-[var(--obr-text-primary)] uppercase tracking-widest border-b-2 border-[var(--obr-primary-main)] inline-block">Skills</h4>
-            
-            <!-- Link Action (Expanded) -->
-             <div v-if="canLink" class="flex gap-2">
+    <transition name="expand">
+      <div v-if="isExpanded" class="border-t-2 border-[var(--obr-text-primary)] bg-[var(--obr-bg-default)] bg-opacity-50 overflow-hidden">
+        
+       <!-- Actions Bar (Expanded State) -->
+       <div v-if="canLink" class="px-3 pt-3 flex justify-end">
+
                  <button 
                     v-if="isActive"
                     @click="emit('link', null)"
@@ -207,6 +217,11 @@ const cancelSkillEdit = () => {
                     <span>{{ isActive ? '🔄 Update Link' : '🔗 Link Token' }}</span>
                 </button>
              </div>
+      
+      <!-- Skills Section -->
+      <div class="p-3">
+        <div class="flex justify-between items-end mb-2">
+            <h4 class="text-sm font-black text-[var(--obr-text-primary)] uppercase tracking-widest border-b-2 border-[var(--obr-primary-main)] inline-block">Skills</h4>
         </div>
         
         <div class="space-y-2 mb-4">
@@ -343,8 +358,9 @@ const cancelSkillEdit = () => {
               <span v-else>Delete File</span>
            </button>
         </div>
-      </div>
+       </div>
     </div>
+    </transition>
   </div>
 </template>
 
@@ -365,5 +381,20 @@ const cancelSkillEdit = () => {
   transform: scale(1.02);
   z-index: 50;
   border: 1px solid var(--obr-primary-main);
+}
+
+.expand-enter-active,
+.expand-leave-active {
+  transition: all 0.3s ease-out;
+  transform-origin: top center;
+  max-height: 500px; /* Arbitrary large height */
+  opacity: 1;
+}
+
+.expand-enter-from,
+.expand-leave-to {
+  opacity: 0;
+  transform: translateY(-10px) scaleY(0.95);
+  max-height: 0;
 }
 </style>
