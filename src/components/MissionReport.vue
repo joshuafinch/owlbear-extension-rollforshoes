@@ -14,6 +14,7 @@ export interface RollResult {
 const props = defineProps<{
   result: RollResult;
   character?: Character;
+  isRetroactive?: boolean; // New prop to indicate if we are in retroactive mode
 }>();
 
 const emit = defineEmits<{
@@ -34,11 +35,11 @@ const successCount = computed(() => props.result.dice.filter(d => d === 6).lengt
 const nonSixesCount = computed(() => props.result.dice.length - successCount.value);
 const currentXp = computed(() => props.character?.xp || 0);
 
-// Can advance if: (Current XP + 1 from this failure) >= Cost (non-sixes)
+// Can advance if: (Current XP) >= Cost (non-sixes)
 const canAdvanceOnFail = computed(() => {
     if (isAllSixes.value) return false;
-    // XP available including the potential +1 from this failure
-    const availableXp = currentXp.value + 1;
+    // XP available - do NOT assume +1 from failure until failure is claimed
+    const availableXp = currentXp.value;
     return availableXp >= nonSixesCount.value;
 });
 
@@ -163,7 +164,12 @@ const confirmEvolution = () => {
             <div v-if="!isAllSixes" class="flex flex-col gap-2">
                 
               <!-- Option C: Succeeded (Mark as Success) -->
+              <!-- Only show if NOT retroactive (standard flow) OR if user specifically wants to mark success retroactively (which is rare but allowed if we want to change history). 
+                   But typically, "Advance!" button implies we want to advance. 
+                   If isRetroactive is true, we hide Success/Fail options because they are already handled in the main list view.
+              -->
               <button 
+                v-if="!isRetroactive"
                 @click="emit('succeeded', result.id)"
                 class="w-full bg-green-600 hover:bg-green-700 text-white border-2 border-black font-bold uppercase py-3 text-sm flex items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
               >
@@ -173,6 +179,7 @@ const confirmEvolution = () => {
               <div class="flex gap-2">
                 <!-- Option A: Standard Fail -->
                 <button 
+                    v-if="!isRetroactive"
                     @click="emit('takeXp', result.id)"
                     class="flex-1 bg-[var(--obr-bg-default)] hover:bg-gray-100 text-[var(--obr-text-primary)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-3 text-sm flex flex-col items-center justify-center gap-1 group shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
                 >
@@ -189,7 +196,7 @@ const confirmEvolution = () => {
                     <span class="text-lg leading-none">⚡</span> 
                     <span class="leading-none">ADVANCE (-{{ nonSixesCount }} XP)</span>
                 </button>
-                 <div v-else class="flex-1 flex items-center justify-center bg-gray-100 border-2 border-dashed border-gray-300 text-gray-400 font-bold text-xs uppercase text-center p-1 cursor-not-allowed select-none">
+                 <div v-else-if="!isRetroactive || (isRetroactive && !canAdvanceOnFail)" class="flex-1 flex items-center justify-center bg-gray-100 border-2 border-dashed border-gray-300 text-gray-400 font-bold text-xs uppercase text-center p-1 cursor-not-allowed select-none">
                      Need {{ nonSixesCount }} XP to advance
                  </div>
               </div>

@@ -279,6 +279,47 @@ export function useRollForShoes() {
       }
   };
 
+  const unmarkLogAction = async (logId: string, action: 'xp' | 'advance' | 'succeeded') => {
+    const logIndex = rollHistory.value.findIndex(l => l.type === 'ROLL' && l.id === logId);
+    if (logIndex === -1) return;
+
+    const entry = rollHistory.value[logIndex];
+    if (entry.type !== 'ROLL') return;
+
+    const newActions = (entry.actionsTaken || []).filter(a => a !== action);
+    
+    // Optimistic update
+    const newHistory = [...rollHistory.value];
+    newHistory[logIndex] = { ...entry, actionsTaken: newActions };
+    rollHistory.value = newHistory;
+
+    try {
+      const cleanHistory = JSON.parse(JSON.stringify(newHistory));
+      await OBR.room.setMetadata({
+          [LOGS_DATA_KEY]: cleanHistory
+      });
+    } catch (e) {
+        console.error('Failed to unmark log action', e);
+    }
+  };
+
+  const deleteLogEntry = async (logId: string) => {
+    // Optimistic
+    const newHistory = rollHistory.value.filter(entry => entry.id !== logId);
+    rollHistory.value = newHistory;
+
+    try {
+        const cleanHistory = JSON.parse(JSON.stringify(newHistory));
+        await OBR.room.setMetadata({
+            [LOGS_DATA_KEY]: cleanHistory
+        });
+        OBR.notification.show('Log entry deleted.', 'SUCCESS');
+    } catch (e) {
+        console.error('Failed to delete log entry', e);
+        OBR.notification.show('Failed to delete log entry.', 'ERROR');
+    }
+  };
+
   const clearLogs = async () => {
     // Optimistic
     rollHistory.value = [];
@@ -478,6 +519,8 @@ export function useRollForShoes() {
     rollHistory,
     addLogEntry,
     markLogAction,
+    unmarkLogAction,
+    deleteLogEntry,
     clearLogs,
     debugMode,
     activeCharacterId,

@@ -14,10 +14,13 @@ const {
   role,
   addXp, 
   addSkill, 
+  removeSkill,
   importData,
   rollDice,
   addLogEntry,
   markLogAction,
+  unmarkLogAction,
+  deleteLogEntry,
   clearLogs,
   debugMode,
   exportData
@@ -112,7 +115,8 @@ const handleRollEvolve = (logId: string, newSkillName: string, xpCost: number) =
             newSkillName: newSkillName,
             rank: currentRoll.value.rank + 1,
             timestamp: Date.now(),
-            cost: xpCost
+            cost: xpCost,
+            sourceRollId: logId // Link back to the roll
          });
          
          OBR.notification.show(`${currentRoll.value.characterName} acquired new skill: ${newSkillName} (Rank ${currentRoll.value.rank + 1})`, "SUCCESS");
@@ -130,6 +134,55 @@ const handleLogTakeXp = (logId: string, characterId: string) => {
         OBR.notification.show(`${char.name} gains 1 XP (Total: ${char.xp}).`);
     } else {
         OBR.notification.show(`Character gains 1 XP from archived failure.`);
+    }
+};
+
+const handleLogDelete = (logId: string) => {
+    // Check if it's a SKILL entry with revert info
+    const entry = rollHistory.value.find(e => e.id === logId);
+    if (!entry) return;
+
+    if (entry.type === 'SKILL' && entry.sourceRollId) {
+        if (confirm('Undo this skill advancement? This will remove the skill and refund XP.')) {
+            // 1. Remove the skill from the character
+            // We need to find the skill index. This is tricky since we only store name/rank.
+            // Assumption: The most recent skill with this name/rank is the one we want.
+            const char = characterList.value.find(c => c.id === entry.characterId);
+            if (char) {
+                // Find index of skill matching name and rank
+                // Search from end to find most recent
+                let skillIndex = -1;
+                for (let i = char.skills.length - 1; i >= 0; i--) {
+                    if (char.skills[i].name === entry.newSkillName && char.skills[i].rank === entry.rank) {
+                        skillIndex = i;
+                        break;
+                    }
+                }
+
+                if (skillIndex !== -1) {
+                    removeSkill(entry.characterId, skillIndex);
+                } else {
+                    console.warn("Could not find skill to revert on character");
+                }
+
+                // 2. Refund XP
+                if (entry.cost > 0) {
+                    addXp(entry.characterId, entry.cost);
+                }
+            }
+
+            // 3. Unmark the "advance" action on the source roll so it can be used again
+            unmarkLogAction(entry.sourceRollId, 'advance');
+
+            // 4. Delete the log entry
+            deleteLogEntry(logId);
+            OBR.notification.show("Advancement reverted.");
+        }
+    } else {
+        // Standard delete for other logs (Rolls, or Skills without source info)
+        if (confirm('Are you sure you want to delete this log entry? This cannot be undone.')) {
+            deleteLogEntry(logId);
+        }
     }
 };
 
@@ -158,7 +211,8 @@ const handleLogEvolve = (logId: string, characterId: string, rank: number, newSk
         newSkillName: newSkillName,
         rank: rank + 1,
         timestamp: Date.now(),
-        cost: xpCost
+        cost: xpCost,
+        sourceRollId: logId // Link back to the roll that spawned this
     });
 
     OBR.notification.show(`Character acquired new skill: ${newSkillName} (Rank ${rank + 1})`, "SUCCESS");
@@ -238,6 +292,7 @@ const handleLogSucceeded = (logId: string) => {
             @takeXp="handleLogTakeXp"
             @evolve="handleLogEvolve"
             @succeeded="handleLogSucceeded"
+            @deleteLog="handleLogDelete"
           />
       </div>
 

@@ -51,6 +51,7 @@ export interface SkillLogEntry {
   rank: number;
   timestamp: number;
   cost: number;
+  sourceRollId?: string;
 }
 
 export type LogEntry = RollLogEntry | SkillLogEntry;

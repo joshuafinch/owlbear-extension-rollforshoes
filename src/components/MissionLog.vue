@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import type { LogEntry, RollLogEntry, Character } from '../types';
 import MissionReport from './MissionReport.vue';
 
@@ -8,10 +8,27 @@ const props = defineProps<{
   characters: Character[];
 }>();
 
+const latestRollIds = computed(() => {
+    const ids = new Set<string>();
+    const seenChars = new Set<string>();
+    
+    // History is presumably sorted newest first
+    for (const entry of props.history) {
+        if (entry.type === 'ROLL') {
+            if (!seenChars.has(entry.characterId)) {
+                ids.add(entry.id);
+                seenChars.add(entry.characterId);
+            }
+        }
+    }
+    return ids;
+});
+
 const emit = defineEmits<{
     (e: 'takeXp', logId: string, characterId: string): void;
     (e: 'evolve', logId: string, characterId: string, rank: number, newSkillName: string, xpCost: number): void;
     (e: 'succeeded', logId: string): void;
+    (e: 'deleteLog', logId: string): void;
 }>();
 
 const formatTime = (timestamp: number) => {
@@ -43,8 +60,11 @@ const canAffordAdvance = (entry: RollLogEntry) => {
     const successes = countSuccesses(entry.dice);
     const nonSixes = entry.dice.length - successes;
     
-    // XP + 1 (from this failure) >= Cost
-    return (char.xp + 1) >= nonSixes;
+    // XP >= Cost (Do NOT assume +1, user must claim Fail first to get the XP)
+    // However, for retroactive actions in the log, the entry might NOT have 'xp' action taken yet.
+    // If we remove +1 here, users with 0 XP can NEVER advance from log unless they claim XP first.
+    // Which is the desired behavior for strict accounting.
+    return char.xp >= nonSixes;
 };
 </script>
 
@@ -63,6 +83,7 @@ const canAffordAdvance = (entry: RollLogEntry) => {
             dice: activeEvolutionEntry.dice
         }"
         :character="characters.find(c => c.id === activeEvolutionEntry?.characterId)"
+        :isRetroactive="true"
         @close="activeEvolutionEntry = null"
         @takeXp="(id) => { emit('takeXp', id, activeEvolutionEntry!.characterId); activeEvolutionEntry = null; }"
         @confirmEvolve="handleRetroEvolve"
@@ -118,32 +139,12 @@ const canAffordAdvance = (entry: RollLogEntry) => {
                     <!-- Result Tag -->
                     <div class="mt-2 flex justify-between items-center">
                         <!-- Retroactive Actions -->
-                        <div v-if="!entry.actionsTaken?.length" class="flex gap-2">
-                             <template v-if="!isCritical(entry.dice)">
-                                 <button 
-                                    @click="emit('takeXp', entry.id, entry.characterId)"
-                                    class="text-[10px] bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-1 font-bold uppercase text-red-600"
-                                    title="Claim 1 XP for Failure"
-                                >
-                                    FAIL (+1 XP)
-                                </button>
-                                <button 
-                                    v-if="canAffordAdvance(entry)"
-                                    @click="startRetroEvolution(entry)"
-                                    class="text-[10px] bg-[var(--obr-primary-main)] text-white hover:opacity-90 border border-black px-2 py-1 font-bold uppercase animate-pulse"
-                                    title="Spend XP to Advance"
-                                >
-                                    Advance!
-                                </button>
-                                 <button 
-                                    @click="emit('succeeded', entry.id)"
-                                    class="text-[10px] bg-green-50 hover:bg-green-100 border border-green-200 px-2 py-1 font-bold uppercase text-green-600"
-                                    title="Mark as Succeeded"
-                                >
-                                    SUCCESS
-                                </button>
-                             </template>
-                             <template v-else>
+                        <div 
+                            v-if="!entry.actionsTaken?.includes('advance') && !entry.actionsTaken?.includes('succeeded')" 
+                            class="flex gap-2 items-center"
+                        >
+                             <!-- CRITICAL CASE -->
+                             <template v-if="isCritical(entry.dice)">
                                 <button 
                                     @click="startRetroEvolution(entry)"
                                     class="text-[10px] bg-[#ff0055] text-white hover:bg-[#d40045] border border-black px-2 py-1 font-bold uppercase animate-pulse"
@@ -151,14 +152,58 @@ const canAffordAdvance = (entry: RollLogEntry) => {
                                     Evolve!
                                 </button>
                              </template>
+
+                             <!-- STANDARD CASE -->
+                             <template v-else>
+                                 <!-- Fail (+1 XP) -->
+                                 <button 
+                                    v-if="!entry.actionsTaken?.includes('xp')"
+                                    @click="emit('takeXp', entry.id, entry.characterId)"
+                                    class="text-[10px] bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-1 font-bold uppercase text-red-600"
+                                    title="Claim 1 XP for Failure"
+                                >
+                                    FAIL (+1 XP)
+                                </button>
+                                <span v-else class="text-[10px] text-gray-400 font-bold italic uppercase mr-2">XP Claimed</span>
+
+                                <!-- Advance -->
+                                <button 
+                                    v-if="canAffordAdvance(entry) && latestRollIds.has(entry.id)"
+                                    @click="startRetroEvolution(entry)"
+                                    class="text-[10px] bg-[var(--obr-primary-main)] text-white hover:opacity-90 border border-black px-2 py-1 font-bold uppercase animate-pulse"
+                                    title="Spend XP to Advance"
+                                >
+                                    Advance!
+                                </button>
+                                <!-- OLD/HISTORICAL ROLL - Advance Blocked -->
+                                <button 
+                                    v-else-if="canAffordAdvance(entry) && !latestRollIds.has(entry.id)"
+                                    class="text-[10px] bg-gray-300 text-gray-500 border border-gray-400 px-2 py-1 font-bold uppercase cursor-not-allowed opacity-50"
+                                    title="Must advance on latest roll"
+                                    disabled
+                                >
+                                    Advance
+                                </button>
+
+                                 <!-- Success (Only if XP not taken) -->
+                                 <button 
+                                    v-if="!entry.actionsTaken?.includes('xp')"
+                                    @click="emit('succeeded', entry.id)"
+                                    class="text-[10px] bg-green-50 hover:bg-green-100 border border-green-200 px-2 py-1 font-bold uppercase text-green-600"
+                                    title="Mark as Succeeded"
+                                >
+                                    SUCCESS
+                                </button>
+                             </template>
                         </div>
+                        
+                        <!-- Terminal State Status -->
                         <div v-else class="text-[10px] text-gray-400 uppercase font-bold italic">
-                            <span v-if="entry.actionsTaken.includes('advance')">Evolved</span>
-                            <span v-else-if="entry.actionsTaken.includes('xp')">XP Claimed</span>
-                            <span v-else-if="entry.actionsTaken.includes('succeeded')">Succeeded</span>
+                            <span v-if="entry.actionsTaken?.includes('advance')">Evolved</span>
+                            <span v-else-if="entry.actionsTaken?.includes('succeeded')">Succeeded</span>
                         </div>
 
-                        <div class="flex justify-end ml-auto">
+                        <div class="flex justify-end ml-auto items-center gap-2">
                             <span v-if="isCritical(entry.dice)" class="text-[#ff0055] font-black text-xs uppercase border-2 border-[#ff0055] px-1 transform -rotate-2">
                                 ★ CRITICAL ★
                             </span>
@@ -168,6 +213,15 @@ const canAffordAdvance = (entry: RollLogEntry) => {
                             <span v-else class="text-gray-400 font-bold text-xs uppercase">
                                 Standard
                             </span>
+                            
+                            <!-- Delete Button (Only on Hover) -->
+                            <button 
+                                @click="emit('deleteLog', entry.id)"
+                                class="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-600 font-bold ml-2 px-1"
+                                title="Delete Log Entry"
+                            >
+                                ✕
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -176,7 +230,7 @@ const canAffordAdvance = (entry: RollLogEntry) => {
             <!-- SKILL ENTRY -->
             <div 
                 v-else-if="entry.type === 'SKILL'"
-                class="relative bg-[var(--obr-bg-default)] p-4 shadow-md border-l-8 border-[var(--obr-primary-main)] font-mono text-sm opacity-90 my-2 rounded-r-lg"
+                class="relative bg-[var(--obr-bg-default)] p-4 shadow-md border-l-8 border-[var(--obr-primary-main)] font-mono text-sm opacity-90 my-2 rounded-r-lg group"
             >
                  <!-- Timestamp Badge -->
                  <div class="absolute -right-2 -top-2 bg-[var(--obr-primary-main)] text-white px-3 py-1 text-[10px] font-bold rounded-full shadow-sm">
@@ -202,6 +256,17 @@ const canAffordAdvance = (entry: RollLogEntry) => {
                         <span>{{ entry.characterName }}</span>
                         <span v-if="entry.cost > 0">-{{ entry.cost }} XP</span>
                         <span v-else class="text-[var(--obr-primary-main)]">Free (Crit)</span>
+                    </div>
+
+                    <!-- Delete Button (Only on Hover) -->
+                    <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <button 
+                            @click="emit('deleteLog', entry.id)"
+                            class="text-gray-400 hover:text-red-600 font-bold px-1 text-xs"
+                            title="Delete Log Entry"
+                        >
+                            ✕
+                        </button>
                     </div>
                 </div>
             </div>
