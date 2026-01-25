@@ -35,7 +35,7 @@ const startEvolution = () => {
 
 const confirmEvolution = () => {
   if (newSkillName.value.trim()) {
-    emit('confirmEvolve', newSkillName.value.trim());
+    emit('confirmEvolve', newSkillName.value.trim().toUpperCase());
   }
 };
 </script>
@@ -53,7 +53,7 @@ const confirmEvolution = () => {
           Mission Report
         </h2>
         <div class="inline-block bg-black text-white text-[10px] font-mono px-2 py-0.5 mb-6 uppercase tracking-widest">
-           {{ result.characterName }} // {{ result.skillName }} {{ result.rank }}
+           {{ result.characterName }} // {{ result.skillName.toUpperCase() }} {{ result.rank }}
         </div>
 
         <!-- Dice Container (Hidden during evolution to save space/focus) -->

@@ -33,7 +33,7 @@ const isGm = computed(() => props.role === 'GM');
 const handleAddSkill = () => {
   if (!newSkillName.value.trim()) return;
   emit('addSkill', props.character.id, {
-    name: newSkillName.value,
+    name: newSkillName.value.toUpperCase(),
     rank: newSkillRank.value
   });
   newSkillName.value = '';
@@ -55,7 +55,7 @@ const startEditingSkill = (index: number, skill: Skill) => {
 const saveSkillEdit = (index: number) => {
     if (!editSkillName.value.trim()) return;
     emit('updateSkill', props.character.id, index, {
-        name: editSkillName.value,
+        name: editSkillName.value.toUpperCase(),
         rank: editSkillRank.value
     });
     editingSkillIndex.value = null;
@@ -173,7 +173,7 @@ const cancelSkillEdit = () => {
                 </button>
 
                 <div class="flex-1 z-10 cursor-pointer" @click="startEditingSkill(index, skill)" title="Click to edit">
-                     <span class="font-bold text-[var(--obr-text-primary)] block leading-tight">{{ skill.name }}</span>
+                     <span class="font-bold text-[var(--obr-text-primary)] block leading-tight uppercase">{{ skill.name }}</span>
                 </div>
                 
                 <div class="flex items-center gap-2 z-10 ml-2">
@@ -202,7 +202,7 @@ const cancelSkillEdit = () => {
                     <input 
                       v-model="editSkillName"
                       type="text"
-                      class="flex-1 bg-transparent text-[var(--obr-text-primary)] font-bold px-1 py-1 text-sm focus:outline-none"
+                      class="flex-1 bg-transparent text-[var(--obr-text-primary)] font-bold px-1 py-1 text-sm focus:outline-none uppercase"
                       @keyup.enter="saveSkillEdit(index)"
                       @keyup.esc="cancelSkillEdit"
                       ref="editInput"

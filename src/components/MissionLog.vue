@@ -45,7 +45,7 @@ const countSuccesses = (dice: number[]) => dice.filter(d => d === 6).length;
             <div class="flex flex-col gap-1">
                 <div class="flex justify-between items-baseline border-b border-dashed border-gray-300 pb-1 mb-1">
                     <span class="font-black uppercase text-black">{{ entry.characterName }}</span>
-                    <span class="text-[10px] text-gray-500">{{ entry.skillName }} ({{ entry.rank }})</span>
+                    <span class="text-[10px] text-gray-500 uppercase">{{ entry.skillName }} ({{ entry.rank }})</span>
                 </div>
                 
                 <div class="flex items-center gap-2 mt-1">
