@@ -152,8 +152,17 @@ const handleLogDelete = (logId: string) => {
                 // Find index of skill matching name and rank
                 // Search from end to find most recent
                 let skillIndex = -1;
+                
+                // Debug logging for reversion
+                console.log(`[Revert] Looking for skill: "${entry.newSkillName}" (Rank ${entry.rank}) on character "${char.name}"`);
+
                 for (let i = char.skills.length - 1; i >= 0; i--) {
-                    if (char.skills[i].name === entry.newSkillName && char.skills[i].rank === entry.rank) {
+                    const skill = char.skills[i];
+                    // Robust comparison: Case-insensitive name, loose equality for rank
+                    const nameMatch = (skill.name || "").trim().toLowerCase() === (entry.newSkillName || "").trim().toLowerCase();
+                    const rankMatch = skill.rank == entry.rank;
+
+                    if (nameMatch && rankMatch) {
                         skillIndex = i;
                         break;
                     }
@@ -162,7 +171,8 @@ const handleLogDelete = (logId: string) => {
                 if (skillIndex !== -1) {
                     removeSkill(entry.characterId, skillIndex);
                 } else {
-                    console.warn("Could not find skill to revert on character");
+                    console.warn(`[Revert] Could not find skill to revert. Available skills:`, JSON.parse(JSON.stringify(char.skills)));
+                    OBR.notification.show("Skill not found (already deleted?), but XP was refunded.", "WARNING");
                 }
 
                 // 2. Refund XP
