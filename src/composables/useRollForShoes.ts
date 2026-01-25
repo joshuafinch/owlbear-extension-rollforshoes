@@ -19,6 +19,22 @@ export function useRollForShoes() {
 
   const activeCharacterId = ref<string | null>(null);
 
+  // --- Lock Tracking ---
+  // We use timestamp-based locks to prevent "stale echoes" from the server 
+  // from overwriting our optimistic updates.
+  // When we write to the server, we ignore incoming updates for a short duration.
+  const characterLocks = ref<Map<string, number>>(new Map());
+  const logLock = ref<number>(0);
+  const LOCK_DURATION = 2000; // ms
+
+  const setCharLock = (id: string) => {
+      characterLocks.value.set(id, Date.now() + LOCK_DURATION);
+  };
+  
+  const setLogLock = () => {
+      logLock.value = Date.now() + LOCK_DURATION;
+  };
+
   // Computed helper to get list as array
   const characterList = computed({
     get: () => {
@@ -84,6 +100,7 @@ export function useRollForShoes() {
 
     // Optimistic update
     characters.value[id] = newChar;
+    setCharLock(id);
 
     try {
       const roomMetadata = await OBR.room.getMetadata();
@@ -104,24 +121,29 @@ export function useRollForShoes() {
   const updateCharacter = async (id: string, updates: Partial<Character>) => {
     if (!characters.value[id]) return;
     
+    // console.log(`[RollForShoes] updateCharacter Start: ${id}`, updates);
+
     // Optimistic
     const updatedChar = { ...characters.value[id], ...updates };
     characters.value[id] = updatedChar;
+    setCharLock(id);
 
     try {
-      // Create a clean object for storage, avoiding potential Proxy/Ref issues
-      // DataCloneError often happens when Vue reactive objects are passed directly to postMessage
+      // Create a clean object for storage
       const cleanData = JSON.parse(JSON.stringify(updatedChar));
       
+      // console.log(`[RollForShoes] updateCharacter: Fetching Metadata...`);
       const roomMetadata = await OBR.room.getMetadata();
       const currentData = (roomMetadata[ROOM_DATA_KEY] as CharacterData) || {};
       
+      // console.log(`[RollForShoes] updateCharacter: Setting Metadata...`);
       await OBR.room.setMetadata({
         [ROOM_DATA_KEY]: {
           ...currentData,
           [id]: cleanData
         }
       });
+      // console.log(`[RollForShoes] updateCharacter: Write Complete.`);
     } catch (e) {
       console.error('Failed to update character', e);
     }
@@ -130,6 +152,7 @@ export function useRollForShoes() {
     const deleteCharacter = async (id: string) => {
     // Optimistic update
     delete characters.value[id];
+    setCharLock(id);
 
     try {
       const roomMetadata = await OBR.room.getMetadata();
@@ -151,12 +174,20 @@ export function useRollForShoes() {
     const char = characters.value[id];
     if (!char) return Promise.resolve();
     const newXp = Math.max(0, char.xp + amount);
+    // XP change also affects logs if triggered from a log action, 
+    // so we should probably lock logs too just in case of racing events?
+    // Actually, no, addXp calls updateCharacter which locks the character.
+    // The issue is that the SERVER event for character update might contain old logs.
+    // So yes, character updates should arguably also lock logs to be safe?
+    // Let's enable log locking on character updates too.
+    setLogLock(); 
     return updateCharacter(id, { xp: newXp });
   };
 
   const addSkill = (id: string, skill: Skill) => {
     const char = characters.value[id];
     if (!char) return Promise.resolve();
+    setLogLock();
     return updateCharacter(id, { skills: [...char.skills, skill] });
   };
   
@@ -240,28 +271,44 @@ export function useRollForShoes() {
   };
 
   const addLogEntry = async (entry: LogEntry) => {
+    // console.log(`[RollForShoes] addLogEntry Start:`, entry.type);
     // Optimistic
     const newHistory = [entry, ...rollHistory.value].slice(0, 50); // Keep last 50
     rollHistory.value = newHistory;
+    
+    // Track that we are messing with the log list
+    setLogLock();
 
     try {
        // Strip reactivity to prevent DataCloneError
        const cleanHistory = JSON.parse(JSON.stringify(newHistory));
-       await OBR.room.setMetadata({
+       // console.log(`[RollForShoes] addLogEntry: Writing to Room Metadata...`);
+       return OBR.room.setMetadata({
         [LOGS_DATA_KEY]: cleanHistory
       });
     } catch (e) {
         console.error('Failed to add log entry', e);
+        return Promise.resolve();
     }
   };
 
   const markLogAction = async (logId: string, action: 'xp' | 'advance' | 'succeeded') => {
+      // console.log(`[RollForShoes] markLogAction Start: ${logId} -> ${action}`);
       const logIndex = rollHistory.value.findIndex(l => l.type === 'ROLL' && l.id === logId);
-      if (logIndex === -1) return;
+      if (logIndex === -1) {
+          console.warn(`[RollForShoes] markLogAction: Log ${logId} not found locally.`);
+          return Promise.resolve();
+      }
 
       const entry = rollHistory.value[logIndex];
       // Type guard already happened in findIndex, but TS might need help
-      if (entry.type !== 'ROLL') return;
+      if (entry.type !== 'ROLL') return Promise.resolve();
+
+      // Avoid duplicates
+      if (entry.actionsTaken?.includes(action)) {
+          // console.log(`[RollForShoes] markLogAction: Action ${action} already taken.`);
+          return Promise.resolve();
+      }
 
       const newActions = [...(entry.actionsTaken || []), action];
       
@@ -269,23 +316,27 @@ export function useRollForShoes() {
       const newHistory = [...rollHistory.value];
       newHistory[logIndex] = { ...entry, actionsTaken: newActions };
       rollHistory.value = newHistory;
+      
+      setLogLock();
 
       try {
         const cleanHistory = JSON.parse(JSON.stringify(newHistory));
-        await OBR.room.setMetadata({
+        // console.log(`[RollForShoes] markLogAction: Writing to Room Metadata...`);
+        return OBR.room.setMetadata({
             [LOGS_DATA_KEY]: cleanHistory
         });
       } catch (e) {
           console.error('Failed to mark log action', e);
+          return Promise.resolve();
       }
   };
 
   const unmarkLogAction = async (logId: string, action: 'xp' | 'advance' | 'succeeded') => {
     const logIndex = rollHistory.value.findIndex(l => l.type === 'ROLL' && l.id === logId);
-    if (logIndex === -1) return;
+    if (logIndex === -1) return Promise.resolve();
 
     const entry = rollHistory.value[logIndex];
-    if (entry.type !== 'ROLL') return;
+    if (entry.type !== 'ROLL') return Promise.resolve();
 
     const newActions = (entry.actionsTaken || []).filter(a => a !== action);
     
@@ -294,13 +345,16 @@ export function useRollForShoes() {
     newHistory[logIndex] = { ...entry, actionsTaken: newActions };
     rollHistory.value = newHistory;
 
+    setLogLock();
+
     try {
       const cleanHistory = JSON.parse(JSON.stringify(newHistory));
-      await OBR.room.setMetadata({
+      return OBR.room.setMetadata({
           [LOGS_DATA_KEY]: cleanHistory
       });
     } catch (e) {
         console.error('Failed to unmark log action', e);
+        return Promise.resolve();
     }
   };
 
@@ -309,15 +363,19 @@ export function useRollForShoes() {
     const newHistory = rollHistory.value.filter(entry => entry.id !== logId);
     rollHistory.value = newHistory;
 
+    setLogLock();
+
     try {
         const cleanHistory = JSON.parse(JSON.stringify(newHistory));
         await OBR.room.setMetadata({
             [LOGS_DATA_KEY]: cleanHistory
         });
         OBR.notification.show('Log entry deleted.', 'SUCCESS');
+        return Promise.resolve();
     } catch (e) {
         console.error('Failed to delete log entry', e);
         OBR.notification.show('Failed to delete log entry.', 'ERROR');
+        return Promise.resolve();
     }
   };
 
@@ -325,6 +383,8 @@ export function useRollForShoes() {
     // Optimistic
     rollHistory.value = [];
     
+    setLogLock();
+
     try {
         await OBR.room.setMetadata({
             [LOGS_DATA_KEY]: []
@@ -441,6 +501,7 @@ export function useRollForShoes() {
 
       // Listen for room data changes
       unsubscribeRoom.value = OBR.room.onMetadataChange((newMetadata) => {
+        // console.log("[RollForShoes] onMetadataChange fired");
         const newData = newMetadata[ROOM_DATA_KEY] as CharacterData;
         const newLogs = newMetadata[LOGS_DATA_KEY] as any[];
         
@@ -448,16 +509,57 @@ export function useRollForShoes() {
         // We must handle the case where newData is undefined (if the entire key was removed)
         // or just update our local state to match whatever the room has.
         if (newData) {
-          characters.value = newData;
+           // Merging strategy for characters:
+           // If we have pending updates for a specific character ID, IGNORE incoming data for that ID
+           // to prevent overwriting our optimistic state with stale server data.
+           const currentIds = new Set(Object.keys(characters.value));
+           const newIds = new Set(Object.keys(newData));
+           const now = Date.now();
+           
+           // 1. Update/Add characters that aren't currently being modified by us
+           for (const [id, char] of Object.entries(newData)) {
+               const lockTime = characterLocks.value.get(id);
+               const isLocked = lockTime && lockTime > now;
+
+               if (!isLocked) {
+                   characters.value[id] = char;
+               } else {
+                   // console.log(`[RollForShoes] Ignoring incoming update for pending character: ${id}`);
+               }
+           }
+
+           // 2. Handle deletions (if ID is in current but not in new, and not pending)
+           for (const id of currentIds) {
+               const lockTime = characterLocks.value.get(id);
+               const isLocked = lockTime && lockTime > now;
+
+               if (!newIds.has(id) && !isLocked) {
+                   delete characters.value[id];
+               }
+           }
         } else {
-            // If the key is gone, clear local data or handle gracefully
-            // However, in our delete logic we set specific keys to undefined,
-            // so newData should still exist but contain fewer keys.
-            // If the entire ROOM_DATA_KEY is somehow wiped, we should clear our list.
-             characters.value = {};
+             // If the key is gone, clear local data or handle gracefully
+             // However, in our delete logic we set specific keys to undefined,
+             // so newData should still exist but contain fewer keys.
+             // If the entire ROOM_DATA_KEY is somehow wiped, we should clear our list
+             // UNLESS we are in the middle of creating something (unlikely to wipe all)
+             if (characterLocks.value.size === 0) {
+                 characters.value = {};
+             }
         }
 
         if (newLogs) {
+             const now = Date.now();
+             const isLocked = logLock.value > now;
+
+             // If we have any pending log operations, we skip the update entirely for now.
+             // This is a coarser lock than characters because logs are a single array.
+             if (isLocked) {
+                 // console.log(`[RollForShoes] Skipping Log sync due to pending op(s)`);
+                 return;
+             }
+            
+            // console.log("[RollForShoes] Syncing Logs from Server");
             rollHistory.value = newLogs.map(log => {
               if (!log.type) {
                   return { ...log, type: 'ROLL' } as RollLogEntry;
