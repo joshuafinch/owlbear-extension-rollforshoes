@@ -78,7 +78,8 @@ const cancelEdit = () => {
             <button 
                v-if="!isManageMode"
                @click.stop="emit('roll', skill)"
-               class="h-9 px-3 flex items-center gap-1.5 bg-[var(--obr-text-primary)] hover:bg-[var(--obr-primary-main)] text-[var(--obr-text-inverse)] rounded shadow-sm hover:shadow-md active:translate-y-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-[var(--obr-primary-main)]"
+               class="h-9 px-3 flex items-center gap-1.5 bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)] rounded shadow-sm hover:shadow-md active:translate-y-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-[var(--obr-primary-main)] skill-roll-btn"
+               :style="{ '--btn-hover-bg': color || 'var(--obr-primary-main)' }"
                :aria-label="`Roll ${skill.rank} dice for ${skill.name}`"
                title="Roll Dice"
             >
@@ -147,5 +148,8 @@ const cancelEdit = () => {
 <style scoped>
 .skill-item-root:hover {
     border-color: var(--hover-border-color, var(--obr-border-base));
+}
+.skill-roll-btn:hover {
+    background-color: var(--btn-hover-bg);
 }
 </style>

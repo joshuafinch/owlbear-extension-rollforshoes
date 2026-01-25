@@ -160,7 +160,7 @@ const handleXpChange = (amount: number) => {
     :class="isActive ? 'ring-2 ring-opacity-50' : ''"
     :style="{ 
         '--card-accent': cardColor,
-        'borderColor': isActive ? cardColor : 'var(--obr-border-base)',
+        'borderColor': isActive ? cardColor : `${cardColor}66`,
         '--tw-ring-color': cardColor
     }"
   >
@@ -171,7 +171,10 @@ const handleXpChange = (amount: number) => {
     ></div>
 
     <!-- Header / Summary View -->
-    <div class="p-0 bg-gradient-to-r from-[var(--obr-surface-base)] to-[var(--obr-surface-card)] transition-all duration-300 relative z-20">
+    <div 
+        class="p-0 transition-all duration-300 relative z-20"
+        :style="{ background: `linear-gradient(to right, ${cardColor}33, var(--obr-surface-card))` }"
+    >
       <div class="flex items-center justify-between gap-2">
         
         <!-- Name & Toggle -->
@@ -229,8 +232,9 @@ const handleXpChange = (amount: number) => {
         
           <!-- Animated XP Widget -->
             <div 
-             class="flex shrink-0 items-center bg-[var(--obr-surface-base)] rounded border-2 border-[var(--obr-border-base)] shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] transition-all duration-300 overflow-hidden relative group/xp mr-2"
+             class="flex shrink-0 items-center bg-[var(--obr-surface-base)] rounded border-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] transition-all duration-300 overflow-hidden relative group/xp mr-2"
              :class="[isExpanded ? 'p-1 gap-1' : 'px-2 py-1 gap-0', isXpAnimating ? 'ring-2 ring-[var(--obr-status-warning)] border-[var(--obr-status-warning)] scale-110 shadow-[0_0_15px_rgba(250,204,21,0.5)]' : '']"
+             :style="{ borderColor: isXpAnimating ? '' : `${cardColor}66` }"
              role="group" 
              aria-label="Experience Points"
         >
@@ -280,7 +284,7 @@ const handleXpChange = (amount: number) => {
     
     <!-- Expanded Details -->
     <transition name="expand">
-      <div v-if="isExpanded" class="border-t-2 border-[var(--obr-border-base)] bg-[var(--obr-surface-base)] bg-opacity-90 overflow-hidden relative">
+      <div v-if="isExpanded" class="border-t-2 bg-[var(--obr-surface-base)] bg-opacity-90 overflow-hidden relative" :style="{ borderColor: cardColor }">
         
         <!-- Background Artwork -->
         <div v-if="character.imageUrl" class="absolute inset-0 z-0 pointer-events-none flex items-end justify-center opacity-10 grayscale">

@@ -4,7 +4,7 @@
   /* --- BASE VARIABLES (Light Mode Default) --- */
   
   /* Backgrounds */
-  --obr-bg-default: #fefce8;
+  --obr-bg-default: #f3f4f6; /* Gray-100 (Cool Neutral) */
   
   /* Text */
   --obr-text-primary: rgba(0, 0, 0, 0.87);
