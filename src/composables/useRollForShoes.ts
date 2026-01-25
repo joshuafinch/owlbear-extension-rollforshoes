@@ -128,7 +128,13 @@ export function useRollForShoes() {
     const newSkills = [...char.skills];
     newSkills.splice(skillIndex, 1);
     updateCharacter(id, { skills: newSkills });
-  }
+  };
+
+  const reorderSkills = (id: string, newSkills: Skill[]) => {
+    const char = characters.value[id];
+    if (!char) return;
+    updateCharacter(id, { skills: newSkills });
+  };
 
   const linkSelectionToCharacter = async (characterId: string) => {
     if (selectedItems.value.length === 0) return;
@@ -295,6 +301,7 @@ export function useRollForShoes() {
     addSkill,
     updateSkill,
     removeSkill,
+    reorderSkills,
     linkSelectionToCharacter,
     exportData,
     importData,

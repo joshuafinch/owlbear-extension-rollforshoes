@@ -18,6 +18,7 @@ const {
   addSkill, 
   updateSkill,
   removeSkill,
+  reorderSkills,
   linkSelectionToCharacter, 
   deleteCharacter,
   exportData,
@@ -215,6 +216,7 @@ const handleRollEvolve = (newSkillName: string) => {
             @addSkill="addSkill"
             @updateSkill="updateSkill"
             @removeSkill="removeSkill"
+            @reorderSkills="reorderSkills"
             @link="linkSelectionToCharacter"
             @delete="deleteCharacter"
             @roll="handleRoll"

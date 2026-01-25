@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import draggable from 'vuedraggable';
 import type { Character, Skill } from '../types';
 
 const props = defineProps<{
@@ -13,6 +14,7 @@ const emit = defineEmits<{
   (e: 'addSkill', id: string, skill: Skill): void;
   (e: 'updateSkill', id: string, index: number, skill: Partial<Skill>): void;
   (e: 'removeSkill', id: string, index: number): void;
+  (e: 'reorderSkills', id: string, skills: Skill[]): void;
   (e: 'link', id: string): void;
   (e: 'delete', id: string): void;
   (e: 'roll', id: string, skill: Skill): void;
@@ -29,6 +31,16 @@ const editSkillRank = ref(1);
 
 const canLink = computed(() => props.selectedTokenIds.length > 0);
 const isGm = computed(() => props.role === 'GM');
+
+// Computed property for vuedraggable to handle skills array
+const draggableSkills = computed({
+  get: () => props.character.skills,
+  set: (value: Skill[]) => {
+     // Wait for drag to complete? vuedraggable handles this automatically usually.
+     // However, with computed properties, it's best to emit directly.
+     emit('reorderSkills', props.character.id, value);
+  }
+});
 
 const handleAddSkill = () => {
   if (!newSkillName.value.trim()) return;
@@ -152,79 +164,98 @@ const cancelSkillEdit = () => {
         </div>
         
         <div class="space-y-2 mb-4">
-          <div 
-            v-for="(skill, index) in character.skills" 
-            :key="index"
-            class="relative flex items-center justify-between bg-[var(--obr-bg-paper)] p-2 rounded border border-[var(--obr-text-disabled)] border-opacity-30 group hover:border-[var(--obr-primary-main)] hover:shadow-md transition-all"
+          <draggable 
+            v-model="draggableSkills" 
+            item-key="name" 
+            handle=".drag-handle"
+            ghost-class="sortable-ghost"
+            drag-class="sortable-drag"
+            :animation="200"
+            :force-fallback="true"
+            :fallback-tolerance="3"
+            :fallback-on-body="true"
           >
-            <!-- Background rank watermark -->
-            <div class="absolute right-10 top-1/2 -translate-y-1/2 text-4xl font-black text-[var(--obr-text-disabled)] opacity-5 pointer-events-none z-0">{{ skill.rank }}</div>
+            <template #item="{ element: skill, index }">
+              <div 
+                class="relative flex items-center justify-between bg-[var(--obr-bg-paper)] p-2 rounded border border-[var(--obr-text-disabled)] border-opacity-30 group hover:border-[var(--obr-primary-main)] hover:shadow-md transition-colors mb-2 select-none"
+              >
+                <!-- Background rank watermark -->
+                <div class="absolute right-10 top-1/2 -translate-y-1/2 text-4xl font-black text-[var(--obr-text-disabled)] opacity-5 pointer-events-none z-0">{{ skill.rank }}</div>
 
-            <!-- View Mode -->
-            <template v-if="editingSkillIndex !== index">
-                <!-- Roll Button -->
-                <button 
-                   @click.stop="emit('roll', character.id, skill)"
-                   class="mr-3 w-8 h-8 flex items-center justify-center bg-[var(--obr-text-primary)] hover:bg-[var(--obr-primary-main)] text-white font-black text-xs rounded shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] active:translate-y-0.5 active:shadow-none transition-all z-20 border border-transparent hover:border-white focus:outline-none focus:ring-2 focus:ring-[var(--obr-primary-main)]"
-                   :aria-label="`Roll ${skill.rank} dice for ${skill.name}`"
-                   title="Roll Dice"
+                <!-- Drag Handle -->
+                <div 
+                  class="drag-handle cursor-grab active:cursor-grabbing text-[var(--obr-text-disabled)] hover:text-[var(--obr-text-primary)] px-2 mr-1"
                 >
-                   <span aria-hidden="true">🎲</span>
-                </button>
-
-                <div class="flex-1 z-10 cursor-pointer" @click="startEditingSkill(index, skill)" title="Click to edit">
-                     <span class="font-bold text-[var(--obr-text-primary)] block leading-tight uppercase">{{ skill.name }}</span>
+                  <span class="text-xs">⋮⋮</span>
                 </div>
-                
-                <div class="flex items-center gap-2 z-10 ml-2">
-                   <!-- Rank Badge -->
-                   <button 
-                      class="w-8 h-8 flex items-center justify-center bg-[var(--obr-text-primary)] text-[var(--obr-bg-paper)] font-black rounded shadow-sm cursor-pointer hover:scale-110 transition-transform border-2 border-transparent hover:border-[var(--obr-primary-main)] focus:outline-none focus:ring-2 focus:ring-[var(--obr-primary-main)]"
-                      @click="startEditingSkill(index, skill)"
-                      title="Click to edit rank"
-                      :aria-label="`Rank ${skill.rank}. Click to edit skill.`"
-                   >
-                      {{ skill.rank }}
-                   </button>
-                   
-                   <button 
-                      @click="emit('removeSkill', character.id, index)"
-                      class="w-8 h-8 flex items-center justify-center text-[var(--obr-text-disabled)] hover:text-red-500 hover:bg-red-100 rounded opacity-60 hover:opacity-100 transition-all focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-500"
-                      :aria-label="`Remove skill ${skill.name}`"
-                      title="Remove Skill"
-                   ><span aria-hidden="true">×</span></button>
-                </div>
-            </template>
 
-            <!-- Edit Mode -->
-            <template v-else>
-                <div class="flex items-center gap-2 w-full z-10 bg-[var(--obr-bg-paper)] p-1 -m-1 rounded ring-2 ring-[var(--obr-primary-main)] shadow-lg">
-                    <input 
-                      v-model="editSkillName"
-                      type="text"
-                      class="flex-1 bg-transparent text-[var(--obr-text-primary)] font-bold px-1 py-1 text-sm focus:outline-none uppercase"
-                      @keyup.enter="saveSkillEdit(index)"
-                      @keyup.esc="cancelSkillEdit"
-                      ref="editInput"
-                    />
-                    <div class="flex flex-col items-center">
-                        <label class="text-[8px] font-black uppercase text-[var(--obr-text-secondary)]">Rank</label>
+                <!-- View Mode -->
+                <template v-if="editingSkillIndex !== index">
+                    <!-- Roll Button -->
+                    <button 
+                       @click.stop="emit('roll', character.id, skill)"
+                       class="mr-3 w-8 h-8 flex items-center justify-center bg-[var(--obr-text-primary)] hover:bg-[var(--obr-primary-main)] text-white font-black text-xs rounded shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] active:translate-y-0.5 active:shadow-none transition-all z-20 border border-transparent hover:border-white focus:outline-none focus:ring-2 focus:ring-[var(--obr-primary-main)]"
+                       :aria-label="`Roll ${skill.rank} dice for ${skill.name}`"
+                       title="Roll Dice"
+                    >
+                       <span aria-hidden="true">🎲</span>
+                    </button>
+
+                    <div class="flex-1 z-10 cursor-pointer" @click="startEditingSkill(index, skill)" title="Click to edit">
+                         <span class="font-bold text-[var(--obr-text-primary)] block leading-tight uppercase">{{ skill.name }}</span>
+                    </div>
+                    
+                    <div class="flex items-center gap-2 z-10 ml-2">
+                       <!-- Rank Badge -->
+                       <button 
+                          class="w-8 h-8 flex items-center justify-center bg-[var(--obr-text-primary)] text-[var(--obr-bg-paper)] font-black rounded shadow-sm cursor-pointer hover:scale-110 transition-transform border-2 border-transparent hover:border-[var(--obr-primary-main)] focus:outline-none focus:ring-2 focus:ring-[var(--obr-primary-main)]"
+                          @click="startEditingSkill(index, skill)"
+                          title="Click to edit rank"
+                          :aria-label="`Rank ${skill.rank}. Click to edit skill.`"
+                       >
+                          {{ skill.rank }}
+                       </button>
+                       
+                       <button 
+                          @click="emit('removeSkill', character.id, index)"
+                          class="w-8 h-8 flex items-center justify-center text-[var(--obr-text-disabled)] hover:text-red-500 hover:bg-red-100 rounded opacity-60 hover:opacity-100 transition-all focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+                          :aria-label="`Remove skill ${skill.name}`"
+                          title="Remove Skill"
+                       ><span aria-hidden="true">×</span></button>
+                    </div>
+                </template>
+
+                <!-- Edit Mode -->
+                <template v-else>
+                    <div class="flex items-center gap-2 w-full z-10 bg-[var(--obr-bg-paper)] p-1 -m-1 rounded ring-2 ring-[var(--obr-primary-main)] shadow-lg">
                         <input 
-                        v-model.number="editSkillRank"
-                        type="number"
-                        min="1"
-                        max="10"
-                        class="w-10 bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] border border-[var(--obr-text-disabled)] rounded px-1 py-0 text-center text-sm font-bold focus:outline-none focus:border-[var(--obr-primary-main)]"
-                        @keyup.enter="saveSkillEdit(index)"
+                          v-model="editSkillName"
+                          type="text"
+                          class="flex-1 bg-transparent text-[var(--obr-text-primary)] font-bold px-1 py-1 text-sm focus:outline-none uppercase"
+                          @keyup.enter="saveSkillEdit(index)"
+                          @keyup.esc="cancelSkillEdit"
+                          ref="editInput"
                         />
+                        <div class="flex flex-col items-center">
+                            <label class="text-[8px] font-black uppercase text-[var(--obr-text-secondary)]">Rank</label>
+                            <input 
+                            v-model.number="editSkillRank"
+                            type="number"
+                            min="1"
+                            max="10"
+                            class="w-10 bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] border border-[var(--obr-text-disabled)] rounded px-1 py-0 text-center text-sm font-bold focus:outline-none focus:border-[var(--obr-primary-main)]"
+                            @keyup.enter="saveSkillEdit(index)"
+                            />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <button @click="saveSkillEdit(index)" class="bg-green-500 text-white w-6 h-6 rounded flex items-center justify-center hover:bg-green-600 shadow-sm text-xs font-bold">✓</button>
+                            <button @click="cancelSkillEdit" class="bg-gray-200 text-gray-600 w-6 h-6 rounded flex items-center justify-center hover:bg-gray-300 shadow-sm text-xs font-bold">✕</button>
+                        </div>
                     </div>
-                    <div class="flex flex-col gap-1">
-                        <button @click="saveSkillEdit(index)" class="bg-green-500 text-white w-6 h-6 rounded flex items-center justify-center hover:bg-green-600 shadow-sm text-xs font-bold">✓</button>
-                        <button @click="cancelSkillEdit" class="bg-gray-200 text-gray-600 w-6 h-6 rounded flex items-center justify-center hover:bg-gray-300 shadow-sm text-xs font-bold">✕</button>
-                    </div>
-                </div>
+                </template>
+              </div>
             </template>
-          </div>
+          </draggable>
         </div>
 
         <!-- Add Skill Form -->
@@ -264,3 +295,23 @@ const cancelSkillEdit = () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.sortable-ghost {
+  opacity: 0.5;
+  background: var(--obr-bg-default);
+  border: 1px dashed var(--obr-primary-main);
+}
+.sortable-ghost * {
+  opacity: 0;
+}
+
+.sortable-drag {
+  background: var(--obr-bg-paper);
+  opacity: 1;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transform: scale(1.02);
+  z-index: 50;
+  border: 1px solid var(--obr-primary-main);
+}
+</style>
