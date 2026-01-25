@@ -93,11 +93,11 @@ const cancelSkillEdit = () => {
           :aria-label="isExpanded ? `Collapse character sheet for ${character.name}` : `Expand character sheet for ${character.name}`"
         >
            <div class="w-8 h-8 flex items-center justify-center bg-[var(--obr-text-primary)] text-[var(--obr-bg-paper)] rounded-full font-black border-2 border-[var(--obr-bg-paper)] shadow-sm transform transition-transform group-hover:scale-110" aria-hidden="true">
-              <span class="text-[var(--obr-bg-paper)] text-sm">{{ character.name.charAt(0).toUpperCase() }}</span>
+              <span class="text-[var(--obr-bg-paper)] text-base font-bold">{{ character.name.charAt(0).toUpperCase() }}</span>
            </div>
            <div class="flex flex-col">
-              <h3 class="font-black text-lg text-[var(--obr-text-primary)] uppercase tracking-tight leading-none group-hover:text-[var(--obr-primary-main)] transition-colors">{{ character.name }}</h3>
-              <span class="text-[10px] font-bold text-[var(--obr-text-disabled)] uppercase tracking-wider flex items-center gap-1 group-hover:text-[var(--obr-text-secondary)] transition-colors">
+              <h3 class="font-black text-xl text-[var(--obr-text-primary)] uppercase tracking-tight leading-none group-hover:text-[var(--obr-primary-main)] transition-colors">{{ character.name }}</h3>
+              <span class="text-xs font-bold text-[var(--obr-text-disabled)] uppercase tracking-wider flex items-center gap-1 group-hover:text-[var(--obr-text-secondary)] transition-colors">
                  <svg 
                    class="w-4 h-4 transform transition-transform duration-300 text-[var(--obr-text-primary)]"
                    :class="{ 'rotate-180': isExpanded }"
@@ -117,18 +117,18 @@ const cancelSkillEdit = () => {
         <!-- XP Counter -->
         <div class="flex items-center bg-[var(--obr-bg-default)] rounded border-2 border-[var(--obr-text-primary)] px-1 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]" role="group" aria-label="Experience Points">
           <div class="flex flex-col items-center mr-2 pl-1 border-r border-[var(--obr-text-disabled)] border-opacity-30 pr-2" aria-hidden="true">
-             <span class="text-[8px] font-black uppercase text-[var(--obr-text-secondary)] leading-none">XP</span>
+             <span class="text-[10px] font-black uppercase text-[var(--obr-text-secondary)] leading-none">XP</span>
           </div>
           <button 
             @click="emit('addXp', character.id, -1)"
             :disabled="character.xp <= 0"
-            class="w-8 h-8 flex items-center justify-center rounded hover:bg-red-500 hover:text-white text-[var(--obr-text-primary)] font-bold transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-inherit focus:outline-none focus:ring-2 focus:ring-red-500"
+            class="w-8 h-8 flex items-center justify-center rounded hover:bg-red-500 hover:text-white text-[var(--obr-text-primary)] font-bold transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-inherit focus:outline-none focus:ring-2 focus:ring-red-500 text-lg"
             aria-label="Decrease XP"
           >-</button>
-          <span class="mx-1 font-mono font-black text-lg w-6 text-center text-[var(--obr-text-primary)]" aria-live="polite">{{ character.xp }}</span>
+          <span class="mx-1 font-mono font-black text-xl w-8 text-center text-[var(--obr-text-primary)]" aria-live="polite">{{ character.xp }}</span>
           <button 
             @click="emit('addXp', character.id, 1)"
-            class="w-8 h-8 flex items-center justify-center rounded hover:bg-green-500 hover:text-white text-[var(--obr-text-primary)] font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
+            class="w-8 h-8 flex items-center justify-center rounded hover:bg-green-500 hover:text-white text-[var(--obr-text-primary)] font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 text-lg"
             aria-label="Increase XP"
           >+</button>
         </div>
@@ -139,7 +139,7 @@ const cancelSkillEdit = () => {
      <div v-if="!isExpanded && canLink" class="px-3 pb-3 flex justify-end">
         <button 
             @click.stop="emit('link', character.id)"
-            class="text-[10px] font-bold uppercase bg-[var(--obr-primary-main)] text-[var(--obr-primary-contrast)] hover:opacity-90 px-2 py-1 rounded shadow-sm flex items-center gap-1"
+            class="text-xs font-bold uppercase bg-[var(--obr-primary-main)] text-[var(--obr-primary-contrast)] hover:opacity-90 px-3 py-1.5 rounded shadow-sm flex items-center gap-1"
         >
             <span>🔗 Link Token</span>
         </button>
@@ -151,13 +151,13 @@ const cancelSkillEdit = () => {
       <!-- Skills Section -->
       <div class="p-3">
         <div class="flex justify-between items-end mb-2">
-            <h4 class="text-xs font-black text-[var(--obr-text-primary)] uppercase tracking-widest border-b-2 border-[var(--obr-primary-main)] inline-block">Skills</h4>
+            <h4 class="text-sm font-black text-[var(--obr-text-primary)] uppercase tracking-widest border-b-2 border-[var(--obr-primary-main)] inline-block">Skills</h4>
             
             <!-- Link Action (Expanded) -->
              <button 
                 v-if="canLink"
                 @click="emit('link', character.id)"
-                class="text-[10px] font-bold uppercase text-[var(--obr-primary-main)] hover:underline flex items-center gap-1"
+                class="text-xs font-bold uppercase text-[var(--obr-primary-main)] hover:underline flex items-center gap-1"
             >
                 <span>🔗 Link Token</span>
             </button>
@@ -194,7 +194,7 @@ const cancelSkillEdit = () => {
                     <!-- Roll Button -->
                     <button 
                        @click.stop="emit('roll', character.id, skill)"
-                       class="mr-3 w-8 h-8 flex items-center justify-center bg-[var(--obr-text-primary)] hover:bg-[var(--obr-primary-main)] text-white font-black text-xs rounded shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] active:translate-y-0.5 active:shadow-none transition-all z-20 border border-transparent hover:border-white focus:outline-none focus:ring-2 focus:ring-[var(--obr-primary-main)]"
+                       class="mr-3 w-8 h-8 flex items-center justify-center bg-[var(--obr-text-primary)] hover:bg-[var(--obr-primary-main)] text-white font-black text-sm rounded shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] active:translate-y-0.5 active:shadow-none transition-all z-20 border border-transparent hover:border-white focus:outline-none focus:ring-2 focus:ring-[var(--obr-primary-main)]"
                        :aria-label="`Roll ${skill.rank} dice for ${skill.name}`"
                        title="Roll Dice"
                     >
@@ -202,13 +202,13 @@ const cancelSkillEdit = () => {
                     </button>
 
                     <div class="flex-1 z-10 cursor-pointer" @click="startEditingSkill(index, skill)" title="Click to edit">
-                         <span class="font-bold text-[var(--obr-text-primary)] block leading-tight uppercase">{{ skill.name }}</span>
+                         <span class="font-bold text-[var(--obr-text-primary)] block leading-tight uppercase text-base">{{ skill.name }}</span>
                     </div>
                     
                     <div class="flex items-center gap-2 z-10 ml-2">
                        <!-- Rank Badge -->
                        <button 
-                          class="w-8 h-8 flex items-center justify-center bg-[var(--obr-text-primary)] text-[var(--obr-bg-paper)] font-black rounded shadow-sm cursor-pointer hover:scale-110 transition-transform border-2 border-transparent hover:border-[var(--obr-primary-main)] focus:outline-none focus:ring-2 focus:ring-[var(--obr-primary-main)]"
+                          class="w-8 h-8 flex items-center justify-center bg-[var(--obr-text-primary)] text-[var(--obr-bg-paper)] font-black text-base rounded shadow-sm cursor-pointer hover:scale-110 transition-transform border-2 border-transparent hover:border-[var(--obr-primary-main)] focus:outline-none focus:ring-2 focus:ring-[var(--obr-primary-main)]"
                           @click="startEditingSkill(index, skill)"
                           title="Click to edit rank"
                           :aria-label="`Rank ${skill.rank}. Click to edit skill.`"
@@ -218,7 +218,7 @@ const cancelSkillEdit = () => {
                        
                        <button 
                           @click="emit('removeSkill', character.id, index)"
-                          class="w-8 h-8 flex items-center justify-center text-[var(--obr-text-disabled)] hover:text-red-500 hover:bg-red-100 rounded opacity-60 hover:opacity-100 transition-all focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+                          class="w-8 h-8 flex items-center justify-center text-[var(--obr-text-disabled)] hover:text-red-500 hover:bg-red-100 rounded opacity-60 hover:opacity-100 transition-all focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-500 text-lg"
                           :aria-label="`Remove skill ${skill.name}`"
                           title="Remove Skill"
                        ><span aria-hidden="true">×</span></button>
@@ -231,13 +231,13 @@ const cancelSkillEdit = () => {
                         <input 
                           v-model="editSkillName"
                           type="text"
-                          class="flex-1 bg-transparent text-[var(--obr-text-primary)] font-bold px-1 py-1 text-sm focus:outline-none uppercase"
+                          class="flex-1 bg-transparent text-[var(--obr-text-primary)] font-bold px-1 py-1 text-base focus:outline-none uppercase"
                           @keyup.enter="saveSkillEdit(index)"
                           @keyup.esc="cancelSkillEdit"
                           ref="editInput"
                         />
                         <div class="flex flex-col items-center">
-                            <label class="text-[8px] font-black uppercase text-[var(--obr-text-secondary)]">Rank</label>
+                            <label class="text-[10px] font-black uppercase text-[var(--obr-text-secondary)]">Rank</label>
                             <input 
                             v-model.number="editSkillRank"
                             type="number"
@@ -248,8 +248,8 @@ const cancelSkillEdit = () => {
                             />
                         </div>
                         <div class="flex flex-col gap-1">
-                            <button @click="saveSkillEdit(index)" class="bg-green-500 text-white w-6 h-6 rounded flex items-center justify-center hover:bg-green-600 shadow-sm text-xs font-bold">✓</button>
-                            <button @click="cancelSkillEdit" class="bg-gray-200 text-gray-600 w-6 h-6 rounded flex items-center justify-center hover:bg-gray-300 shadow-sm text-xs font-bold">✕</button>
+                            <button @click="saveSkillEdit(index)" class="bg-green-500 text-white w-6 h-6 rounded flex items-center justify-center hover:bg-green-600 shadow-sm text-sm font-bold">✓</button>
+                            <button @click="cancelSkillEdit" class="bg-gray-200 text-gray-600 w-6 h-6 rounded flex items-center justify-center hover:bg-gray-300 shadow-sm text-sm font-bold">✕</button>
                         </div>
                     </div>
                 </template>
@@ -260,7 +260,7 @@ const cancelSkillEdit = () => {
 
         <!-- Add Skill Form -->
         <div class="flex gap-2 items-center bg-[var(--obr-bg-paper)] p-2 rounded-lg border border-dashed border-[var(--obr-text-disabled)] hover:border-[var(--obr-primary-main)] transition-colors">
-          <div class="w-6 h-6 flex items-center justify-center rounded-full bg-[var(--obr-primary-main)] text-white font-bold text-xs shrink-0 shadow-sm">+</div>
+          <div class="w-6 h-6 flex items-center justify-center rounded-full bg-[var(--obr-primary-main)] text-white font-bold text-sm shrink-0 shadow-sm">+</div>
           <input 
             v-model="newSkillName" 
             type="text" 
@@ -273,7 +273,7 @@ const cancelSkillEdit = () => {
             type="number" 
             min="1" 
             max="10"
-            class="w-10 bg-[var(--obr-bg-default)] border border-[var(--obr-text-disabled)] border-opacity-30 rounded px-1 py-1 text-center text-xs font-bold text-[var(--obr-text-primary)] outline-none focus:border-[var(--obr-primary-main)]"
+            class="w-10 bg-[var(--obr-bg-default)] border border-[var(--obr-text-disabled)] border-opacity-30 rounded px-1 py-1 text-center text-sm font-bold text-[var(--obr-text-primary)] outline-none focus:border-[var(--obr-primary-main)]"
             @keyup.enter="handleAddSkill"
           />
           <button 

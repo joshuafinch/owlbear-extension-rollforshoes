@@ -107,11 +107,11 @@ const copyUrl = async () => {
             <div class="flex flex-col sm:flex-row border-4 border-black bg-white group hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(220,38,38,1)] transition-all">
                 <div class="sm:w-20 bg-black text-white flex items-center justify-center font-black text-4xl py-2 sm:py-0">1</div>
                 <div class="flex-1 p-4 border-t-4 sm:border-t-0 sm:border-l-4 border-black">
-                    <div class="font-black uppercase text-xs text-red-600 mb-1 tracking-wider">Secure Asset</div>
+                    <div class="font-black uppercase text-sm text-red-600 mb-1 tracking-wider">Secure Asset</div>
                     <div class="flex flex-col gap-3">
-                         <div class="text-xl font-black">Copy Manifest URL</div>
+                         <div class="text-2xl font-black">Copy Manifest URL</div>
                          <div class="flex gap-2">
-                            <code class="flex-1 bg-gray-100 border-2 border-dashed border-gray-400 p-2 font-mono text-xs font-bold truncate select-all">{{ url }}</code>
+                            <code class="flex-1 bg-gray-100 border-2 border-dashed border-gray-400 p-3 font-mono text-sm font-bold truncate select-all">{{ url }}</code>
                             <button @click="copyUrl" class="bg-yellow-400 border-2 border-black px-4 py-2 font-black uppercase text-sm hover:bg-yellow-300 active:bg-yellow-500 transition-colors flex items-center gap-2">
                                 <span v-if="copied">✔ COPIED</span>
                                 <span v-else>COPY</span>
@@ -125,8 +125,8 @@ const copyUrl = async () => {
              <div class="flex flex-col sm:flex-row border-4 border-black bg-white group hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(37,99,235,1)] transition-all">
                 <div class="sm:w-20 bg-black text-white flex items-center justify-center font-black text-4xl py-2 sm:py-0">2</div>
                 <div class="flex-1 p-4 border-t-4 sm:border-t-0 sm:border-l-4 border-black">
-                     <div class="font-black uppercase text-xs text-blue-600 mb-1 tracking-wider">Infiltrate</div>
-                     <div class="text-xl font-black">Open <a href="https://www.owlbear.rodeo/" target="_blank" class="underline decoration-4 decoration-blue-500 hover:text-blue-600 hover:decoration-black">Owlbear Rodeo</a></div>
+                     <div class="font-black uppercase text-sm text-blue-600 mb-1 tracking-wider">Infiltrate</div>
+                     <div class="text-2xl font-black">Open <a href="https://www.owlbear.rodeo/" target="_blank" class="underline decoration-4 decoration-blue-500 hover:text-blue-600 hover:decoration-black">Owlbear Rodeo</a></div>
                 </div>
             </div>
             
@@ -134,8 +134,8 @@ const copyUrl = async () => {
              <div class="flex flex-col sm:flex-row border-4 border-black bg-white group hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(22,163,74,1)] transition-all">
                 <div class="sm:w-20 bg-black text-white flex items-center justify-center font-black text-4xl py-2 sm:py-0">3</div>
                 <div class="flex-1 p-4 border-t-4 sm:border-t-0 sm:border-l-4 border-black">
-                    <div class="font-black uppercase text-xs text-green-600 mb-1 tracking-wider">Locate</div>
-                    <div class="text-lg">Click <span class="bg-gray-200 px-2 border-2 border-black text-sm font-black mx-1">•••</span> (Extras) → <span class="uppercase font-black">Extensions</span></div>
+                    <div class="font-black uppercase text-sm text-green-600 mb-1 tracking-wider">Locate</div>
+                    <div class="text-xl">Click <span class="bg-gray-200 px-2 border-2 border-black text-base font-black mx-1">•••</span> (Extras) → <span class="uppercase font-black">Extensions</span></div>
                 </div>
             </div>
 
@@ -143,8 +143,8 @@ const copyUrl = async () => {
              <div class="flex flex-col sm:flex-row border-4 border-black bg-white group hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(147,51,234,1)] transition-all">
                 <div class="sm:w-20 bg-black text-white flex items-center justify-center font-black text-4xl py-2 sm:py-0">4</div>
                 <div class="flex-1 p-4 border-t-4 sm:border-t-0 sm:border-l-4 border-black">
-                    <div class="font-black uppercase text-xs text-purple-600 mb-1 tracking-wider">Execute</div>
-                    <div class="text-lg leading-tight">Click <span class="font-black bg-black text-white px-1">+ Custom Extension</span> and paste the URL.</div>
+                    <div class="font-black uppercase text-sm text-purple-600 mb-1 tracking-wider">Execute</div>
+                    <div class="text-xl leading-tight">Click <span class="font-black bg-black text-white px-2 py-0.5">+ Custom Extension</span> and paste the URL.</div>
                 </div>
             </div>
 

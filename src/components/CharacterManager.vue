@@ -129,27 +129,27 @@ const handleRollEvolve = (newSkillName: string) => {
        <div class="flex items-end gap-1 mb-0 border-b-4 border-[var(--obr-text-primary)] pl-2">
           <button 
             @click="activeTab = 'DISPATCH'"
-            class="px-4 py-2 font-black uppercase tracking-wider text-xs rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-text-primary)] transition-all relative top-[2px]"
+            class="px-5 py-3 font-black uppercase tracking-wider text-sm rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-text-primary)] transition-all relative top-[2px]"
             :class="activeTab === 'DISPATCH' 
-              ? 'bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-bg-default)] z-10 -mb-[4px] pt-3 pb-3' 
+              ? 'bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-bg-default)] z-10 -mb-[4px] pt-4 pb-4' 
               : 'bg-[var(--obr-bg-paper)] text-[var(--obr-text-disabled)] hover:bg-gray-200 hover:text-[var(--obr-text-secondary)]'"
           >
             Dispatch
           </button>
           <button 
             @click="activeTab = 'LOGS'"
-            class="px-4 py-2 font-black uppercase tracking-wider text-xs rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-text-primary)] transition-all relative top-[2px]"
+            class="px-5 py-3 font-black uppercase tracking-wider text-sm rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-text-primary)] transition-all relative top-[2px]"
             :class="activeTab === 'LOGS' 
-              ? 'bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-bg-default)] z-10 -mb-[4px] pt-3 pb-3' 
+              ? 'bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-bg-default)] z-10 -mb-[4px] pt-4 pb-4' 
               : 'bg-[var(--obr-bg-paper)] text-[var(--obr-text-disabled)] hover:bg-gray-200 hover:text-[var(--obr-text-secondary)]'"
           >
             Logs
           </button>
           <button 
             @click="activeTab = 'SYSTEMS'"
-            class="px-4 py-2 font-black uppercase tracking-wider text-xs rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-text-primary)] transition-all relative top-[2px]"
+            class="px-5 py-3 font-black uppercase tracking-wider text-sm rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-text-primary)] transition-all relative top-[2px]"
             :class="activeTab === 'SYSTEMS' 
-              ? 'bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-bg-default)] z-10 -mb-[4px] pt-3 pb-3' 
+              ? 'bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-bg-default)] z-10 -mb-[4px] pt-4 pb-4' 
               : 'bg-[var(--obr-bg-paper)] text-[var(--obr-text-disabled)] hover:bg-gray-200 hover:text-[var(--obr-text-secondary)]'"
           >
             Systems
@@ -157,14 +157,14 @@ const handleRollEvolve = (newSkillName: string) => {
        </div>
 
       <!-- Action Bar (Dispatch Tab Only) -->
-      <div v-if="activeTab === 'DISPATCH'" class="flex justify-between items-center py-3 px-2">
-         <h2 class="text-xl font-black text-[var(--obr-text-primary)] uppercase tracking-tighter italic leading-none">
+      <div v-if="activeTab === 'DISPATCH'" class="flex justify-between items-center py-4 px-3">
+         <h2 class="text-2xl font-black text-[var(--obr-text-primary)] uppercase tracking-tighter italic leading-none">
             Personnel
          </h2>
          <button 
            v-if="!isCreating"
            @click="isCreating = true"
-           class="bg-[var(--obr-primary-main)] hover:bg-[var(--obr-primary-dark)] text-[var(--obr-primary-contrast)] text-[10px] font-black uppercase tracking-widest py-2 px-3 rounded shadow-[3px_3px_0px_0px_rgba(0,0,0,0.5)] active:translate-y-1 active:shadow-none transition-all border-2 border-[var(--obr-text-primary)]"
+           class="bg-[var(--obr-primary-main)] hover:bg-[var(--obr-primary-dark)] text-[var(--obr-primary-contrast)] text-xs font-black uppercase tracking-widest py-3 px-4 rounded shadow-[3px_3px_0px_0px_rgba(0,0,0,0.5)] active:translate-y-1 active:shadow-none transition-all border-2 border-[var(--obr-text-primary)]"
          >
            + New Recruit
          </button>

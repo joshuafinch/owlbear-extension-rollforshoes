@@ -49,10 +49,10 @@ const confirmEvolution = () => {
       
       <div class="p-6 text-center">
         <!-- Header -->
-        <h2 class="text-2xl font-black uppercase tracking-tighter italic mb-1 text-[var(--obr-text-primary)]">
+        <h2 class="text-3xl font-black uppercase tracking-tighter italic mb-2 text-[var(--obr-text-primary)]">
           Mission Report
         </h2>
-        <div class="inline-block bg-black text-white text-[10px] font-mono px-2 py-0.5 mb-6 uppercase tracking-widest">
+        <div class="inline-block bg-black text-white text-xs font-mono px-3 py-1 mb-6 uppercase tracking-widest">
            {{ result.characterName }} // {{ result.skillName.toUpperCase() }} {{ result.rank }}
         </div>
 
@@ -61,7 +61,7 @@ const confirmEvolution = () => {
           <div 
             v-for="(die, index) in result.dice" 
             :key="index"
-            class="w-12 h-12 flex items-center justify-center border-4 rounded-lg text-2xl font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] transition-all duration-500 animate-bounce-in"
+            class="w-16 h-16 flex items-center justify-center border-4 rounded-lg text-4xl font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] transition-all duration-500 animate-bounce-in"
             :class="die === 6 
               ? 'bg-[var(--obr-primary-main)] border-black text-white scale-110 z-10' 
               : 'bg-white border-gray-300 text-gray-400'"
@@ -75,18 +75,18 @@ const confirmEvolution = () => {
         <!-- Status Messages -->
         <div class="mb-6 min-h-[3rem] flex items-center justify-center" aria-live="polite">
           <div v-if="isEvolving" class="w-full">
-             <div class="text-[#ff0055] font-black text-lg uppercase tracking-tighter italic mb-2 animate-pulse">
+             <div class="text-[#ff0055] font-black text-xl uppercase tracking-tighter italic mb-2 animate-pulse">
                 Evolution Protocol Initiated
              </div>
-             <p class="text-xs font-bold uppercase text-[var(--obr-text-secondary)]">Enter name for Rank {{ result.rank + 1 }} Skill</p>
+             <p class="text-sm font-bold uppercase text-[var(--obr-text-secondary)]">Enter name for Rank {{ result.rank + 1 }} Skill</p>
           </div>
-          <div v-else-if="isAllSixes" class="text-[#ff0055] font-black text-3xl uppercase tracking-tighter italic animate-pulse drop-shadow-md transform -rotate-2">
+          <div v-else-if="isAllSixes" class="text-[#ff0055] font-black text-4xl uppercase tracking-tighter italic animate-pulse drop-shadow-md transform -rotate-2">
             CRITICAL SUCCESS!
           </div>
-          <div v-else-if="successCount > 0" class="text-[var(--obr-primary-main)] font-black text-xl uppercase tracking-widest">
+          <div v-else-if="successCount > 0" class="text-[var(--obr-primary-main)] font-black text-2xl uppercase tracking-widest">
             {{ successCount }} Sixes Rolled
           </div>
-          <div v-else class="text-[var(--obr-text-disabled)] font-bold uppercase tracking-widest text-sm">
+          <div v-else class="text-[var(--obr-text-disabled)] font-bold uppercase tracking-widest text-lg">
             Standard Execution
           </div>
         </div>
@@ -107,13 +107,13 @@ const confirmEvolution = () => {
              <div class="grid grid-cols-2 gap-2">
                 <button 
                   @click="isEvolving = false"
-                  class="w-full bg-[var(--obr-bg-paper)] hover:bg-gray-200 text-[var(--obr-text-primary)] border-2 border-black font-bold uppercase py-2 text-xs"
+                  class="w-full bg-[var(--obr-bg-paper)] hover:bg-gray-200 text-[var(--obr-text-primary)] border-2 border-black font-bold uppercase py-3 text-sm"
                 >
                   Cancel
                 </button>
                 <button 
                   @click="confirmEvolution"
-                  class="w-full bg-[#ff0055] hover:bg-[#d40045] text-white border-2 border-black font-black uppercase py-2 text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none"
+                  class="w-full bg-[#ff0055] hover:bg-[#d40045] text-white border-2 border-black font-black uppercase py-3 text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none"
                 >
                   Confirm
                 </button>
@@ -135,21 +135,21 @@ const confirmEvolution = () => {
             <div v-if="!isAllSixes" class="grid grid-cols-2 gap-2">
               <button 
                 @click="emit('takeXp')"
-                class="w-full bg-[var(--obr-bg-default)] hover:bg-gray-100 text-[var(--obr-text-primary)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-2 text-xs flex items-center justify-center gap-1 group"
+                class="w-full bg-[var(--obr-bg-default)] hover:bg-gray-100 text-[var(--obr-text-primary)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-3 text-sm flex items-center justify-center gap-1 group"
               >
-                <span class="text-red-500 group-hover:text-red-600">⚠</span> FAILED (+1 XP)
+                <span class="text-red-500 group-hover:text-red-600 text-lg">⚠</span> FAILED (+1 XP)
               </button>
               <button 
                 @click="emit('close')"
-                class="w-full bg-[var(--obr-primary-main)] hover:opacity-90 text-[var(--obr-primary-contrast)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-2 text-xs flex items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
+                class="w-full bg-[var(--obr-primary-main)] hover:opacity-90 text-[var(--obr-primary-contrast)] border-2 border-[var(--obr-text-primary)] font-bold uppercase py-3 text-sm flex items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
               >
-                <span>✓</span> SUCCEEDED
+                <span class="text-lg">✓</span> SUCCEEDED
               </button>
             </div>
             
             <button 
               @click="emit('close')"
-              class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] font-bold uppercase text-[10px] tracking-widest py-2"
+              class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] hover:bg-gray-100 font-bold uppercase text-xs tracking-widest py-4 mt-2 rounded border border-transparent hover:border-gray-300 transition-colors"
             >
               Dismiss Report
             </button>
