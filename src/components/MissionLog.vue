@@ -82,7 +82,7 @@ const canAffordAdvance = (entry: RollLogEntry) => {
              <p class="font-black uppercase text-base">Log Empty</p>
         </div>
 
-        <template v-for="(entry, index) in history" :key="index">
+        <template v-for="(entry) in history" :key="entry.id">
             <!-- ROLL ENTRY -->
             <div 
                 v-if="entry.type === 'ROLL'"
@@ -176,23 +176,32 @@ const canAffordAdvance = (entry: RollLogEntry) => {
             <!-- SKILL ENTRY -->
             <div 
                 v-else-if="entry.type === 'SKILL'"
-                class="relative bg-[var(--obr-bg-default)] p-3 shadow-md border-l-4 border-[var(--obr-primary-main)] font-mono text-sm opacity-90"
+                class="relative bg-[var(--obr-bg-default)] p-4 shadow-md border-l-8 border-[var(--obr-primary-main)] font-mono text-sm opacity-90 my-2 rounded-r-lg"
             >
                  <!-- Timestamp Badge -->
-                 <div class="absolute -right-2 -top-2 bg-[var(--obr-primary-main)] text-white px-2 py-0.5 text-[10px] font-bold rounded-full">
+                 <div class="absolute -right-2 -top-2 bg-[var(--obr-primary-main)] text-white px-3 py-1 text-[10px] font-bold rounded-full shadow-sm">
                     {{ formatTime(entry.timestamp) }}
                 </div>
                 
-                <div class="flex flex-col gap-1 text-center">
-                    <div class="text-xs uppercase text-gray-500 tracking-widest mb-1">Skill Acquired</div>
-                    <div class="font-black uppercase text-lg leading-tight">{{ entry.newSkillName }}</div>
-                    <div class="text-xs font-bold bg-black text-white px-2 py-1 inline-block mx-auto rounded mt-1">
-                        Rank {{ entry.rank }}
+                <div class="flex flex-col gap-2 text-center">
+                    <div class="text-[10px] uppercase text-[var(--obr-text-secondary)] tracking-[0.2em] font-black border-b border-gray-200 pb-1 w-full">
+                        ✨ Skill Acquired ✨
                     </div>
-                    <div class="mt-2 text-[10px] uppercase border-t border-gray-200 pt-1 flex justify-between px-2">
+                    
+                    <div class="font-black uppercase text-xl leading-tight text-[var(--obr-text-primary)] my-1">
+                        {{ entry.newSkillName }}
+                    </div>
+
+                    <div class="flex justify-center items-center gap-2">
+                         <div class="text-xs font-bold bg-black text-white px-3 py-1 rounded shadow-sm">
+                            Rank {{ entry.rank }}
+                        </div>
+                    </div>
+
+                    <div class="mt-2 text-[10px] uppercase bg-gray-50 rounded p-1 flex justify-between px-2 text-gray-600 font-bold">
                         <span>{{ entry.characterName }}</span>
                         <span v-if="entry.cost > 0">-{{ entry.cost }} XP</span>
-                        <span v-else>Free (Crit)</span>
+                        <span v-else class="text-[var(--obr-primary-main)]">Free (Crit)</span>
                     </div>
                 </div>
             </div>

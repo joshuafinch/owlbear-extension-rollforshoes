@@ -1,7 +1,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import OBR from '@owlbear-rodeo/sdk';
 import getPluginId from '../utils/getPluginId';
-import type { Character, CharacterData, Skill, CharacterLink, LogEntry, RollLogEntry } from '../types';
+import type { Character, CharacterData, Skill, CharacterLink, LogEntry, RollLogEntry, SkillLogEntry } from '../types';
 
 export function useRollForShoes() {
   const characters = ref<CharacterData>({});
@@ -377,10 +377,19 @@ export function useRollForShoes() {
       characters.value = (metadata[ROOM_DATA_KEY] as CharacterData) || {};
       const rawLogs = (metadata[LOGS_DATA_KEY] as any[]) || [];
       
-      // Migration: Ensure logs have a type
+      // Migration: Ensure logs have a type and ID
       rollHistory.value = rawLogs.map(log => {
         if (!log.type) {
+            // Legacy ROLL entry
             return { ...log, type: 'ROLL' } as RollLogEntry;
+        }
+        if (log.type === 'SKILL' && !log.id) {
+            // Fix missing ID/CharacterID in Skill Logs
+            return { 
+                ...log, 
+                id: crypto.randomUUID(), 
+                characterId: '' // Fallback for legacy data without char ID
+            } as SkillLogEntry;
         }
         return log as LogEntry;
       });
@@ -410,6 +419,13 @@ export function useRollForShoes() {
             rollHistory.value = newLogs.map(log => {
               if (!log.type) {
                   return { ...log, type: 'ROLL' } as RollLogEntry;
+              }
+              if (log.type === 'SKILL' && !log.id) {
+                return { 
+                    ...log, 
+                    id: crypto.randomUUID(), 
+                    characterId: '' 
+                } as SkillLogEntry;
               }
               return log as LogEntry;
             });

@@ -44,6 +44,8 @@ export interface RollLogEntry {
 
 export interface SkillLogEntry {
   type: 'SKILL';
+  id: string;
+  characterId: string;
   characterName: string;
   newSkillName: string;
   rank: number;

@@ -106,6 +106,8 @@ const handleRollEvolve = (logId: string, newSkillName: string, xpCost: number) =
          // Add SKILL Log
          addLogEntry({
             type: 'SKILL',
+            id: crypto.randomUUID(),
+            characterId: currentRoll.value.characterId,
             characterName: currentRoll.value.characterName,
             newSkillName: newSkillName,
             rank: currentRoll.value.rank + 1,
@@ -150,6 +152,8 @@ const handleLogEvolve = (logId: string, characterId: string, rank: number, newSk
     // Add SKILL Log
     addLogEntry({
         type: 'SKILL',
+        id: crypto.randomUUID(),
+        characterId: characterId,
         characterName: charName,
         newSkillName: newSkillName,
         rank: rank + 1,
