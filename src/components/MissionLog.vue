@@ -118,8 +118,8 @@ const canAffordAdvance = (entry: RollLogEntry) => {
                 <!-- Content -->
                 <div class="flex flex-col gap-1">
                     <div class="flex justify-between items-baseline border-b border-dashed border-gray-300 pb-1 mb-1">
-                        <span class="font-black uppercase text-black text-base">{{ entry.characterName }}</span>
-                        <span class="text-xs text-gray-500 uppercase">{{ entry.skillName }} ({{ entry.rank }})</span>
+                        <span class="font-black text-black text-base">{{ entry.characterName }}</span>
+                        <span class="text-xs text-gray-500">{{ entry.skillName }} ({{ entry.rank }})</span>
                     </div>
                     
                     <div class="flex items-center gap-2 mt-1">
@@ -242,7 +242,7 @@ const canAffordAdvance = (entry: RollLogEntry) => {
                         ✨ Skill Acquired ✨
                     </div>
                     
-                    <div class="font-black uppercase text-xl leading-tight text-[var(--obr-text-primary)] my-1">
+                    <div class="font-black text-xl leading-tight text-[var(--obr-text-primary)] my-1">
                         {{ entry.newSkillName }}
                     </div>
 

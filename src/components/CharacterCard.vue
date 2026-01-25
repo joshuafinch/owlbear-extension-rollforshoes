@@ -81,7 +81,7 @@ const isManageMode = ref(false);
 const handleAddSkill = (name: string) => {
   if (!name.trim()) return;
   emit('addSkill', props.character.id, {
-    name: name.toUpperCase(),
+    name: name,
     rank: newSkillRank.value
   });
   newSkillRank.value = 2; 
@@ -131,7 +131,7 @@ const startEditingSkill = async (index: number, skill: Skill) => {
 const saveSkillEdit = (index: number) => {
     if (!editSkillName.value.trim()) return;
     emit('updateSkill', props.character.id, index, {
-        name: editSkillName.value.toUpperCase(),
+        name: editSkillName.value,
         rank: editSkillRank.value
     });
     editingSkillIndex.value = null;
@@ -193,7 +193,7 @@ const handleXpChange = (amount: number) => {
              aria-hidden="true"
             >
               <img v-if="character.imageUrl" :src="character.imageUrl" class="w-full h-full object-cover" :alt="character.name" />
-              <span v-else class="text-[var(--obr-bg-paper)] font-bold" :class="isExpanded ? 'text-2xl' : 'text-lg'">{{ character.name.charAt(0).toUpperCase() }}</span>
+              <span v-else class="text-[var(--obr-bg-paper)] font-bold" :class="isExpanded ? 'text-2xl' : 'text-lg'">{{ character.name.charAt(0) }}</span>
            </div>
            <div class="flex flex-col min-w-0 transition-all duration-300 origin-left" :class="{'translate-x-2 scale-110': isExpanded}">
               
@@ -205,7 +205,7 @@ const handleXpChange = (amount: number) => {
                    :title="isExpanded ? 'Click to edit name' : ''"
               >
                   <h3 
-                    class="font-black text-[var(--obr-text-primary)] uppercase tracking-tight leading-none group-hover:text-[var(--obr-primary-main)] transition-colors duration-300 truncate pr-1"
+                    class="font-black text-[var(--obr-text-primary)] tracking-tight leading-none group-hover:text-[var(--obr-primary-main)] transition-colors duration-300 truncate pr-1"
                     :class="isExpanded ? 'text-xl' : 'text-xl'"
                   >
                     {{ character.name }}
@@ -218,7 +218,7 @@ const handleXpChange = (amount: number) => {
                       ref="editNameInput"
                       v-model="editNameValue"
                       type="text"
-                      class="bg-[var(--obr-bg-paper)] text-[var(--obr-text-primary)] font-black uppercase tracking-tight leading-none border-b-2 border-[var(--obr-primary-main)] focus:outline-none w-full min-w-[150px] text-xl"
+                      class="bg-[var(--obr-bg-paper)] text-[var(--obr-text-primary)] font-black tracking-tight leading-none border-b-2 border-[var(--obr-primary-main)] focus:outline-none w-full min-w-[150px] text-xl"
                       @keyup.enter="saveNameEdit"
                       @keyup.esc="cancelNameEdit"
                       @blur="saveNameEdit"
@@ -366,7 +366,7 @@ const handleXpChange = (amount: number) => {
                         @click="isManageMode ? startEditingSkill(index, skill) : null"
                         :title="isManageMode ? 'Click to edit name' : ''"
                     >
-                          <span class="font-bold text-[var(--obr-text-primary)] block leading-tight uppercase text-base truncate">{{ skill.name }}</span>
+                          <span class="font-bold text-[var(--obr-text-primary)] block leading-tight text-base truncate">{{ skill.name }}</span>
                      </div>
  
                      <!-- Actions Group -->
@@ -418,7 +418,7 @@ const handleXpChange = (amount: number) => {
                            ref="editSkillInput"
                            v-model="editSkillName"
                            type="text"
-                           class="flex-1 bg-transparent text-[var(--obr-text-primary)] font-bold px-2 py-1 text-base focus:outline-none uppercase"
+                           class="flex-1 bg-transparent text-[var(--obr-text-primary)] font-bold px-2 py-1 text-base focus:outline-none"
                            @keyup.enter="saveSkillEdit(index)"
                            @keyup.esc="cancelSkillEdit"
                            placeholder="SKILL NAME"

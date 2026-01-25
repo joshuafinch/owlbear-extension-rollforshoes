@@ -54,7 +54,7 @@ const handleActivate = () => {
                     ref="inputRef"
                     v-model="inputValue"
                     type="text" 
-                    class="flex-1 bg-[var(--obr-bg-default)] border-2 border-[var(--obr-text-disabled)] rounded px-3 py-2 text-sm font-bold text-[var(--obr-text-primary)] focus:border-[var(--obr-primary-main)] outline-none uppercase tracking-wide placeholder:text-[var(--obr-text-disabled)]/50"
+                    class="flex-1 bg-[var(--obr-bg-default)] border-2 border-[var(--obr-text-disabled)] rounded px-3 py-2 text-sm font-bold text-[var(--obr-text-primary)] focus:border-[var(--obr-primary-main)] outline-none tracking-wide placeholder:text-[var(--obr-text-disabled)]/50"
                     :placeholder="placeholder"
                     @keyup.enter="handleSubmit"
                     @keyup.esc="handleCancel"

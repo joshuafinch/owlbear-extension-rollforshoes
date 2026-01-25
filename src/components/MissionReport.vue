@@ -54,7 +54,7 @@ const confirmEvolution = () => {
   if (newSkillName.value.trim()) {
     // If it was all sixes, cost is 0. If it was a fail, cost is nonSixesCount
     const cost = isAllSixes.value ? 0 : nonSixesCount.value;
-    emit('confirmEvolve', props.result.id, newSkillName.value.trim().toUpperCase(), cost);
+    emit('confirmEvolve', props.result.id, newSkillName.value.trim(), cost);
   }
 };
 </script>
@@ -71,8 +71,8 @@ const confirmEvolution = () => {
         <h2 class="text-3xl font-black uppercase tracking-tighter italic mb-2 text-[var(--obr-text-primary)]">
           Mission Report
         </h2>
-        <div class="inline-block bg-black text-white text-xs font-mono px-3 py-1 mb-6 uppercase tracking-widest">
-           {{ result.characterName }} // {{ result.skillName.toUpperCase() }} {{ result.rank }}
+        <div class="inline-block bg-black text-white text-xs font-mono px-3 py-1 mb-6 tracking-widest">
+           {{ result.characterName }} // {{ result.skillName }} {{ result.rank }}
         </div>
 
         <!-- Dice Container (Hidden during evolution to save space/focus) -->
@@ -129,7 +129,7 @@ const confirmEvolution = () => {
                 type="text"
                 autocomplete="off"
                 data-1p-ignore
-                class="w-full bg-black text-white border-2 border-[#ff0055] p-3 font-bold uppercase text-center mb-2 focus:outline-none focus:shadow-[0_0_10px_#ff0055]"
+                class="w-full bg-black text-white border-2 border-[#ff0055] p-3 font-bold text-center mb-2 focus:outline-none focus:shadow-[0_0_10px_#ff0055]"
                 placeholder="NEW SKILL NAME..."
                 @keyup.enter="confirmEvolution"
              />
