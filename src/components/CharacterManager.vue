@@ -250,7 +250,7 @@ const handleLogSucceeded = async (logId: string) => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col overflow-hidden bg-[var(--obr-surface-card)]">
+  <div class="h-full flex flex-col overflow-hidden bg-transparent">
     
     <!-- Mission Report Overlay -->
     <MissionReport 
@@ -265,7 +265,7 @@ const handleLogSucceeded = async (logId: string) => {
     />
 
     <!-- Fixed Header -->
-    <div class="flex-none bg-[var(--obr-surface-base)] z-10 pt-2 px-2 pb-0">
+    <div class="flex-none bg-transparent z-10 pt-2 px-2 pb-0">
       
        <!-- Top Tabs -->
        <div class="flex items-end gap-1 mb-0 border-b-4 border-[var(--obr-border-base)] pl-2">
