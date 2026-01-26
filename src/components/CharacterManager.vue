@@ -264,92 +264,86 @@ const handleLogSucceeded = async (logId: string) => {
         @succeeded="handleRollSucceeded"
     />
 
-    <!-- Fixed Header -->
-    <div class="flex-none bg-transparent z-10 pt-2 px-2 pb-0">
+    <!-- Main Interface Frame -->
+    <div class="flex-1 flex flex-col overflow-hidden">
       
-       <!-- Top Tabs -->
-       <div class="flex items-end gap-1 mb-0 border-b-4 border-[var(--obr-border-base)] pl-2">
-          <button 
-            @click="activeTab = TAB_DISPATCH"
-            class="px-5 py-3 font-black uppercase tracking-wider text-sm rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-border-base)] transition-all relative top-[2px]"
-            :class="activeTab === TAB_DISPATCH 
-              ? 'bg-[var(--obr-surface-base)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-surface-base)] z-10 -mb-[4px] pt-4 pb-4' 
-              : 'bg-[var(--obr-surface-card)] text-[var(--obr-text-disabled)] hover:bg-[var(--obr-surface-hover)] hover:text-[var(--obr-text-secondary)]'"
-          >
-            Dispatch
-          </button>
-          <button 
-            @click="activeTab = TAB_LOGS"
-            class="px-5 py-3 font-black uppercase tracking-wider text-sm rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-border-base)] transition-all relative top-[2px]"
-            :class="activeTab === TAB_LOGS 
-              ? 'bg-[var(--obr-surface-base)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-surface-base)] z-10 -mb-[4px] pt-4 pb-4' 
-              : 'bg-[var(--obr-surface-card)] text-[var(--obr-text-disabled)] hover:bg-[var(--obr-surface-hover)] hover:text-[var(--obr-text-secondary)]'"
-          >
-            Logs
-          </button>
-          <button 
-            @click="activeTab = TAB_SYSTEMS"
-            class="px-5 py-3 font-black uppercase tracking-wider text-sm rounded-t-lg border-t-2 border-l-2 border-r-2 border-[var(--obr-border-base)] transition-all relative top-[2px]"
-            :class="activeTab === TAB_SYSTEMS 
-              ? 'bg-[var(--obr-surface-base)] text-[var(--obr-text-primary)] border-b-4 border-b-[var(--obr-surface-base)] z-10 -mb-[4px] pt-4 pb-4' 
-              : 'bg-[var(--obr-surface-card)] text-[var(--obr-text-disabled)] hover:bg-[var(--obr-surface-base)] hover:text-[var(--obr-text-secondary)]'"
-          >
-            System
-          </button>
-       </div>
-    </div>
+      <!-- Integrated Header / Nav -->
+      <nav class="flex flex-none border-b-4 border-[var(--obr-border-base)] z-10">
+        <!-- Dispatch Tab -->
+        <button 
+          @click="activeTab = TAB_DISPATCH"
+          class="flex-1 py-3 text-center font-black uppercase tracking-widest text-xs sm:text-sm transition-all relative group flex items-center justify-center gap-2"
+          :class="activeTab === TAB_DISPATCH 
+            ? 'bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)]' 
+            : 'text-[var(--obr-text-disabled)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-surface-hover)]'"
+        >
+          <span v-if="activeTab === TAB_DISPATCH" class="text-[var(--obr-brand-accent)]">●</span>
+          Dispatch
+        </button>
 
-    <!-- Scrollable Content -->
-    <div class="flex-1 overflow-y-auto px-4 pb-4 space-y-4 custom-scrollbar pt-2 bg-transparent rounded-b-lg mx-2 border-x-4 border-b-4 border-[var(--obr-border-base)]">
-      
-      <!-- DISPATCH TAB CONTENT -->
-      <div v-if="activeTab === TAB_DISPATCH">
-          <DispatchConsole @roll="handleRoll" />
-      </div>
+        <!-- Vertical Divider -->
+        <div class="w-[4px] bg-[var(--obr-border-base)]"></div>
 
-      <!-- LOGS TAB CONTENT -->
-      <div v-if="activeTab === TAB_LOGS" class="h-full pb-4">
-          <MissionLog 
-            :history="rollHistory" 
-            :characters="characterList"
-            @takeXp="handleLogTakeXp"
-            @evolve="handleLogEvolve"
-            @succeeded="handleLogSucceeded"
-            @deleteLog="handleLogDelete"
-          />
-      </div>
+        <!-- Logs Tab -->
+        <button 
+          @click="activeTab = TAB_LOGS"
+          class="flex-1 py-3 text-center font-black uppercase tracking-widest text-xs sm:text-sm transition-all relative group flex items-center justify-center gap-2"
+          :class="activeTab === TAB_LOGS 
+            ? 'bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)]' 
+            : 'text-[var(--obr-text-disabled)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-surface-hover)]'"
+        >
+          <span v-if="activeTab === TAB_LOGS" class="text-[var(--obr-brand-accent)]">●</span>
+          Logs
+        </button>
 
-      <!-- SYSTEMS TAB CONTENT -->
-      <div v-if="activeTab === TAB_SYSTEMS" class="h-full pb-4">
-          <SystemTerminal 
-            :role="role"
-            :isDebug="debugMode"
-            @export="exportData"
-            @import="handleImport"
-            @clearLogs="clearLogs"
-            @toggleDebug="debugMode = !debugMode"
-          />
+        <!-- Vertical Divider -->
+        <div class="w-[4px] bg-[var(--obr-border-base)]"></div>
+
+        <!-- System Tab -->
+        <button 
+          @click="activeTab = TAB_SYSTEMS"
+          class="flex-1 py-3 text-center font-black uppercase tracking-widest text-xs sm:text-sm transition-all relative group flex items-center justify-center gap-2"
+          :class="activeTab === TAB_SYSTEMS 
+            ? 'bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)]' 
+            : 'text-[var(--obr-text-disabled)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-surface-hover)]'"
+        >
+          <span v-if="activeTab === TAB_SYSTEMS" class="text-[var(--obr-brand-accent)]">●</span>
+          System
+        </button>
+      </nav>
+
+      <!-- Scrollable Content Area -->
+      <div class="flex-1 min-h-0 overflow-hidden relative">
+        
+        <!-- DISPATCH TAB CONTENT -->
+        <div v-if="activeTab === TAB_DISPATCH" class="h-full">
+            <DispatchConsole @roll="handleRoll" />
+        </div>
+
+        <!-- LOGS TAB CONTENT -->
+        <div v-if="activeTab === TAB_LOGS" class="h-full">
+            <MissionLog 
+              :history="rollHistory" 
+              :characters="characterList"
+              @takeXp="handleLogTakeXp"
+              @evolve="handleLogEvolve"
+              @succeeded="handleLogSucceeded"
+              @deleteLog="handleLogDelete"
+            />
+        </div>
+
+        <!-- SYSTEMS TAB CONTENT -->
+        <div v-if="activeTab === TAB_SYSTEMS" class="h-full">
+            <SystemTerminal 
+              :role="role"
+              :isDebug="debugMode"
+              @export="exportData"
+              @import="handleImport"
+              @clearLogs="clearLogs"
+              @toggleDebug="debugMode = !debugMode"
+            />
+        </div>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-/* Custom Scrollbar Styling */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--obr-text-disabled);
-  border-radius: 3px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--obr-primary-main);
-}
-</style>

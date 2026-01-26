@@ -60,12 +60,12 @@ const onDragEnd = () => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
+  <div class="h-full flex flex-col px-4 pt-4 overflow-y-auto custom-scrollbar">
       <!-- Action Bar -->
       <div class="flex justify-between items-end py-4 px-3 shrink-0 border-b-2 border-dashed border-[var(--obr-text-disabled)] border-opacity-30 mb-4">
          <h2 class="text-3xl font-black text-[var(--obr-text-primary)] uppercase tracking-tighter leading-none transform -rotate-1 origin-bottom-left">
             Personnel
-            <span class="block text-[10px] font-bold tracking-widest text-[var(--obr-text-secondary)] not-italic mt-1 rotate-1 ml-1">Active Roster // Class-A</span>
+            <span class="block text-[10px] font-bold tracking-widest text-[var(--obr-text-secondary)] mt-1 rotate-1 ml-1">Active Roster // Class-A</span>
          </h2>
       </div>
       

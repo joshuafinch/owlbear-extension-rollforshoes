@@ -31,12 +31,12 @@ const handleClearLogs = () => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-black p-4 font-mono text-green-500 overflow-hidden border-2 border-gray-800 shadow-inner rounded-lg relative">
+  <div class="flex flex-col h-full bg-black p-4 font-mono text-green-500">
     
     <!-- CRT Screen Effect Overlay -->
-    <div class="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-10 bg-[length:100%_2px,3px_100%]"></div>
+    <!--<div class="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-10 bg-[length:100%_2px,3px_100%]"></div>
     <div class="absolute inset-0 pointer-events-none shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] z-20"></div>
-
+  -->
     <!-- Header -->
     <div class="border-b border-green-800 pb-3 mb-4 flex justify-between items-center z-0 relative">
         <span class="text-sm font-bold tracking-widest">root@AGENCY-HQ:~$ SYS_ADMIN</span>
@@ -47,8 +47,8 @@ const handleClearLogs = () => {
         </div>
     </div>
 
-    <!-- Content -->
-    <div class="flex-1 overflow-y-auto space-y-6 relative z-0">
+    <!-- Scrollable Content -->
+    <div class="flex-1 space-y-6 relative z-0 pr-2 overflow-y-auto custom-scrollbar relative">
         
         <!-- Welcome Message -->
         <div class="text-sm space-y-2 mb-6 opacity-80">
@@ -139,9 +139,8 @@ const handleClearLogs = () => {
     </div>
 
     <!-- Footer -->
-    <div class="mt-auto pt-4 text-xs text-gray-600 flex justify-between font-mono relative z-0">
+    <div class="mt-auto pt-4 text-xs text-gray-600 flex font-mono relative z-0">
         <span>V.1.0.4-BETA</span>
-        <span class="animate-pulse">_</span>
     </div>
 
   </div>
@@ -162,5 +161,23 @@ const handleClearLogs = () => {
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* Custom Scrollbar Styling (Dark/Terminal Theme) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 50, 0, 0.2);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #15803d; /* green-700 */
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #22c55e; /* green-500 */
 }
 </style>
