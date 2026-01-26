@@ -2,10 +2,10 @@
 
 :root {
   /* --- BASE VARIABLES (Light Mode Default) --- */
-  
+
   /* Backgrounds */
-  --obr-bg-default: #f3f4f6; /* Gray-100 (Cool Neutral) */
-  
+  --obr-bg-default: #f3f4f6;
+
   /* Text */
   --obr-text-primary: rgba(0, 0, 0, 0.87);
   --obr-text-secondary: rgba(0, 0, 0, 0.6);
@@ -15,7 +15,7 @@
   --obr-primary-main: #6366f1;
   --obr-primary-dark: #4338ca;
   --obr-primary-contrast: #ffffff;
-  
+
   --obr-secondary-main: #a855f7;
   --obr-secondary-contrast: #ffffff;
 
@@ -34,17 +34,17 @@
 
   /* Text Semantics */
   /* Used for text sitting on top of inverted backgrounds (like badges) */
-  --obr-text-inverse: #ffffff; 
+  --obr-text-inverse: #ffffff;
 
   /* Status Colors (Adaptive) */
-  --obr-status-success: #10b981; /* Emerald-500 */
-  --obr-status-warning: #f59e0b; /* Amber-500 */
-  --obr-status-danger: #ef4444;  /* Red-500 */
-  --obr-status-critical: #ff0055; /* Brand Pink */
+  --obr-status-success: #10b981;
+  --obr-status-warning: #f59e0b;
+  --obr-status-danger: #ef4444;
+  --obr-status-critical: #ff0055;
 
   /* Brand Specifics */
-  --obr-brand-hazard: #fbbf24;   /* Amber-400 */
-  --obr-brand-accent: #ff0055;   /* Brand Pink */
+  --obr-brand-hazard: #fbbf24;
+  --obr-brand-accent: #ff0055;
 
   /* Typography */
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -59,35 +59,22 @@
 
 /* --- DARK MODE OVERRIDES --- */
 .dark {
-  /* Backgrounds */
-  --obr-bg-default: #0f172a; /* Slate-950 */
-  
-  /* Text */
+  --obr-bg-default: #0f172a;
   --obr-text-primary: #ffffff;
   --obr-text-secondary: rgba(255, 255, 255, 0.7);
   --obr-text-disabled: rgba(255, 255, 255, 0.5);
-
-  /* Surfaces */
-  --obr-surface-card: #1e293b; /* Slate-900 */
+  --obr-surface-card: #1e293b;
   --obr-surface-hover: rgba(255, 255, 255, 0.05);
-
-  /* Text Semantics */
-  /* In dark mode, if we have "dark text on light badge", we might want dark slate. 
-     However, usually badges in dark mode are still dark. 
-     If we want 'inverted' text (e.g. text on a white badge in dark mode), this would be dark.
-     BUT: In our design, badges usually follow the primary color which is contrasting to white.
-     Let's define inverse as the 'Paper' color of the opposite mode for safety, 
-     or just keep it simple.
-     For now, let's assume 'inverse' means "The color of the Card Surface".
-  */
-  --obr-text-inverse: #1e293b; 
+  --obr-text-inverse: #1e293b;
 }
 
 /* Global scrollbar reset to prevent double scrolling on body */
-body, html {
+body,
+html {
   margin: 0;
   padding: 0;
   height: 100%;
   width: 100%;
-  overflow: hidden; /* Important: delegate scrolling to internal containers */
+  overflow: hidden;
+  /* Important: delegate scrolling to internal containers */
 }

@@ -300,7 +300,7 @@ const handleLogSucceeded = async (logId: string) => {
     </div>
 
     <!-- Scrollable Content -->
-    <div class="flex-1 overflow-y-auto px-4 pb-4 space-y-4 custom-scrollbar pt-2">
+    <div class="flex-1 overflow-y-auto px-4 pb-4 space-y-4 custom-scrollbar pt-2 bg-transparent rounded-b-lg mx-2 border-x-4 border-b-4 border-[var(--obr-border-base)]">
       
       <!-- DISPATCH TAB CONTENT -->
       <div v-if="activeTab === TAB_DISPATCH">

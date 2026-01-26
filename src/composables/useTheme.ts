@@ -10,10 +10,8 @@ export function useTheme() {
     // Set Mode Class
     if (theme.mode === 'DARK') {
       root.classList.add('dark');
-      root.style.colorScheme = 'dark';
     } else {
       root.classList.remove('dark');
-      root.style.colorScheme = 'light';
     }
     
     // NOTE: All specific color variables are now handled in src/style.css
