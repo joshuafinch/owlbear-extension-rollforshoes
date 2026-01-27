@@ -182,9 +182,9 @@ const handleDeleteClick = (id: string) => {
                         <div
                             class="flex justify-between items-baseline border-b border-dashed border-[var(--obr-border-subtle)] pb-1 mb-1">
                             <span class="font-black text-[var(--obr-text-primary)] text-base">{{ entry.characterName
-                            }}</span>
+                                }}</span>
                             <span class="text-xs text-[var(--obr-text-secondary)]">{{ entry.skillName }} ({{ entry.rank
-                            }})</span>
+                                }})</span>
                         </div>
 
                         <!-- Dice Display -->
@@ -193,8 +193,13 @@ const handleDeleteClick = (id: string) => {
                             <div class="flex gap-1 flex-wrap">
                                 <span v-for="(die, i) in entry.dice" :key="i"
                                     class="w-6 h-6 flex items-center justify-center border border-[var(--obr-border-base)] rounded text-xs font-bold shadow-[1px_1px_0px_0px_rgba(0,0,0,0.2)]"
-                                    :class="die === 6 ? 'bg-[var(--obr-primary-main)] text-white' : 'bg-[var(--obr-bg-default)] text-[var(--obr-text-primary)]'">
+                                    :class="die === 6 ? 'bg-[var(--obr-status-critical)] text-white scale-110 rotate-3 z-10' : 'bg-[var(--obr-surface-card)] text-[var(--obr-text-primary)] -rotate-3'">
                                     {{ die }}
+                                </span>
+                                <!-- Sum of Dice, if more than one dice -->
+                                <span v-if="entry.dice.length > 1"
+                                    class="ml-2 text-[var(--obr-text-secondary)] font-bold text-xs self-center">
+                                    => {{entry.dice.reduce((sum, d) => sum + d, 0)}}
                                 </span>
                             </div>
                         </div>
@@ -301,7 +306,7 @@ const handleDeleteClick = (id: string) => {
                     <div
                         class="flex justify-between items-baseline border-b border-dashed border-[var(--obr-border-subtle)] pb-1 mb-2">
                         <span class="font-black text-[var(--obr-text-primary)] text-base">{{ entry.characterName
-                        }}</span>
+                            }}</span>
                         <span class="text-[10px] font-bold text-[var(--obr-text-secondary)]">{{
                             formatTime(entry.timestamp) }}</span>
                     </div>
