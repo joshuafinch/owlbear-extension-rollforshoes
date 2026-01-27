@@ -37,9 +37,9 @@ const handleClearLogs = () => {
   <div class="flex flex-col h-full bg-black p-4 font-mono text-green-500">
     
     <!-- CRT Screen Effect Overlay -->
-    <!--<div class="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-10 bg-[length:100%_2px,3px_100%]"></div>
+    <div class="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-10 bg-[length:100%_2px,3px_100%]"></div>
     <div class="absolute inset-0 pointer-events-none shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] z-20"></div>
-  -->
+
     <!-- Header -->
     <div class="border-b border-green-800 pb-3 mb-4 flex justify-between items-center z-0 relative">
         <span class="text-sm font-bold tracking-widest">root@AGENCY-HQ:~$ SYS_ADMIN</span>
