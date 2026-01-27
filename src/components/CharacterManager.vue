@@ -64,6 +64,28 @@ let unsubscribeNpcRoll: (() => void) | null = null;
 let hasNpcContextMenu = false;
 let stopRoleWatcher: WatchStopHandle | null = null;
 const { enqueueModal, releaseModal } = useModalQueue();
+const missionReportHeartbeatReleaseDelay = 600;
+let missionReportHeartbeatTimeout: ReturnType<typeof setTimeout> | null = null;
+
+const clearMissionReportHeartbeat = () => {
+    if (missionReportHeartbeatTimeout !== null) {
+        clearTimeout(missionReportHeartbeatTimeout);
+        missionReportHeartbeatTimeout = null;
+    }
+};
+
+const releaseMissionReportModal = () => {
+    clearMissionReportHeartbeat();
+    releaseModal(MODAL_MISSION_REPORT);
+};
+
+const scheduleMissionReportHeartbeatRelease = () => {
+    clearMissionReportHeartbeat();
+    missionReportHeartbeatTimeout = setTimeout(() => {
+        missionReportHeartbeatTimeout = null;
+        releaseMissionReportModal();
+    }, missionReportHeartbeatReleaseDelay);
+};
 
 if (OBR.isAvailable) {
     OBR.onReady(() => {
@@ -113,7 +135,14 @@ const setupMissionReportListener = () => {
 
             if (payload.type === 'MISSION_REPORT_CLOSED') {
                 if (event.connectionId === localConnectionId.value) {
-                    releaseModal(MODAL_MISSION_REPORT);
+                    releaseMissionReportModal();
+                }
+                return;
+            }
+
+            if (payload.type === 'MISSION_REPORT_HEARTBEAT') {
+                if (event.connectionId === localConnectionId.value) {
+                    scheduleMissionReportHeartbeatRelease();
                 }
                 return;
             }
@@ -226,6 +255,7 @@ onUnmounted(() => {
     destroyNpcContextMenu();
     stopRoleWatcher?.();
     stopRoleWatcher = null;
+    clearMissionReportHeartbeat();
 });
 
 const handleImport = (event: Event) => {
@@ -302,7 +332,7 @@ const queueMissionReportModal = (rollId: string, isControllerView: boolean) => {
                 await openMissionReportModal(rollId, isControllerView);
             } catch (error) {
                 console.error('Failed to open Mission Report modal', error);
-                releaseModal(MODAL_MISSION_REPORT);
+                releaseMissionReportModal();
             }
         },
     });
