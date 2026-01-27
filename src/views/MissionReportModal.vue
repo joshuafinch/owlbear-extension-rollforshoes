@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onBeforeUnmount } from 'vue';
 import OBR from '@owlbear-rodeo/sdk';
 import MissionReport from '../components/MissionReport.vue';
 import { useRollForShoes } from '../composables/useRollForShoes';
-import { LOG_TYPE_ROLL, LOG_TYPE_SKILL, MODAL_MISSION_REPORT } from '../constants';
+import { LOG_TYPE_ROLL, LOG_TYPE_SKILL, MODAL_MISSION_REPORT, BROADCAST_MISSION_REPORT } from '../constants';
 import type { RollLogEntry, SkillLogEntry } from '../types';
 import { useMissionReportControls } from '../composables/useMissionReportControls';
+import getPluginId from '../utils/getPluginId';
 
 const params = new URLSearchParams(window.location.search);
 const rollId = params.get('rollId');
@@ -13,6 +14,24 @@ const isControllerView = params.get('controller') === '1';
 
 const { rollHistory, characterList } = useRollForShoes();
 const { awardFailureXp, advanceSkillFromRoll, markRollSucceeded } = useMissionReportControls();
+
+const missionReportChannel = getPluginId(BROADCAST_MISSION_REPORT);
+let hasNotifiedClose = false;
+
+const notifyMissionReportClosed = async () => {
+  if (hasNotifiedClose) return;
+  hasNotifiedClose = true;
+  if (!OBR.isAvailable) return;
+  try {
+    await OBR.broadcast.sendMessage(
+      missionReportChannel,
+      { type: 'MISSION_REPORT_CLOSED' },
+      { destination: 'ALL' },
+    );
+  } catch (error) {
+    console.error('Failed to broadcast mission report close', error);
+  }
+};
 
 const rollEntry = computed<RollLogEntry | null>(() => {
   if (!rollId) return null;
@@ -39,10 +58,14 @@ const evolvedSkillName = computed(() => {
   return skillEntry?.newSkillName;
 });
 
+const isNpcReport = computed(() => rollEntry.value?.isNpc === true);
+const isNpcHidden = computed(() => Boolean(rollEntry.value?.isHiddenFromPlayers));
+
 const closeModal = async () => {
   try {
     if (OBR.isAvailable) {
       await OBR.modal.close(MODAL_MISSION_REPORT);
+      await notifyMissionReportClosed();
     } else {
       window.close();
     }
@@ -50,6 +73,14 @@ const closeModal = async () => {
     console.error('Failed to close mission report modal', error);
   }
 };
+
+window.addEventListener('beforeunload', () => {
+  void notifyMissionReportClosed();
+});
+
+onBeforeUnmount(() => {
+  void notifyMissionReportClosed();
+});
 
 const handleTakeXp = async () => {
   if (!rollEntry.value) return;
@@ -113,6 +144,8 @@ if (isLoading.value) {
       :character="character"
       :isController="isControllerView"
       :evolvedSkillName="evolvedSkillName"
+      :isNpcReport="isNpcReport"
+      :isNpcHidden="isNpcHidden"
       @close="closeModal"
       @takeXp="handleTakeXp"
       @confirmEvolve="handleConfirmEvolve"
@@ -130,3 +163,20 @@ if (isLoading.value) {
     </div>
   </div>
 </template>
+const missionReportChannel = getPluginId(BROADCAST_MISSION_REPORT);
+let hasNotifiedClose = false;
+
+const notifyMissionReportClosed = async () => {
+  if (hasNotifiedClose) return;
+  hasNotifiedClose = true;
+  if (!OBR.isAvailable) return;
+  try {
+    await OBR.broadcast.sendMessage(
+      missionReportChannel,
+      { type: 'MISSION_REPORT_CLOSED' },
+      { destination: 'ALL' },
+    );
+  } catch (error) {
+    console.error('Failed to broadcast mission report close', error);
+  }
+};

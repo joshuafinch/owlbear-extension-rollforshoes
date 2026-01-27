@@ -19,6 +19,8 @@ const props = withDefaults(defineProps<{
   color?: string;
   isController?: boolean;
   evolvedSkillName?: string;
+  isNpcReport?: boolean;
+  isNpcHidden?: boolean;
 }>(), {
   isController: true,
 });
@@ -34,11 +36,24 @@ const isEvolving = ref(false);
 const newSkillName = ref('');
 const skillInput = ref<HTMLInputElement | null>(null);
 
+const isNpcReport = computed(() => props.isNpcReport === true);
+const isNpcHidden = computed(() => Boolean(props.isNpcHidden));
 const isAllSixes = computed(() => props.result.dice.length > 0 && props.result.dice.every(d => d === 6));
 const successCount = computed(() => props.result.dice.filter(d => d === 6).length);
 const isControllerView = computed(() => props.isController !== false);
 const actionState = computed(() => props.result.actionsTaken || []);
+const showActionControls = computed(() => isControllerView.value && !isNpcReport.value);
+const reportTitle = computed(() => isNpcReport.value ? 'NPC Roll' : 'Mission Report');
 const observerStatus = computed(() => {
+    if (isNpcReport.value) {
+        if (isNpcHidden.value) {
+            return {
+                label: 'GM kept this roll hidden',
+                tone: 'text-[var(--obr-status-danger)]',
+            };
+        }
+        return null;
+    }
     if (actionState.value.includes('advance')) {
         return {
             label: props.evolvedSkillName
@@ -75,6 +90,7 @@ const canAdvanceOnFail = computed(() => {
 });
 
 const startEvolution = () => {
+  if (!showActionControls.value) return;
   isEvolving.value = true;
   nextTick(() => {
     skillInput.value?.focus();
@@ -82,6 +98,7 @@ const startEvolution = () => {
 };
 
 const confirmEvolution = () => {
+  if (!showActionControls.value) return;
   if (newSkillName.value.trim()) {
     // If it was all sixes, cost is 0. If it was a fail, cost is nonSixesCount
     const cost = isAllSixes.value ? 0 : nonSixesCount.value;
@@ -106,10 +123,16 @@ const confirmEvolution = () => {
       <div class="p-6 text-center">
         <!-- Header -->
         <h2 class="text-3xl font-black uppercase tracking-tighter italic mb-2 text-[var(--obr-text-primary)]">
-          Mission Report
+          {{ reportTitle }}
         </h2>
         <div class="inline-block bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)] text-xs font-mono px-3 py-1 mb-6 tracking-widest">
            {{ result.characterName }} // {{ result.skillName }} {{ result.rank }}
+        </div>
+        <div 
+          v-if="isNpcReport && isNpcHidden"
+          class="mb-4 text-xs font-black uppercase tracking-widest flex items-center gap-2 justify-center"
+        >
+          <span class="px-2 py-1 border border-[var(--obr-status-danger)] text-[var(--obr-status-danger)] rounded">Hidden From Players</span>
         </div>
 
         <!-- Dice Container (Hidden during evolution to save space/focus) -->
@@ -129,7 +152,7 @@ const confirmEvolution = () => {
         </div>
 
         <!-- Status Messages -->
-        <div class="mb-4 min-h-[3rem] flex items-center justify-center" aria-live="polite">
+        <div v-if="!isNpcReport" class="mb-4 min-h-[3rem] flex items-center justify-center" aria-live="polite">
           <div v-if="isEvolving" class="w-full">
              <div class="text-[var(--obr-status-critical)] font-black text-xl uppercase tracking-tighter italic mb-2 animate-pulse">
                 Evolution Protocol Initiated
@@ -148,16 +171,16 @@ const confirmEvolution = () => {
         </div>
 
         <!-- Current XP Display -->
-        <div v-if="!isAllSixes && !isEvolving" class="flex items-center justify-center gap-2 mb-4">
-             <span class="text-xs font-bold uppercase text-[var(--obr-text-secondary)] tracking-widest">Current Status:</span>
-             <div class="bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)] px-2 py-0.5 rounded text-sm font-mono font-bold">
-                 {{ currentXp }} XP
-             </div>
+        <div v-if="!isNpcReport && !isAllSixes && !isEvolving" class="flex items-center justify-center gap-2 mb-4">
+              <span class="text-xs font-bold uppercase text-[var(--obr-text-secondary)] tracking-widest">Current Status:</span>
+              <div class="bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)] px-2 py-0.5 rounded text-sm font-mono font-bold">
+                  {{ currentXp }} XP
+              </div>
         </div>
 
         <!-- Actions / Observer Notice -->
         <div class="space-y-2">
-          <template v-if="isControllerView">
+          <template v-if="showActionControls">
             <!-- Evolution Form -->
             <div v-if="isEvolving" class="animate-fade-in">
                <input 
@@ -237,11 +260,19 @@ const confirmEvolution = () => {
                  @click="emit('close')"
                  class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-surface-hover)] font-bold uppercase text-xs tracking-widest py-4 mt-2 rounded border border-transparent hover:border-[var(--obr-border-subtle)] transition-colors"
               >
-                 Dismiss Report (Decide Later)
+                  Dismiss Report (Decide Later)
               </button>
             </div>
           </template>
-          <div v-else class="text-xs uppercase tracking-widest bg-[var(--obr-surface-hover)] border border-dashed border-[var(--obr-border-subtle)] p-4">
+          <template v-else-if="isControllerView">
+            <button 
+              class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-surface-hover)] font-bold uppercase text-xs tracking-widest py-4 rounded border border-transparent hover:border-[var(--obr-border-subtle)] transition-colors"
+              @click="emit('close')"
+            >
+              Close
+            </button>
+          </template>
+          <div v-else-if="!isNpcReport" class="text-xs uppercase tracking-widest bg-[var(--obr-surface-hover)] border border-dashed border-[var(--obr-border-subtle)] p-4">
             <template v-if="observerStatus">
               <p class="font-black" :class="observerStatus.tone">
                 {{ observerStatus.label }}
@@ -253,6 +284,11 @@ const confirmEvolution = () => {
             <template v-else>
               <p class="text-[var(--obr-text-secondary)]">Awaiting operator decision...</p>
             </template>
+          </div>
+          <div v-else-if="observerStatus" class="text-xs uppercase tracking-widest bg-[var(--obr-surface-hover)] border border-dashed border-[var(--obr-border-subtle)] p-4">
+            <p class="font-black" :class="observerStatus.tone">
+              {{ observerStatus.label }}
+            </p>
           </div>
         </div>
         <button 

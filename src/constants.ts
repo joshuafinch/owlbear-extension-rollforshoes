@@ -13,12 +13,17 @@ export const LOG_TYPE_SKILL = 'SKILL';
 
 // Modal IDs
 export const MODAL_MISSION_REPORT = 'mission-report';
+export const MODAL_NPC_ROLL_POPOVER = 'npc-roll-popover';
 
 // Metadata Constants
 // Using a constant suffix to ensure we don't typo it elsewhere
 export const METADATA_SUFFIX_CHARACTERS = 'characters';
 export const METADATA_SUFFIX_LOGS = 'logs';
 export const METADATA_SUFFIX_LINK = 'link';
+
+// Broadcast Channels
+export const BROADCAST_NPC_ROLL_REQUEST = 'npc-roll-request';
+export const BROADCAST_MISSION_REPORT = 'mission-report-open';
 
 // Default Values
 export const DEFAULT_NEW_SKILL_RANK = 2;

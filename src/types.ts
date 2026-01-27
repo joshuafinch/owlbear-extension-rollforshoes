@@ -5,6 +5,13 @@ export interface Skill {
   rank: number;
 }
 
+export interface NpcRollRequest {
+  npcName: string;
+  skillName: string;
+  diceCount: number;
+  revealToPlayers: boolean;
+}
+
 export interface Character {
   id: string;
   name: string;
@@ -44,6 +51,8 @@ export interface RollLogEntry {
   timestamp: number;
   actionsTaken?: ('xp' | 'advance' | 'succeeded')[];
   evolvedSkillName?: string;
+  isNpc?: boolean;
+  isHiddenFromPlayers?: boolean;
 }
 
 export interface SkillLogEntry {

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch, type WatchStopHandle } from 'vue';
 import { useRollForShoes } from '../composables/useRollForShoes';
 import DispatchConsole from './DispatchConsole.vue';
 import SystemTerminal from './SystemTerminal.vue';
 import MissionLog from './MissionLog.vue';
-import type { Skill } from '../types';
+import type { Skill, NpcRollRequest } from '../types';
 import OBR from '@owlbear-rodeo/sdk';
 import { 
   TAB_DISPATCH, 
@@ -13,9 +13,14 @@ import {
   LOG_TYPE_ROLL, 
   LOG_TYPE_SKILL,
   MODAL_MISSION_REPORT,
-} from '../constants';
+  MODAL_NPC_ROLL_POPOVER,
+  BROADCAST_NPC_ROLL_REQUEST,
+  BROADCAST_MISSION_REPORT,
+  ROLE_GM,
+ } from '../constants';
 import { useMissionReportControls } from '../composables/useMissionReportControls';
 import getPluginId from '../utils/getPluginId';
+import { useModalQueue } from '../composables/useModalQueue';
 
 const { 
   characterList, 
@@ -47,9 +52,16 @@ const { awardFailureXp, advanceSkillFromRoll, markRollSucceeded } = useMissionRe
 const displayedRollIds = new Set<string>();
 let isModalReady = false;
 const modalReadyResolvers: Array<() => void> = [];
-const missionReportChannel = getPluginId('mission-report-open');
+const missionReportChannel = getPluginId(BROADCAST_MISSION_REPORT);
+const npcRollRequestChannel = getPluginId(BROADCAST_NPC_ROLL_REQUEST);
+const npcPopoverId = getPluginId(MODAL_NPC_ROLL_POPOVER);
+const npcContextMenuId = getPluginId('npc-roll-menu');
 const localConnectionId = ref<string | null>(null);
 let unsubscribeMissionReport: (() => void) | null = null;
+let unsubscribeNpcRoll: (() => void) | null = null;
+let hasNpcContextMenu = false;
+let stopRoleWatcher: WatchStopHandle | null = null;
+const { enqueueModal, releaseModal } = useModalQueue();
 
 if (OBR.isAvailable) {
     OBR.onReady(() => {
@@ -78,18 +90,33 @@ const handleRemoteMissionReport = async (rollId: string) => {
         return;
     }
     displayedRollIds.add(rollId);
-    await openMissionReportModal(rollId, false);
+    queueMissionReportModal(rollId, false);
+};
+
+const ensureConnectionId = async () => {
+    if (!OBR.isAvailable) return;
+    if (!localConnectionId.value) {
+        localConnectionId.value = await OBR.player.getConnectionId();
+    }
 };
 
 const setupMissionReportListener = () => {
     if (!OBR.isAvailable) return;
 
     OBR.onReady(async () => {
-        localConnectionId.value = await OBR.player.getConnectionId();
+        await ensureConnectionId();
         unsubscribeMissionReport = OBR.broadcast.onMessage(missionReportChannel, (event) => {
             if (!event?.data || typeof event.data !== 'object') return;
-            if (event.connectionId === localConnectionId.value) return;
             const payload = event.data as { type?: string; rollId?: string };
+
+            if (payload.type === 'MISSION_REPORT_CLOSED') {
+                if (event.connectionId === localConnectionId.value) {
+                    releaseModal(MODAL_MISSION_REPORT);
+                }
+                return;
+            }
+
+            if (event.connectionId === localConnectionId.value) return;
             if (payload.type !== 'MISSION_REPORT') return;
             if (!payload.rollId) return;
             handleRemoteMissionReport(payload.rollId);
@@ -97,13 +124,106 @@ const setupMissionReportListener = () => {
     });
 };
 
+const setupNpcRollListener = () => {
+    if (!OBR.isAvailable) return;
+    OBR.onReady(async () => {
+        await ensureConnectionId();
+        unsubscribeNpcRoll = OBR.broadcast.onMessage(npcRollRequestChannel, (event) => {
+            if (!event?.data || typeof event.data !== 'object') return;
+            if (event.connectionId !== localConnectionId.value) return;
+            const payload = event.data as NpcRollRequest;
+            handleNpcRoll(payload);
+        });
+    });
+};
+
+const buildNpcPopoverUrl = (tokenId: string) => {
+    const baseUrl = new URL(window.location.href);
+    baseUrl.search = '';
+    baseUrl.searchParams.set('modal', MODAL_NPC_ROLL_POPOVER);
+    baseUrl.searchParams.set('tokenId', tokenId);
+    return baseUrl.toString();
+};
+
+const openNpcPopover = async (tokenId: string | null, anchorId?: string | null) => {
+    if (!OBR.isAvailable || !tokenId) return;
+    try {
+        await OBR.popover.open({
+            id: npcPopoverId,
+            url: buildNpcPopoverUrl(tokenId),
+            anchorElementId: anchorId || tokenId,
+            width: 280,
+            height: 320,
+        });
+    } catch (error) {
+        console.error('Failed to open NPC roll popover', error);
+    }
+};
+
+const registerNpcContextMenu = () => {
+    if (!OBR.isAvailable || hasNpcContextMenu) return;
+    OBR.onReady(async () => {
+        if (hasNpcContextMenu) return;
+        try {
+            await OBR.contextMenu.create({
+                id: npcContextMenuId,
+                icons: [
+                    {
+                        icon: '/icons/npc-roll.svg',
+                        label: 'NPC Roll',
+                        filter: {
+                            roles: ['GM'],
+                        },
+                    },
+                ],
+                onClick(context, elementId) {
+                    const firstCharacterLayerItem = context.items?.find((item) => item.layer === 'CHARACTER');
+                    const fallbackItem = firstCharacterLayerItem ?? context.items?.[0];
+                    const targetId = fallbackItem?.id || null;
+                    if (!targetId) {
+                        return;
+                    }
+                    openNpcPopover(targetId, elementId ?? targetId);
+                },
+            });
+            hasNpcContextMenu = true;
+        } catch (error) {
+            console.error('Failed to register NPC context menu', error);
+        }
+    });
+};
+
+const destroyNpcContextMenu = async () => {
+    if (!OBR.isAvailable || !hasNpcContextMenu) return;
+    try {
+        await OBR.contextMenu.remove(npcContextMenuId);
+    } catch (error) {
+        console.error('Failed to destroy NPC context menu', error);
+    } finally {
+        hasNpcContextMenu = false;
+    }
+};
+
 onMounted(() => {
     setupMissionReportListener();
+    setupNpcRollListener();
+    stopRoleWatcher = watch(role, (currentRole) => {
+        if (currentRole === ROLE_GM) {
+            registerNpcContextMenu();
+        } else {
+            destroyNpcContextMenu();
+        }
+    }, { immediate: true });
 });
 
 onUnmounted(() => {
     unsubscribeMissionReport?.();
     unsubscribeMissionReport = null;
+    unsubscribeNpcRoll?.();
+    unsubscribeNpcRoll = null;
+    destroyNpcContextMenu();
+    stopRoleWatcher?.();
+    stopRoleWatcher = null;
 });
 
 const handleImport = (event: Event) => {
@@ -163,17 +283,27 @@ const buildMissionReportUrl = (rollId: string, isControllerView: boolean) => {
 
 const openMissionReportModal = async (rollId: string, isControllerView: boolean) => {
     if (!OBR.isAvailable) return;
-    try {
-        await waitForModalReady();
-        await OBR.modal.open({
-            id: MODAL_MISSION_REPORT,
-            url: buildMissionReportUrl(rollId, isControllerView),
-            height: 640,
-            width: 420,
-        });
-    } catch (error) {
-        console.error('Failed to open Mission Report modal', error);
-    }
+    await waitForModalReady();
+    await OBR.modal.open({
+        id: MODAL_MISSION_REPORT,
+        url: buildMissionReportUrl(rollId, isControllerView),
+        height: 640,
+        width: 420,
+    });
+};
+
+const queueMissionReportModal = (rollId: string, isControllerView: boolean) => {
+    enqueueModal({
+        id: MODAL_MISSION_REPORT,
+        opener: async () => {
+            try {
+                await openMissionReportModal(rollId, isControllerView);
+            } catch (error) {
+                console.error('Failed to open Mission Report modal', error);
+                releaseModal(MODAL_MISSION_REPORT);
+            }
+        },
+    });
 };
 
 const broadcastMissionReport = async (rollId: string) => {
@@ -210,8 +340,34 @@ const handleRoll = async (characterId: string, skill: Skill) => {
         actionsTaken: []
     });
 
-    await openMissionReportModal(rollId, true);
+    queueMissionReportModal(rollId, true);
     await broadcastMissionReport(rollId);
+};
+
+const handleNpcRoll = async (payload: NpcRollRequest) => {
+    const dice = rollDice(payload.diceCount, debugMode.value);
+    const rollId = crypto.randomUUID();
+    displayedRollIds.add(rollId);
+    const npcName = payload.npcName.trim() || 'NPC Operative';
+    const skillName = payload.skillName.trim() || 'Field Test';
+
+    await addLogEntry({
+        type: LOG_TYPE_ROLL,
+        id: rollId,
+        characterId: `npc-${rollId}`,
+        characterName: npcName,
+        skillName,
+        rank: payload.diceCount,
+        dice,
+        timestamp: Date.now(),
+        isNpc: true,
+        isHiddenFromPlayers: !payload.revealToPlayers,
+    });
+
+    queueMissionReportModal(rollId, true);
+    if (payload.revealToPlayers) {
+        await broadcastMissionReport(rollId);
+    }
 };
 
 const handleLogTakeXp = async (logId: string, characterId: string) => {
@@ -346,7 +502,7 @@ const handleLogSucceeded = async (logId: string) => {
         
         <!-- DISPATCH TAB CONTENT -->
         <div v-if="activeTab === TAB_DISPATCH" class="h-full">
-            <DispatchConsole @roll="handleRoll" />
+            <DispatchConsole @roll="handleRoll" @npcRoll="handleNpcRoll" />
         </div>
 
         <!-- LOGS TAB CONTENT -->
@@ -354,6 +510,7 @@ const handleLogSucceeded = async (logId: string) => {
             <MissionLog 
               :history="rollHistory" 
               :characters="characterList"
+              :role="role"
               @takeXp="handleLogTakeXp"
               @evolve="handleLogEvolve"
               @succeeded="handleLogSucceeded"

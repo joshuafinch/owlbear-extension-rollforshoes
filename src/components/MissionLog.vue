@@ -2,19 +2,32 @@
 import { ref, computed } from 'vue';
 import type { LogEntry, RollLogEntry, Character } from '../types';
 import MissionReport from './MissionReport.vue';
-import { LOG_TYPE_ROLL, LOG_TYPE_SKILL } from '../constants';
+import { LOG_TYPE_ROLL, LOG_TYPE_SKILL, ROLE_GM } from '../constants';
 
 const props = defineProps<{
   history: LogEntry[];
   characters: Character[];
+  role?: string;
 }>();
+
+const isGm = computed(() => props.role === ROLE_GM);
+const visibleHistory = computed(() => {
+    if (isGm.value) {
+        return props.history;
+    }
+    return props.history.filter((entry) => {
+        if (entry.type !== LOG_TYPE_ROLL) return true;
+        const rollEntry = entry as RollLogEntry;
+        return !(rollEntry.isNpc && rollEntry.isHiddenFromPlayers);
+    });
+});
 
 const latestRollIds = computed(() => {
     const ids = new Set<string>();
     const seenChars = new Set<string>();
     
     // History is presumably sorted newest first
-    for (const entry of props.history) {
+    for (const entry of visibleHistory.value) {
         if (entry.type === LOG_TYPE_ROLL) {
             if (!seenChars.has(entry.characterId)) {
                 ids.add(entry.id);
@@ -65,6 +78,7 @@ const getAdvanceSummary = (entry: RollLogEntry) => {
 const activeEvolutionEntry = ref<RollLogEntry | null>(null);
 
 const startRetroEvolution = (entry: RollLogEntry) => {
+    if (entry.isNpc) return;
     activeEvolutionEntry.value = entry;
 };
 
@@ -146,12 +160,12 @@ const handleDeleteClick = (id: string) => {
     <!-- Scrollable Logs -->
     <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-[var(--obr-surface-base)]">
         
-        <div v-if="history.length === 0" class="text-center py-10 opacity-40">
-             <div class="text-5xl mb-2 grayscale">📇</div>
-             <p class="font-black uppercase text-base text-[var(--obr-text-primary)]">Log Empty</p>
+        <div v-if="visibleHistory.length === 0" class="text-center py-10 opacity-40">
+              <div class="text-5xl mb-2 grayscale">📇</div>
+              <p class="font-black uppercase text-base text-[var(--obr-text-primary)]">Log Empty</p>
         </div>
 
-        <template v-for="(entry) in history" :key="entry.id">
+        <template v-for="entry in visibleHistory" :key="entry.id">
             <!-- ROLL ENTRY -->
             <div 
                 v-if="entry.type === LOG_TYPE_ROLL"
@@ -170,6 +184,16 @@ const handleDeleteClick = (id: string) => {
                         <span class="font-black text-[var(--obr-text-primary)] text-base">{{ entry.characterName }}</span>
                         <span class="text-xs text-[var(--obr-text-secondary)]">{{ entry.skillName }} ({{ entry.rank }})</span>
                     </div>
+
+                    <div v-if="entry.isNpc" class="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.35em]">
+                        <span class="text-[var(--obr-status-critical)]">NPC Roll</span>
+                        <span 
+                            class="tracking-normal px-2 py-0.5 rounded-full border text-[var(--obr-text-primary)]"
+                            :class="entry.isHiddenFromPlayers ? 'border-[var(--obr-status-danger)] text-[var(--obr-status-danger)]' : 'border-[var(--obr-status-success)] text-[var(--obr-status-success)]'"
+                        >
+                            {{ entry.isHiddenFromPlayers ? 'Hidden from players' : 'Broadcast to players' }}
+                        </span>
+                    </div>
                     
                     <div class="flex items-center gap-2 mt-1">
                         <span class="font-bold text-[var(--obr-text-disabled)] select-none">></span>
@@ -187,93 +211,110 @@ const handleDeleteClick = (id: string) => {
 
                     <!-- Result + Actions -->
                     <div class="mt-3 space-y-3">
-                        <div>
-                            <div 
-                                v-if="!hasResolvedOutcome(entry)"
-                                class="text-[10px] uppercase font-black tracking-[0.35em] text-[var(--obr-text-secondary)] mb-1"
-                            >
-                                Outcome Options
-                            </div>
-                            <!-- Retroactive Actions -->
-                            <div 
-                                v-if="!hasResolvedOutcome(entry)" 
-                                class="flex flex-wrap gap-2"
-                            >
-                              <!-- CRITICAL CASE -->
-                              <template v-if="isCritical(entry.dice)">
-                                 <button 
-                                     @click="startRetroEvolution(entry)"
-                                     class="text-[10px] bg-[var(--obr-status-critical)] text-white hover:opacity-90 border border-[var(--obr-border-base)] px-2 py-1 font-bold uppercase animate-pulse"
-                                 >
-                                     Evolve!
-                                 </button>
-                              </template>
-
-                              <!-- STANDARD CASE -->
-                              <template v-else>
-                                  <!-- Fail (+1 XP) -->
-                                  <button 
-                                     v-if="!entry.actionsTaken?.includes('xp')"
-                                     @click="emit('takeXp', entry.id, entry.characterId)"
-                                     class="text-[10px] bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-1 font-bold uppercase text-[var(--obr-status-danger)]"
-                                     title="Claim 1 XP for Failure"
-                                 >
-                                     FAIL (+1 XP)
-                                 </button>
-                                 <span v-else class="text-[10px] text-[var(--obr-text-disabled)] font-bold italic uppercase mr-2">XP Claimed</span>
-
-                                 <!-- Advance -->
-                                 <button 
-                                    v-if="canAffordAdvance(entry) && canAdvanceNow(entry)"
-                                    @click="startRetroEvolution(entry)"
-                                    class="text-[10px] bg-[var(--obr-primary-main)] text-white hover:opacity-90 border border-[var(--obr-border-base)] px-2 py-1 font-bold uppercase animate-pulse"
-                                    title="Spend XP to Advance"
+                        <template v-if="!entry.isNpc">
+                            <div>
+                                <div 
+                                    v-if="!hasResolvedOutcome(entry)"
+                                    class="text-[10px] uppercase font-black tracking-[0.35em] text-[var(--obr-text-secondary)] mb-1"
                                 >
-                                    Advance!
+                                    Outcome Options
+                                </div>
+                                <!-- Retroactive Actions -->
+                                <div 
+                                    v-if="!hasResolvedOutcome(entry)" 
+                                    class="flex flex-wrap gap-2"
+                                >
+                                  <!-- CRITICAL CASE -->
+                                  <template v-if="isCritical(entry.dice)">
+                                     <button 
+                                         @click="startRetroEvolution(entry)"
+                                         class="text-[10px] bg-[var(--obr-status-critical)] text-white hover:opacity-90 border border-[var(--obr-border-base)] px-2 py-1 font-bold uppercase animate-pulse"
+                                     >
+                                         Evolve!
+                                     </button>
+                                  </template>
+
+                                  <!-- STANDARD CASE -->
+                                  <template v-else>
+                                      <!-- Fail (+1 XP) -->
+                                      <button 
+                                         v-if="!entry.actionsTaken?.includes('xp')"
+                                         @click="emit('takeXp', entry.id, entry.characterId)"
+                                         class="text-[10px] bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-1 font-bold uppercase text-[var(--obr-status-danger)]"
+                                         title="Claim 1 XP for Failure"
+                                     >
+                                         FAIL (+1 XP)
+                                     </button>
+                                     <span v-else class="text-[10px] text-[var(--obr-text-disabled)] font-bold italic uppercase mr-2">XP Claimed</span>
+
+                                     <!-- Advance -->
+                                     <button 
+                                        v-if="canAffordAdvance(entry) && canAdvanceNow(entry)"
+                                        @click="startRetroEvolution(entry)"
+                                        class="text-[10px] bg-[var(--obr-primary-main)] text-white hover:opacity-90 border border-[var(--obr-border-base)] px-2 py-1 font-bold uppercase animate-pulse"
+                                        title="Spend XP to Advance"
+                                    >
+                                        Advance!
+                                    </button>
+
+                                      <!-- Success (Only if XP not taken) -->
+                                      <button 
+                                         v-if="!entry.actionsTaken?.includes('xp')"
+                                         @click="emit('succeeded', entry.id)"
+                                         class="text-[10px] bg-green-50 hover:bg-green-100 border border-green-200 px-2 py-1 font-bold uppercase text-[var(--obr-status-success)]"
+                                         title="Mark as Succeeded"
+                                     >
+                                         SUCCESS
+                                     </button>
+                                  </template>
+                                </div>
+                                
+                                <!-- Terminal State Status -->
+                                <div v-else class="text-[10px] text-[var(--obr-text-disabled)] uppercase font-bold italic">
+                                    <span v-if="entry.actionsTaken?.includes('advance')">Evolved</span>
+                                    <span v-else-if="entry.actionsTaken?.includes('succeeded')">Succeeded</span>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap items-center gap-2 justify-between border-t border-dashed border-[var(--obr-border-subtle)] pt-2">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span v-if="isCritical(entry.dice)" class="text-[var(--obr-status-critical)] font-black text-xs uppercase border-2 border-[var(--obr-status-critical)] px-1 transform -rotate-2">
+                                        ★ CRITICAL ★
+                                    </span>
+                                    <span 
+                                        v-if="shouldShowAdvanceSummary(entry)"
+                                        class="text-[10px] font-bold uppercase tracking-wide text-[var(--obr-text-secondary)]"
+                                    >
+                                        {{ getAdvanceSummary(entry) }}
+                                    </span>
+                                </div>
+                                
+                                <!-- Delete Button (Only on Hover) -->
+                                <button 
+                                    @click="handleDeleteClick(entry.id)"
+                                    class="opacity-0 group-hover:opacity-100 transition-opacity font-bold px-1 rounded text-xs"
+                                    :class="deletingLogId === entry.id ? 'bg-[var(--obr-status-danger)] text-white opacity-100' : 'text-[var(--obr-text-disabled)] hover:text-[var(--obr-status-danger)]'"
+                                    :title="deletingLogId === entry.id ? 'Click again to confirm delete' : 'Delete Log Entry'"
+                                >
+                                    {{ deletingLogId === entry.id ? 'CONFIRM?' : '✕' }}
                                 </button>
-
-                                  <!-- Success (Only if XP not taken) -->
-                                  <button 
-                                     v-if="!entry.actionsTaken?.includes('xp')"
-                                     @click="emit('succeeded', entry.id)"
-                                     class="text-[10px] bg-green-50 hover:bg-green-100 border border-green-200 px-2 py-1 font-bold uppercase text-[var(--obr-status-success)]"
-                                     title="Mark as Succeeded"
-                                 >
-                                     SUCCESS
-                                 </button>
-                              </template>
                             </div>
-                            
-                            <!-- Terminal State Status -->
-                            <div v-else class="text-[10px] text-[var(--obr-text-disabled)] uppercase font-bold italic">
-                                <span v-if="entry.actionsTaken?.includes('advance')">Evolved</span>
-                                <span v-else-if="entry.actionsTaken?.includes('succeeded')">Succeeded</span>
+                        </template>
+                        <template v-else>
+                            <div class="text-[10px] uppercase font-black tracking-[0.35em] text-[var(--obr-text-secondary)]">
+                                No advancement options — NPC intel only.
                             </div>
-                        </div>
-
-                        <div class="flex flex-wrap items-center gap-2 justify-between border-t border-dashed border-[var(--obr-border-subtle)] pt-2">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <span v-if="isCritical(entry.dice)" class="text-[var(--obr-status-critical)] font-black text-xs uppercase border-2 border-[var(--obr-status-critical)] px-1 transform -rotate-2">
-                                    ★ CRITICAL ★
-                                </span>
-                                <span 
-                                    v-if="shouldShowAdvanceSummary(entry)"
-                                    class="text-[10px] font-bold uppercase tracking-wide text-[var(--obr-text-secondary)]"
+                            <div class="flex justify-end">
+                                <button 
+                                    @click="handleDeleteClick(entry.id)"
+                                    class="opacity-100 font-bold px-2 py-1 rounded text-xs border"
+                                    :class="deletingLogId === entry.id ? 'bg-[var(--obr-status-danger)] text-white border-[var(--obr-status-danger)]' : 'text-[var(--obr-text-secondary)] border-transparent hover:border-[var(--obr-border-subtle)]'"
+                                    :title="deletingLogId === entry.id ? 'Click again to confirm delete' : 'Delete Log Entry'"
                                 >
-                                    {{ getAdvanceSummary(entry) }}
-                                </span>
+                                    {{ deletingLogId === entry.id ? 'CONFIRM?' : 'Delete' }}
+                                </button>
                             </div>
-                            
-                            <!-- Delete Button (Only on Hover) -->
-                            <button 
-                                @click="handleDeleteClick(entry.id)"
-                                class="opacity-0 group-hover:opacity-100 transition-opacity font-bold px-1 rounded text-xs"
-                                :class="deletingLogId === entry.id ? 'bg-[var(--obr-status-danger)] text-white opacity-100' : 'text-[var(--obr-text-disabled)] hover:text-[var(--obr-status-danger)]'"
-                                :title="deletingLogId === entry.id ? 'Click again to confirm delete' : 'Delete Log Entry'"
-                            >
-                                {{ deletingLogId === entry.id ? 'CONFIRM?' : '✕' }}
-                            </button>
-                        </div>
+                        </template>
                     </div>
                 </div>
             </div>
