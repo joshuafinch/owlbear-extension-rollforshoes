@@ -23,6 +23,7 @@ const {
   addSkill, 
   removeSkill,
   importData,
+  importLogs,
   rollDice,
   addLogEntry,
   markLogAction,
@@ -30,8 +31,13 @@ const {
   deleteLogEntry,
   clearLogs,
   debugMode,
-  exportData
+  exportData,
+  exportLogs
 } = useRollForShoes();
+
+const devHosts = ['localhost', '127.0.0.1', '::1'];
+const runtimeEnv = (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env;
+const isDevBuild = Boolean(runtimeEnv?.DEV && typeof window !== 'undefined' && devHosts.includes(window.location.hostname));
 
 // Tabs: 'DISPATCH' (list) | 'LOGS' (history) | 'SYSTEMS' (admin)
 const activeTab = ref<typeof TAB_DISPATCH | typeof TAB_LOGS | typeof TAB_SYSTEMS>(TAB_DISPATCH);
@@ -56,6 +62,31 @@ const handleImport = (event: Event) => {
   
   reader.readAsText(file);
   input.value = '';
+};
+
+const handleImportLogs = (event: Event) => {
+  if (!isDevBuild) return;
+  const input = event.target as HTMLInputElement;
+  if (!input.files || input.files.length === 0) return;
+
+  const file = input.files[0];
+  const reader = new FileReader();
+
+  reader.onload = (e) => {
+    if (e.target?.result && typeof e.target.result === 'string') {
+      if (confirm('This will overwrite all mission log history. Proceed?')) {
+        importLogs(e.target.result);
+      }
+    }
+  };
+
+  reader.readAsText(file);
+  input.value = '';
+};
+
+const handleExportLogs = () => {
+  if (!isDevBuild) return;
+  exportLogs();
 };
 
 const handleRoll = (characterId: string, skill: Skill) => {
@@ -94,13 +125,7 @@ const handleRollTakeXp = async (logId: string) => {
     if (currentRoll.value) {
         await addXp(currentRoll.value.characterId, 1);
         await markLogAction(logId, 'xp');
-        OBR.notification.show(`${currentRoll.value.characterName} gains 1 XP from failure.`);
-        // Remove: currentRoll.value = null; // Don't close immediately so user sees "Success" or "Evolve" options disabled, or better yet, keep modal open but in 'result' state
-        // Actually, for better UX, we can keep it open or close it. 
-        // If we keep it open, we need to update the UI to show XP was taken.
-        // But the MissionReport is a prop-driven component.
-        // Let's close it for now as per original behavior, but ensure the XP add finished first? 
-        // addXp is async now but we don't await it here because the UI is optimistic.
+        // OBR.notification.show(`${currentRoll.value.characterName} gains 1 XP from failure.`);
         currentRoll.value = null;
     }
 };
@@ -132,7 +157,7 @@ const handleRollEvolve = async (logId: string, newSkillName: string, xpCost: num
             sourceRollId: logId // Link back to the roll
          });
          
-         OBR.notification.show(`${currentRoll.value.characterName} acquired new skill: ${newSkillName} (Rank ${currentRoll.value.rank + 1})`, "SUCCESS");
+        //  OBR.notification.show(`${currentRoll.value.characterName} acquired new skill: ${newSkillName} (Rank ${currentRoll.value.rank + 1})`, "SUCCESS");
          currentRoll.value = null;
     }
 };
@@ -142,12 +167,12 @@ const handleLogTakeXp = async (logId: string, characterId: string) => {
     await markLogAction(logId, 'xp');
     
     // Get updated character for notification
-    const char = characterList.value.find(c => c.id === characterId);
-    if (char) {
-        OBR.notification.show(`${char.name} gains 1 XP (Total: ${char.xp}).`);
-    } else {
-        OBR.notification.show(`Character gains 1 XP from archived failure.`);
-    }
+    // const char = characterList.value.find(c => c.id === characterId);
+    // if (char) {
+    //     // OBR.notification.show(`${char.name} gains 1 XP (Total: ${char.xp}).`);
+    // } else {
+    //     // OBR.notification.show(`Character gains 1 XP from archived failure.`);
+    // }
 };
 
 const handleLogDelete = async (logId: string) => {
@@ -184,7 +209,7 @@ const handleLogDelete = async (logId: string) => {
                 await removeSkill(entry.characterId, skillIndex);
             } else {
                 console.warn(`[Revert] Could not find skill to revert. Available skills:`, JSON.parse(JSON.stringify(char.skills)));
-                OBR.notification.show("Skill not found (already deleted?), but XP was refunded.", "WARNING");
+                // OBR.notification.show("Skill not found (already deleted?), but XP was refunded.", "WARNING");
             }
 
             // 2. Refund XP
@@ -198,7 +223,7 @@ const handleLogDelete = async (logId: string) => {
 
         // 4. Delete the log entry
         await deleteLogEntry(logId);
-        OBR.notification.show("Advancement reverted.");
+        // OBR.notification.show("Advancement reverted.");
     } else {
         // Standard delete for other logs (Rolls, or Skills without source info)
         await deleteLogEntry(logId);
@@ -237,7 +262,7 @@ const handleLogEvolve = async (logId: string, characterId: string, rank: number,
         sourceRollId: logId // Link back to the roll that spawned this
     });
 
-    OBR.notification.show(`Character acquired new skill: ${newSkillName} (Rank ${rank + 1})`, "SUCCESS");
+    // OBR.notification.show(`Character acquired new skill: ${newSkillName} (Rank ${rank + 1})`, "SUCCESS");
 };
 const handleRollSucceeded = async (logId: string) => {
     await markLogAction(logId, 'succeeded');
@@ -245,7 +270,7 @@ const handleRollSucceeded = async (logId: string) => {
 };
 const handleLogSucceeded = async (logId: string) => {
     await markLogAction(logId, 'succeeded');
-    OBR.notification.show(`Roll marked as Succeeded.`);
+    // OBR.notification.show(`Roll marked as Succeeded.`);
 };
 </script>
 
@@ -337,8 +362,11 @@ const handleLogSucceeded = async (logId: string) => {
             <SystemTerminal 
               :role="role"
               :isDebug="debugMode"
+              :isDevBuild="isDevBuild"
               @export="exportData"
               @import="handleImport"
+              @exportLogs="handleExportLogs"
+              @importLogs="handleImportLogs"
               @clearLogs="clearLogs"
               @toggleDebug="debugMode = !debugMode"
             />

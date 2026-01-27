@@ -240,7 +240,7 @@ const linkSelectionToCharacter = async (characterId: string | null) => {
       // Optimistic Update: Clear active character immediately
       activeCharacterId.value = null;
 
-      OBR.notification.show(`Unlinked ${selectedItems.value.length} token(s).`);
+      // OBR.notification.show(`Unlinked ${selectedItems.value.length} token(s).`);
       return;
     }
 
@@ -270,7 +270,7 @@ const linkSelectionToCharacter = async (characterId: string | null) => {
     // Optimistic Update: Immediately set activeCharacterId so the UI refreshes
     activeCharacterId.value = characterId;
 
-    OBR.notification.show(`Linked ${selectedItems.value.length} token(s) to character.`);
+    // OBR.notification.show(`Linked ${selectedItems.value.length} token(s) to character.`);
   } catch (e) {
     console.error('Failed to link tokens', e);
   }
@@ -448,6 +448,92 @@ const importData = async (jsonContent: string) => {
   }
 };
 
+const exportLogs = () => {
+  try {
+    const dataStr = JSON.stringify(rollHistory.value, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mission-logs-backup-${new Date().toISOString().replace(/:/g, '-').split('.')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    console.error('Failed to export mission logs', e);
+    OBR.notification.show('Failed to export mission logs', 'ERROR');
+  }
+};
+
+const importLogs = async (jsonContent: string) => {
+  try {
+    const data = JSON.parse(jsonContent);
+
+    if (!Array.isArray(data)) {
+      throw new Error('Invalid data format: Expected an array of log entries');
+    }
+
+    const sanitized = data.map((entry, index) => {
+      const withType = entry?.type ?? LOG_TYPE_ROLL;
+      if (withType === LOG_TYPE_ROLL) {
+        const required = ['characterId', 'characterName', 'skillName', 'rank', 'dice', 'timestamp'];
+        for (const field of required) {
+          if (entry[field] === undefined) {
+            throw new Error(`Missing field "${field}" on roll log at index ${index}`);
+          }
+        }
+        return {
+          type: LOG_TYPE_ROLL,
+          id: entry.id ?? crypto.randomUUID(),
+          characterId: String(entry.characterId),
+          characterName: String(entry.characterName),
+          skillName: String(entry.skillName),
+          rank: Number(entry.rank),
+          dice: Array.isArray(entry.dice) ? entry.dice.map((d: number) => Number(d)) : [],
+          timestamp: Number(entry.timestamp),
+          actionsTaken: Array.isArray(entry.actionsTaken) ? entry.actionsTaken.filter((action: string) => action === 'xp' || action === 'advance' || action === 'succeeded') : [],
+        } as RollLogEntry;
+      }
+
+      if (withType === LOG_TYPE_SKILL) {
+        const required = ['characterId', 'characterName', 'newSkillName', 'rank', 'timestamp'];
+        for (const field of required) {
+          if (entry[field] === undefined) {
+            throw new Error(`Missing field "${field}" on skill log at index ${index}`);
+          }
+        }
+        return {
+          type: LOG_TYPE_SKILL,
+          id: entry.id ?? crypto.randomUUID(),
+          characterId: String(entry.characterId),
+          characterName: String(entry.characterName),
+          newSkillName: String(entry.newSkillName),
+          rank: Number(entry.rank),
+          timestamp: Number(entry.timestamp),
+          cost: Number(entry.cost ?? 0),
+          sourceRollId: entry.sourceRollId ? String(entry.sourceRollId) : undefined,
+        } as SkillLogEntry;
+      }
+
+      throw new Error(`Unsupported log type at index ${index}`);
+    });
+
+    rollHistory.value = sanitized;
+    setLogLock();
+
+    const cleanHistory = JSON.parse(JSON.stringify(sanitized));
+    await OBR.room.setMetadata({
+      [LOGS_DATA_KEY]: cleanHistory,
+    });
+
+    OBR.notification.show('Mission logs imported successfully', 'SUCCESS');
+  } catch (e) {
+    console.error('Failed to import mission logs', e);
+    OBR.notification.show('Failed to import mission logs: Invalid format', 'ERROR');
+  }
+};
+
 function rollDice(count: number, debug = false): number[] {
   if (debug) {
     // High chance of failure (1s and 2s) for testing XP gain
@@ -597,7 +683,9 @@ export function useRollForShoes() {
     reorderSkills,
     linkSelectionToCharacter,
     exportData,
+    exportLogs,
     importData,
+    importLogs,
     rollDice,
     rollHistory,
     addLogEntry,

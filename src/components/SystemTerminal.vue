@@ -5,11 +5,14 @@ import { ROLE_GM } from '../constants';
 const props = defineProps<{
   role: string;
   isDebug?: boolean;
+  isDevBuild?: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'export'): void;
   (e: 'import', event: Event): void;
+  (e: 'exportLogs'): void;
+  (e: 'importLogs', event: Event): void;
   (e: 'toggleDebug'): void;
   (e: 'clearLogs'): void;
 }>();
@@ -125,6 +128,44 @@ const handleClearLogs = () => {
                            <p v-else class="text-xs text-gray-500 pl-6 mt-1">Permanently erase all mission logs.</p>
                        </div>
                    </button>
+
+                    <div 
+                        v-if="props.isDevBuild" 
+                        class="mt-3 space-y-3 border-t border-dashed border-yellow-900 pt-3"
+                    >
+                        <p class="text-xs text-yellow-500 pl-6">// DEV ONLY: Mission Log Archives</p>
+                        <button 
+                            @click="emit('exportLogs')"
+                            class="w-full text-left hover:bg-yellow-900/30 p-3 rounded transition-colors flex items-center justify-between group"
+                        >
+                            <div>
+                                <p class="text-base font-bold text-yellow-300 group-hover:text-yellow-100">
+                                    <span class="mr-2">🗄</span> LOG_ARCHIVE_EXPORT()
+                                </p>
+                                <p class="text-xs text-gray-500 pl-6 mt-1">Dump mission log history to JSON for debugging.</p>
+                            </div>
+                            <div class="text-[10px] font-black px-2 py-0.5 border border-yellow-700 text-yellow-500">
+                                LOCALHOST
+                            </div>
+                        </button>
+
+                        <label class="group text-left hover:bg-yellow-900/30 p-3 rounded transition-colors cursor-pointer flex flex-col gap-1">
+                            <div class="flex items-center gap-2">
+                                <p class="text-base font-bold text-yellow-300 group-hover:text-yellow-100 flex-1">
+                                    <span class="mr-2">📥</span> LOG_ARCHIVE_IMPORT()
+                                </p>
+                                <span class="text-[10px] font-black px-2 py-0.5 border border-yellow-700 text-yellow-500">LOCALHOST</span>
+                            </div>
+                            <p class="text-xs text-gray-500 pl-6">Overwrite mission log timeline from JSON snapshot.</p>
+                            <input type="file" class="hidden" accept=".json" @change="(e) => emit('importLogs', e)" />
+                        </label>
+
+                        <p class="text-[10px] text-yellow-500/80 pl-6">
+                            ⚠ These protocols are restricted to localhost dev sessions and will overwrite current mission logs.
+                        </p>
+                    </div>
+
+                    
                 </div>
              </div>
         </div>
