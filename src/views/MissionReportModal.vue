@@ -165,60 +165,45 @@ if (isLoading.value) {
 </script>
 
 <template>
-  <div class="h-screen w-screen bg-[var(--obr-surface-base)] text-[var(--obr-text-primary)] flex items-center justify-center p-4">
-    <div v-if="!rollId" class="text-center space-y-2 max-w-sm">
-      <p class="font-black uppercase tracking-widest">Mission Report Unavailable</p>
-      <p class="text-sm text-[var(--obr-text-secondary)]">Missing roll reference. Close this modal and try again.</p>
-      <button 
-        class="mt-4 px-4 py-2 border border-[var(--obr-border-base)] text-xs uppercase tracking-widest"
-        @click="closeModal"
-      >
+  <div
+    class="h-screen w-screen bg-[var(--obr-surface-base)] text-[var(--obr-text-primary)] flex items-stretch p-0 overflow-hidden">
+    <div v-if="!rollId" class="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
+      <div
+        class="w-16 h-16 bg-[var(--obr-status-danger)] rounded-full flex items-center justify-center text-white text-4xl mb-4 transform -rotate-12 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        !</div>
+      <p class="text-4xl font-black uppercase tracking-tighter italic transform -rotate-2">Mission Report Unavailable
+      </p>
+      <p class="text-lg font-bold text-[var(--obr-text-secondary)]">Missing roll reference. Close this modal and try
+        again.</p>
+      <button
+        class="mt-8 px-12 py-4 bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)] font-black uppercase tracking-widest transform skew-x-12 hover:skew-x-0 transition-transform shadow-[8px_8px_0px_0px_var(--obr-status-danger)] active:translate-y-1 active:translate-x-1 active:shadow-none"
+        @click="closeModal">
         Close
       </button>
     </div>
-    <div v-else-if="isLoading" class="text-center space-y-2 max-w-sm animate-pulse">
-      <p class="font-black uppercase tracking-widest">Retrieving Mission Report…</p>
-      <p class="text-sm text-[var(--obr-text-secondary)]">Stand by while telemetry syncs.</p>
+    <div v-else-if="isLoading"
+      class="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4 animate-pulse">
+      <div
+        class="w-16 h-16 border-8 border-[var(--obr-primary-main)] border-t-transparent rounded-full animate-spin mb-4">
+      </div>
+      <p class="text-4xl font-black uppercase tracking-tighter italic">Retrieving Mission Report…</p>
+      <p class="text-lg font-bold text-[var(--obr-text-secondary)]">Stand by while telemetry syncs.</p>
     </div>
-    <MissionReport
-      v-else-if="rollEntry"
-      :result="rollEntry"
-      :character="character"
-      :isController="isControllerView"
-      :evolvedSkillName="evolvedSkillName"
-      :isNpcReport="isNpcReport"
-      :isNpcHidden="isNpcHidden"
-      @close="closeModal"
-      @takeXp="handleTakeXp"
-      @confirmEvolve="handleConfirmEvolve"
-      @succeeded="handleSucceeded"
-    />
-    <div v-else class="text-center space-y-2 max-w-sm">
-      <p class="font-black uppercase tracking-widest">Mission Report Missing</p>
-      <p class="text-sm text-[var(--obr-text-secondary)]">The referenced roll could not be found. It may have been deleted.</p>
-      <button 
-        class="mt-4 px-4 py-2 border border-[var(--obr-border-base)] text-xs uppercase tracking-widest"
-        @click="closeModal"
-      >
+    <MissionReport v-else-if="rollEntry" :result="rollEntry" :character="character" :isController="isControllerView"
+      :evolvedSkillName="evolvedSkillName" :isNpcReport="isNpcReport" :isNpcHidden="isNpcHidden" class="flex-1"
+      @close="closeModal" @takeXp="handleTakeXp" @confirmEvolve="handleConfirmEvolve" @succeeded="handleSucceeded" />
+    <div v-else class="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
+      <div
+        class="w-16 h-16 bg-[var(--obr-status-warning)] rounded-full flex items-center justify-center text-white text-4xl mb-4 transform rotate-12 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        ?</div>
+      <p class="text-4xl font-black uppercase tracking-tighter italic transform rotate-1">Mission Report Missing</p>
+      <p class="text-lg font-bold text-[var(--obr-text-secondary)]">The referenced roll could not be found. It may have
+        been deleted.</p>
+      <button
+        class="mt-8 px-12 py-4 bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)] font-black uppercase tracking-widest transform -skew-x-12 hover:skew-x-0 transition-transform shadow-[8px_8px_0px_0px_var(--obr-primary-main)] active:translate-y-1 active:translate-x-1 active:shadow-none"
+        @click="closeModal">
         Close
       </button>
     </div>
   </div>
 </template>
-const missionReportChannel = getPluginId(BROADCAST_MISSION_REPORT);
-let hasNotifiedClose = false;
-
-const notifyMissionReportClosed = async () => {
-  if (hasNotifiedClose) return;
-  hasNotifiedClose = true;
-  if (!OBR.isAvailable) return;
-  try {
-    await OBR.broadcast.sendMessage(
-      missionReportChannel,
-      { type: 'MISSION_REPORT_CLOSED' },
-      { destination: 'ALL' },
-    );
-  } catch (error) {
-    console.error('Failed to broadcast mission report close', error);
-  }
-};

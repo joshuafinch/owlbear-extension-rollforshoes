@@ -43,38 +43,37 @@ const successCount = computed(() => props.result.dice.filter(d => d === 6).lengt
 const isControllerView = computed(() => props.isController !== false);
 const actionState = computed(() => props.result.actionsTaken || []);
 const showActionControls = computed(() => isControllerView.value && !isNpcReport.value);
-const reportTitle = computed(() => isNpcReport.value ? 'NPC Roll' : 'Mission Report');
 const observerStatus = computed(() => {
-    if (isNpcReport.value) {
-        if (isNpcHidden.value) {
-            return {
-                label: 'GM kept this roll hidden',
-                tone: 'text-[var(--obr-status-danger)]',
-            };
-        }
-        return null;
-    }
-    if (actionState.value.includes('advance')) {
-        return {
-            label: props.evolvedSkillName
-                ? `Skill evolved: ${props.evolvedSkillName}`
-                : 'Skill evolved from this mission',
-            tone: 'text-[var(--obr-status-critical)]',
-        };
-    }
-    if (actionState.value.includes('succeeded')) {
-        return {
-            label: 'Mission marked as Success',
-            tone: 'text-[var(--obr-status-success)]',
-        };
-    }
-    if (actionState.value.includes('xp')) {
-        return {
-            label: '+1 XP logged from failure',
-            tone: 'text-[var(--obr-status-warning)]',
-        };
+  if (isNpcReport.value) {
+    if (isNpcHidden.value) {
+      return {
+        label: 'GM kept this roll hidden',
+        tone: 'text-[var(--obr-status-danger)]',
+      };
     }
     return null;
+  }
+  if (actionState.value.includes('advance')) {
+    return {
+      label: props.evolvedSkillName
+        ? `Skill evolved: ${props.evolvedSkillName}`
+        : 'Skill evolved from this mission',
+      tone: 'text-[var(--obr-status-critical)]',
+    };
+  }
+  if (actionState.value.includes('succeeded')) {
+    return {
+      label: 'Mission marked as Success',
+      tone: 'text-[var(--obr-status-success)]',
+    };
+  }
+  if (actionState.value.includes('xp')) {
+    return {
+      label: '+1 XP logged from failure',
+      tone: 'text-[var(--obr-status-warning)]',
+    };
+  }
+  return null;
 });
 
 // Advancement Logic
@@ -83,10 +82,10 @@ const currentXp = computed(() => props.character?.xp || 0);
 
 // Can advance if: (Current XP) >= Cost (non-sixes)
 const canAdvanceOnFail = computed(() => {
-    if (isAllSixes.value) return false;
-    // XP available - do NOT assume +1 from failure until failure is claimed
-    const availableXp = currentXp.value;
-    return availableXp >= nonSixesCount.value;
+  if (isAllSixes.value) return false;
+  // XP available - do NOT assume +1 from failure until failure is claimed
+  const availableXp = currentXp.value;
+  return availableXp >= nonSixesCount.value;
 });
 
 const startEvolution = () => {
@@ -108,219 +107,201 @@ const confirmEvolution = () => {
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in" aria-modal="true" role="dialog">
-    <div 
-        class="w-full max-w-sm bg-[var(--obr-surface-card)] border-4 border-[var(--obr-border-base)] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden transform transition-all scale-100"
-        :style="color ? { borderColor: color, boxShadow: `8px 8px 0px 0px ${color}` } : {}"
-    >
-      
-      <!-- Top Secret Striped Header -->
-      <div 
-        class="h-4 bg-[repeating-linear-gradient(45deg,#000,#000_10px,var(--obr-brand-hazard)_10px,var(--obr-brand-hazard)_20px)] border-b-4 border-black"
-        :style="color ? { backgroundImage: `repeating-linear-gradient(45deg,#000,#000 10px,${color} 10px,${color} 20px)` } : {}"
-      ></div>
-      
-      <div class="p-6 text-center">
-        <!-- Header -->
-        <h2 class="text-3xl font-black uppercase tracking-tighter italic mb-2 text-[var(--obr-text-primary)]">
-          {{ reportTitle }}
-        </h2>
-        <div class="inline-block bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)] text-xs font-mono px-3 py-1 mb-6 tracking-widest">
-           {{ result.characterName }} // {{ result.skillName }} {{ result.rank }}
-        </div>
-        <div 
-          v-if="isNpcReport && isNpcHidden"
-          class="mb-4 text-xs font-black uppercase tracking-widest flex items-center gap-2 justify-center"
-        >
-          <span class="px-2 py-1 border border-[var(--obr-status-danger)] text-[var(--obr-status-danger)] rounded">Hidden From Players</span>
+  <div :class="[
+    isRetroactive ? 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm' : 'h-full w-full relative flex flex-col overflow-hidden bg-[var(--obr-surface-base)]',
+    'animate-fade-in'
+  ]" :aria-modal="isRetroactive" role="dialog">
+    <div :class="[
+      isRetroactive ? 'w-full max-w-sm border-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]' : 'flex-1 flex flex-col w-full h-full border-0',
+      'bg-[var(--obr-surface-card)] relative overflow-hidden transform transition-all scale-100 border-[var(--obr-border-base)]'
+    ]" :style="color && isRetroactive ? { borderColor: color, boxShadow: `8px 8px 0px 0px ${color}` } : {}">
+
+      <div class="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col items-center justify-start custom-scrollbar">
+        <!-- Character / Skill Header (Condensed Comic Style) -->
+        <div class="relative mb-6 mt-1 transform -rotate-1 group text-center">
+          <div
+            class="inline-block bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)] text-2xl sm:text-3xl font-black px-4 py-1.5 tracking-tighter uppercase transform skew-x-12 shadow-[4px_4px_0px_0px_var(--obr-status-critical)] mb-1">
+            {{ result.characterName }}
+          </div>
+          <h2
+            class="text-xl sm:text-2xl font-black uppercase tracking-tight italic text-[var(--obr-text-primary)] leading-tight mt-2">
+            {{ result.skillName }}
+          </h2>
         </div>
 
-        <!-- Dice Container (Hidden during evolution to save space/focus) -->
-        <div v-if="!isEvolving" class="flex flex-wrap justify-center gap-3 mb-8" role="status" aria-label="Dice Results">
-          <div 
-            v-for="(die, index) in result.dice" 
-            :key="index"
-            class="w-16 h-16 flex items-center justify-center border-4 rounded-lg text-4xl font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] transition-all duration-500 animate-bounce-in"
-            :class="die === 6 
-              ? 'bg-[var(--obr-primary-main)] border-black text-white scale-110 z-10' 
-              : 'bg-[var(--obr-surface-card)] border-[var(--obr-border-subtle)] text-[var(--obr-text-disabled)]'"
-            :style="{ animationDelay: `${index * 50}ms` }"
-            :aria-label="`Die ${index + 1}: ${die}`"
-          >
+        <div v-if="isNpcReport && isNpcHidden"
+          class="mb-6 bg-[var(--obr-status-danger)] text-white p-2 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transform -rotate-1">
+          <span class="text-xs font-black uppercase tracking-widest">Top Secret: Hidden From Players</span>
+        </div>
+
+        <!-- Dice Bay -->
+        <div v-if="!isEvolving"
+          class="w-full max-w-2xl bg-black/5 border-y-4 border-dashed border-[var(--obr-border-subtle)] py-6 px-4 mb-6 flex flex-wrap justify-center gap-3 sm:gap-4"
+          role="status" aria-label="Dice Results">
+          <div v-for="(die, index) in result.dice" :key="index"
+            class="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center border-4 border-black rounded-sm text-4xl sm:text-5xl font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-500 animate-bounce-in relative"
+            :class="[
+              die === 6
+                ? 'bg-[var(--obr-status-critical)] text-white scale-110 rotate-3 z-10'
+                : 'bg-[var(--obr-surface-card)] text-[var(--obr-text-primary)] -rotate-3',
+              isAllSixes ? 'ring-4 ring-yellow-400 animate-pulse' : ''
+            ]" :style="{ animationDelay: `${index * 100}ms` }" :aria-label="`Die ${index + 1}: ${die}`">
             {{ die }}
+            <!-- Impact Sparkle for 6s -->
+            <div v-if="die === 6" class="absolute -inset-2 pointer-events-none">
+              <div class="absolute inset-0 bg-yellow-400/20 blur-xl rounded-full scale-150 animate-pulse"></div>
+            </div>
           </div>
         </div>
 
-        <!-- Status Messages -->
-        <div v-if="!isNpcReport" class="mb-4 min-h-[3rem] flex items-center justify-center" aria-live="polite">
-          <div v-if="isEvolving" class="w-full">
-             <div class="text-[var(--obr-status-critical)] font-black text-xl uppercase tracking-tighter italic mb-2 animate-pulse">
-                Evolution Protocol Initiated
-             </div>
-             <p class="text-sm font-bold uppercase text-[var(--obr-text-secondary)]">Enter name for Rank {{ result.rank + 1 }} Skill</p>
-          </div>
-          <div v-else-if="isAllSixes" class="text-[var(--obr-status-critical)] font-black text-4xl uppercase tracking-tighter italic animate-pulse drop-shadow-md transform -rotate-2">
-            CRITICAL SUCCESS!
-          </div>
-          <div v-else-if="successCount > 0" class="text-[var(--obr-primary-main)] font-black text-2xl uppercase tracking-widest">
-            {{ successCount }} Sixes Rolled
-          </div>
-          <div v-else class="text-[var(--obr-text-disabled)] font-bold uppercase tracking-widest text-lg">
-            Standard Execution
+        <!-- Callout Box (Only for Evolution) -->
+        <div v-if="!isNpcReport && isEvolving" class="mb-6 w-full max-w-lg" aria-live="polite">
+          <div
+            class="text-center p-4 border-4 border-[var(--obr-status-critical)] bg-[var(--obr-status-critical)]/10 transform rotate-1">
+            <div
+              class="text-[var(--obr-status-critical)] font-black text-2xl uppercase tracking-tighter italic mb-1 animate-pulse">
+              Evolution Protocol!
+            </div>
+            <p class="text-xs font-black uppercase text-[var(--obr-text-primary)]">Codename for Rank {{ result.rank + 1
+            }} Skill:</p>
           </div>
         </div>
 
-        <!-- Current XP Display -->
-        <div v-if="!isNpcReport && !isAllSixes && !isEvolving" class="flex items-center justify-center gap-2 mb-4">
-              <span class="text-xs font-bold uppercase text-[var(--obr-text-secondary)] tracking-widest">Current Status:</span>
-              <div class="bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)] px-2 py-0.5 rounded text-sm font-mono font-bold">
-                  {{ currentXp }} XP
-              </div>
-        </div>
-
-        <!-- Actions / Observer Notice -->
-        <div class="space-y-2">
+        <!-- Status / Action Area -->
+        <div class="w-full max-w-lg space-y-4">
           <template v-if="showActionControls">
             <!-- Evolution Form -->
-            <div v-if="isEvolving" class="animate-fade-in">
-               <input 
-                  ref="skillInput"
-                  v-model="newSkillName"
-                  type="text"
-                  autocomplete="off"
-                  data-1p-ignore
-                  class="w-full bg-[var(--obr-surface-input)] text-[var(--obr-text-primary)] border-2 border-[var(--obr-status-critical)] p-3 font-bold text-center mb-2 focus:outline-none focus:shadow-[0_0_10px_var(--obr-status-critical)]"
-                  placeholder="NEW SKILL NAME..."
-                  @keyup.enter="confirmEvolution"
-               />
-               <div class="grid grid-cols-2 gap-2">
-                  <button 
-                    @click="isEvolving = false"
-                    class="w-full bg-[var(--obr-surface-card)] hover:bg-[var(--obr-surface-hover)] text-[var(--obr-text-primary)] border-2 border-[var(--obr-border-base)] font-bold uppercase py-3 text-sm"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    @click="confirmEvolution"
-                    class="w-full bg-[var(--obr-status-critical)] hover:opacity-90 text-white border-2 border-black font-black uppercase py-3 text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none"
-                  >
-                    Confirm
-                  </button>
-               </div>
+            <div v-if="isEvolving" class="animate-fade-in space-y-4">
+              <input ref="skillInput" v-model="newSkillName" type="text" autocomplete="off" data-1p-ignore
+                class="w-full bg-[var(--obr-surface-input)] text-[var(--obr-text-primary)] border-4 border-black p-4 font-black text-2xl text-center uppercase focus:outline-none focus:ring-4 focus:ring-[var(--obr-status-critical)] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                placeholder="NEW ABILITY NAME..." @keyup.enter="confirmEvolution" />
+              <div class="grid grid-cols-2 gap-4">
+                <button @click="isEvolving = false"
+                  class="bg-[var(--obr-surface-card)] hover:bg-[var(--obr-surface-hover)] text-[var(--obr-text-primary)] border-4 border-black font-black uppercase py-4 text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all">
+                  Abort
+                </button>
+                <button @click="confirmEvolution"
+                  class="bg-[var(--obr-status-critical)] hover:opacity-90 text-white border-4 border-black font-black uppercase py-4 text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all">
+                  Manifest!
+                </button>
+              </div>
             </div>
 
             <!-- Normal Actions -->
-            <div v-else>
+            <div v-else class="space-y-4">
               <!-- Advancement Option (Success) -->
-              <button 
-                v-if="isAllSixes"
-                @click="startEvolution"
-                class="w-full bg-[var(--obr-status-critical)] hover:opacity-90 text-white border-2 border-black font-black uppercase py-3 text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 mb-4"
-              >
-                <span>★</span> Evolve New Skill
+              <button v-if="isAllSixes" @click="startEvolution"
+                class="w-full bg-[var(--obr-status-critical)] hover:scale-105 text-white border-4 border-black font-black uppercase py-4 text-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all flex items-center justify-center gap-3">
+                <span>★</span> EVOLVE NOW <span>★</span>
               </button>
 
               <!-- Failure Options -->
-              <div v-if="!isAllSixes" class="flex flex-col gap-2">
-                  
-                <button 
-                  v-if="!isRetroactive"
-                  @click="emit('succeeded', result.id)"
-                  class="w-full bg-[var(--obr-status-success)] hover:opacity-90 text-white border-2 border-black font-bold uppercase py-3 text-sm flex items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
-                >
-                  <span class="text-lg">✓</span> SUCCEEDED
+              <div v-if="!isAllSixes" class="flex flex-col gap-4">
+
+                <button v-if="!isRetroactive" @click="emit('succeeded', result.id)"
+                  class="w-full bg-[var(--obr-status-success)] hover:scale-[1.02] text-white border-4 border-black font-black uppercase py-4 text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 active:translate-x-1 transition-all">
+                  MISSION ACCOMPLISHED
                 </button>
 
-                <div class="flex gap-2">
-                  <button 
-                      v-if="!isRetroactive"
-                      @click="emit('takeXp', result.id)"
-                      class="flex-1 bg-[var(--obr-surface-base)] hover:bg-[var(--obr-text-primary)] text-[var(--obr-text-primary)] hover:text-[var(--obr-bg-default)] border-2 border-[var(--obr-border-base)] font-bold uppercase py-3 text-sm flex flex-col items-center justify-center gap-1 group shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
-                  >
-                      <span class="text-[var(--obr-status-danger)] group-hover:text-[var(--obr-status-danger)] text-lg leading-none">⚠</span> 
-                      <span class="leading-none">FAIL (+1 XP)</span>
-                  </button>
-                  
-                  <button 
-                      v-if="canAdvanceOnFail"
-                      @click="startEvolution"
-                      class="flex-1 bg-[var(--obr-primary-main)] hover:opacity-90 text-[var(--obr-primary-contrast)] border-2 border-[var(--obr-border-base)] font-bold uppercase py-3 text-sm flex flex-col items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
-                  >
-                      <span class="text-lg leading-none">⚡</span> 
-                      <span class="leading-none">ADVANCE (-{{ nonSixesCount }} XP)</span>
-                  </button>
-                   <div v-else-if="!isRetroactive || (isRetroactive && !canAdvanceOnFail)" class="flex-1 flex items-center justify-center bg-[var(--obr-surface-base)] border-2 border-dashed border-[var(--obr-border-subtle)] text-[var(--obr-text-disabled)] font-bold text-xs uppercase text-center p-1 cursor-not-allowed select-none">
-                       Need {{ nonSixesCount }} XP to advance
-                   </div>
+                <button v-if="!isRetroactive" @click="emit('takeXp', result.id)"
+                  class="w-full bg-[var(--obr-status-danger)] hover:scale-[1.02] text-white border-4 border-black font-black uppercase py-4 text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 active:translate-x-1 transition-all">
+                  MISSION FAILED (+1 XP)
+                </button>
+
+                <button v-if="canAdvanceOnFail" @click="startEvolution"
+                  class="w-full bg-[var(--obr-primary-main)] hover:scale-[1.02] text-white border-4 border-black font-black uppercase py-4 text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 active:translate-x-1 transition-all">
+                  SPEND ({{ nonSixesCount }} XP) TO EVOLVE
+                </button>
+
+                <div v-else-if="!isRetroactive || (isRetroactive && !canAdvanceOnFail)"
+                  class="w-full bg-black/5 border-4 border-dashed border-[var(--obr-border-subtle)] text-[var(--obr-text-disabled)] font-black text-sm uppercase text-center p-4 cursor-not-allowed select-none">
+                  Gather {{ nonSixesCount }} XP to evolve
                 </div>
               </div>
-              
-              <button 
-                v-if="!isEvolving"
-                 @click="emit('close')"
-                 class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-surface-hover)] font-bold uppercase text-xs tracking-widest py-4 mt-2 rounded border border-transparent hover:border-[var(--obr-border-subtle)] transition-colors"
-              >
-                  Dismiss Report (Decide Later)
+
+              <button v-if="!isEvolving" @click="emit('close')"
+                class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] font-black uppercase text-xs tracking-[0.3em] py-4 transition-colors">
+                Decide Later...
               </button>
             </div>
           </template>
+
           <template v-else-if="isControllerView">
-            <button 
-              class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-surface-hover)] font-bold uppercase text-xs tracking-widest py-4 rounded border border-transparent hover:border-[var(--obr-border-subtle)] transition-colors"
-              @click="emit('close')"
-            >
-              Close
+            <button
+              class="w-full bg-black text-white border-4 border-black font-black uppercase py-4 text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all"
+              @click="emit('close')">
+              Back to Field
             </button>
           </template>
-          <div v-else-if="!isNpcReport" class="text-xs uppercase tracking-widest bg-[var(--obr-surface-hover)] border border-dashed border-[var(--obr-border-subtle)] p-4">
+
+          <div v-else-if="!isNpcReport"
+            class="bg-white text-black border-4 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transform rotate-1">
             <template v-if="observerStatus">
-              <p class="font-black" :class="observerStatus.tone">
+              <p class="font-black uppercase text-lg leading-none mb-1" :class="observerStatus.tone">
                 {{ observerStatus.label }}
               </p>
-              <p class="text-[var(--obr-text-secondary)] mt-1 tracking-normal normal-case">
-                Report updated live from command log.
+              <p class="text-[9px] font-bold uppercase tracking-widest opacity-50">
+                Satellite Uplink Confirmed
               </p>
             </template>
             <template v-else>
-              <p class="text-[var(--obr-text-secondary)]">Awaiting operator decision...</p>
+              <p class="text-base font-black uppercase animate-pulse">Awaiting Command...</p>
             </template>
           </div>
-          <div v-else-if="observerStatus" class="text-xs uppercase tracking-widest bg-[var(--obr-surface-hover)] border border-dashed border-[var(--obr-border-subtle)] p-4">
-            <p class="font-black" :class="observerStatus.tone">
+
+          <div v-else-if="observerStatus"
+            class="bg-white text-black border-4 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transform rotate-1">
+            <p class="font-black uppercase text-lg leading-none mb-1" :class="observerStatus.tone">
               {{ observerStatus.label }}
             </p>
           </div>
         </div>
-        <button 
-          v-if="!isControllerView"
-          @click="emit('close')"
-          class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-surface-hover)] font-bold uppercase text-xs tracking-widest py-3 mt-4 rounded border border-transparent hover:border-[var(--obr-border-subtle)] transition-colors"
-        >
-          Close
+
+        <button v-if="!isControllerView" @click="emit('close')"
+          class="text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] font-black uppercase text-xs tracking-[0.3em] py-4 transition-colors">
+          Dismiss
         </button>
       </div>
-      
-       <!-- Footer Striped -->
-      <div class="h-2 bg-black w-full"></div>
     </div>
   </div>
 </template>
 
 <style scoped>
 @keyframes bounce-in {
-  0% { opacity: 0; transform: scale(0.3) translateY(-20px); }
-  50% { transform: scale(1.1); }
-  70% { transform: scale(0.9); }
-  100% { opacity: 1; transform: scale(1); }
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(-20px);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+
+  70% {
+    transform: scale(0.9);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
+
 .animate-bounce-in {
   animation: bounce-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
+
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out forwards;
 }
+
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 </style>
