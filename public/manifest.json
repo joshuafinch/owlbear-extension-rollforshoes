@@ -8,7 +8,7 @@
   "icon": "/apple-touch-icon.png",
   "action": {
     "title": "Roll for Shoes",
-    "icon": "/running-shoe.svg",
+    "icon": "/rolling-dices.svg",
     "popover": "/",
     "height": 700,
     "width": 375
