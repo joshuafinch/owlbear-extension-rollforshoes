@@ -144,8 +144,6 @@ const onDragEnd = () => {
               @cancel="isCreating = false"
               @activate="isCreating = true"
            />
-           
-           <div class="h-10"></div>
       </div>
   </div>
 </template>

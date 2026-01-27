@@ -12,14 +12,16 @@ export interface RollResult {
   actionsTaken?: Array<'xp' | 'advance' | 'succeeded'>;
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   result: RollResult;
   character?: Character;
   isRetroactive?: boolean;
   color?: string;
   isController?: boolean;
   evolvedSkillName?: string;
-}>();
+}>(), {
+  isController: true,
+});
 
 const emit = defineEmits<{
   (e: 'close'): void;

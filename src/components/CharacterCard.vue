@@ -4,6 +4,7 @@ import draggable from 'vuedraggable';
 import type { Character, Skill } from '../types';
 import CreationRow from './common/CreationRow.vue';
 import SkillItem from './SkillItem.vue';
+import RankPicker from './RankPicker.vue';
 import { ROLE_GM, DEFAULT_NEW_SKILL_RANK, TACTICAL_PALETTE } from '../constants';
 
 const props = defineProps<{
@@ -234,8 +235,12 @@ const handleXpChange = (amount: number) => {
           <!-- Animated XP Widget -->
             <div 
              class="flex shrink-0 items-center bg-[var(--obr-surface-base)] rounded border-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] transition-all duration-300 overflow-hidden relative group/xp mr-2"
-             :class="[isExpanded ? 'p-1 gap-1' : 'px-2 py-1 gap-0', isXpAnimating ? 'ring-2 ring-[var(--obr-status-warning)] border-[var(--obr-status-warning)] scale-110 shadow-[0_0_15px_rgba(250,204,21,0.5)]' : '']"
-             :style="{ borderColor: isXpAnimating ? '' : `${cardColor}66` }"
+             :class="[isExpanded ? 'p-1 gap-1' : 'px-2 py-1 gap-0', isXpAnimating ? 'ring-2 scale-110' : '']"
+             :style="{
+                borderColor: isXpAnimating ? cardColor : `${cardColor}66`,
+                boxShadow: isXpAnimating ? `0 0 15px ${cardColor}80` : '',
+                '--tw-ring-color': cardColor
+             }"
              role="group" 
              aria-label="Experience Points"
         >
@@ -436,16 +441,8 @@ const handleXpChange = (amount: number) => {
              @cancel="isManageMode = false"
          >
              <template #extra-fields>
-                  <div class="relative flex items-center shrink-0" title="Initial Rank">
-                     <span class="absolute left-2 text-[10px] font-black text-[var(--obr-text-disabled)] select-none">RK</span>
-                     <input 
-                         v-model.number="newSkillRank" 
-                         type="number" 
-                         min="1" 
-                         max="10"
-                         class="w-16 bg-[var(--obr-surface-input)] border-2 border-[var(--obr-border-subtle)] rounded pl-8 pr-1 py-2 text-center text-sm font-bold text-[var(--obr-text-primary)] outline-none focus:border-[var(--obr-primary-main)]"
-                         placeholder="#"
-                     />
+                  <div class="flex items-center shrink-0" title="Initial Rank">
+                     <RankPicker v-model="newSkillRank" label="Rank" alignment="right" />
                   </div>
              </template>
          </CreationRow>

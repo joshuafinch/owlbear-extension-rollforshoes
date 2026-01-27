@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue';
 import type { Skill } from '../types';
+import RankPicker from './RankPicker.vue';
 
 const props = defineProps<{
   skill: Skill;
@@ -19,13 +20,11 @@ const isEditing = ref(false);
 const editSkillName = ref('');
 const editSkillRank = ref(1);
 const editSkillInput = ref<HTMLTextAreaElement | null>(null);
-const showRankPicker = ref(false);
 
 const startEditing = async () => {
   if (!props.isManageMode) return;
   
   isEditing.value = true;
-  showRankPicker.value = false;
   editSkillName.value = props.skill.name;
   editSkillRank.value = props.skill.rank;
   await nextTick();
@@ -39,17 +38,10 @@ const saveEdit = () => {
     rank: editSkillRank.value
   });
   isEditing.value = false;
-  showRankPicker.value = false;
 };
 
 const cancelEdit = () => {
   isEditing.value = false;
-  showRankPicker.value = false;
-};
-
-const selectRank = (rank: number) => {
-    editSkillRank.value = rank;
-    showRankPicker.value = false;
 };
 
 const handleKeydown = (e: KeyboardEvent) => {
@@ -58,11 +50,7 @@ const handleKeydown = (e: KeyboardEvent) => {
         saveEdit();
     }
     if (e.key === 'Escape') {
-        if (showRankPicker.value) {
-            showRankPicker.value = false;
-        } else {
-            cancelEdit();
-        }
+        cancelEdit();
     }
 };
 </script>
@@ -149,28 +137,7 @@ const handleKeydown = (e: KeyboardEvent) => {
             ></textarea>
             
             <div class="flex flex-col items-center border-l border-[var(--obr-border-subtle)] border-opacity-30 pl-2 shrink-0 relative">
-                <!-- Rank Button (Mimics the normal view rank badge) -->
-                <button 
-                    @click="showRankPicker = !showRankPicker"
-                    class="h-[36px] min-w-[36px] px-1 flex flex-col items-center justify-center bg-[var(--obr-surface-base)] border-2 border-[var(--obr-border-subtle)] text-[var(--obr-text-primary)] rounded transition-colors hover:border-[var(--obr-primary-main)]"
-                    title="Change Rank"
-                >
-                    <span class="text-[8px] font-black uppercase text-[var(--obr-text-secondary)] leading-none mb-0.5">Rank</span>
-                    <span class="text-base font-black leading-none">{{ editSkillRank }}</span>
-                </button>
-                
-                <!-- Rank Picker Dropdown -->
-                <div v-if="showRankPicker" class="absolute top-full right-0 mt-1 bg-[var(--obr-surface-card)] border border-[var(--obr-border-subtle)] rounded shadow-xl z-50 w-[160px] p-2 grid grid-cols-5 gap-1">
-                    <button 
-                        v-for="r in 10" 
-                        :key="r"
-                        @click="selectRank(r)"
-                        class="h-8 w-full flex items-center justify-center rounded hover:bg-[var(--obr-primary-main)] hover:text-[var(--obr-primary-contrast)] font-bold text-sm transition-colors"
-                        :class="r === editSkillRank ? 'bg-[var(--obr-primary-main)] text-[var(--obr-primary-contrast)]' : 'bg-[var(--obr-surface-base)] text-[var(--obr-text-primary)]'"
-                    >
-                        {{ r }}
-                    </button>
-                </div>
+                <RankPicker v-model="editSkillRank" label="Rank" alignment="right" />
             </div>
 
            <div class="flex flex-col gap-1 pl-1 shrink-0">
