@@ -15,7 +15,7 @@ const emit = defineEmits<{
 }>();
 
 const inputValue = ref(props.initialValue || '');
-const inputRef = ref<HTMLInputElement | null>(null);
+const inputRef = ref<HTMLTextAreaElement | null>(null);
 
 const isActive = computed({
   get: () => props.active,
@@ -42,6 +42,16 @@ const handleActivate = () => {
         inputRef.value?.focus();
     }, 50);
 };
+
+const handleKeydown = (e: KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSubmit();
+    }
+    if (e.key === 'Escape') {
+        handleCancel();
+    }
+};
 </script>
 
 <template>
@@ -49,16 +59,15 @@ const handleActivate = () => {
     <!-- Active Form State -->
     <div v-if="isActive" class="bg-[var(--obr-surface-card)] p-3 rounded-lg border-2 border-[var(--obr-text-primary)] shadow-lg animate-fade-in-up shrink-0">
         <div class="flex flex-col gap-3">
-            <div class="flex items-center gap-2">
-                <input 
+            <div class="flex items-start gap-2">
+                <textarea 
                     ref="inputRef"
                     v-model="inputValue"
-                    type="text" 
-                    class="flex-1 bg-[var(--obr-bg-default)] border-2 border-[var(--obr-text-disabled)] rounded px-3 py-2 text-sm font-bold text-[var(--obr-text-primary)] focus:border-[var(--obr-primary-main)] outline-none tracking-wide placeholder:text-[var(--obr-text-disabled)]/50"
+                    rows="2"
+                    class="flex-1 min-w-0 bg-[var(--obr-bg-default)] border-2 border-[var(--obr-text-disabled)] rounded px-3 py-2 text-sm font-bold text-[var(--obr-text-primary)] focus:border-[var(--obr-primary-main)] outline-none tracking-wide placeholder:text-[var(--obr-text-disabled)]/50 resize-y"
                     :placeholder="placeholder"
-                    @keyup.enter="handleSubmit"
-                    @keyup.esc="handleCancel"
-                />
+                    @keydown="handleKeydown"
+                ></textarea>
                 
                 <!-- Optional Slot for extra inputs (like Rank) -->
                 <slot name="extra-fields"></slot>

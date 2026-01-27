@@ -436,7 +436,7 @@ const handleXpChange = (amount: number) => {
              @cancel="isManageMode = false"
          >
              <template #extra-fields>
-                  <div class="relative flex items-center" title="Initial Rank">
+                  <div class="relative flex items-center shrink-0" title="Initial Rank">
                      <span class="absolute left-2 text-[10px] font-black text-[var(--obr-text-disabled)] select-none">RK</span>
                      <input 
                          v-model.number="newSkillRank" 
