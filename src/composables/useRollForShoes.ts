@@ -296,7 +296,7 @@ const addLogEntry = async (entry: LogEntry) => {
   }
 };
 
-const markLogAction = async (logId: string, action: 'xp' | 'advance' | 'succeeded') => {
+const markLogAction = async (logId: string, action: 'xp' | 'evolve' | 'succeeded') => {
   const logIndex = rollHistory.value.findIndex(l => l.type === LOG_TYPE_ROLL && l.id === logId);
   if (logIndex === -1) {
     console.warn(`[RollForShoes] markLogAction: Log ${logId} not found locally.`);
@@ -307,16 +307,20 @@ const markLogAction = async (logId: string, action: 'xp' | 'advance' | 'succeede
   // Type guard already happened in findIndex, but TS might need help
   if (entry.type !== LOG_TYPE_ROLL) return Promise.resolve();
 
+  // Handle migration/backwards compatibility: 'advance' -> 'evolve'
+  const currentActions = entry.actionsTaken || [];
+  const normalizedActions = currentActions.map(a => a === ('advance' as any) ? 'evolve' : a);
+
   // Avoid duplicates
-  if (entry.actionsTaken?.includes(action)) {
+  if (normalizedActions.includes(action)) {
     return Promise.resolve();
   }
 
-  const newActions = [...(entry.actionsTaken || []), action];
+  const newActions = [...normalizedActions, action];
 
   // Optimistic update
   const newHistory = [...rollHistory.value];
-  newHistory[logIndex] = { ...entry, actionsTaken: newActions };
+  newHistory[logIndex] = { ...entry, actionsTaken: newActions as any };
   rollHistory.value = newHistory;
 
   setLogLock();
@@ -332,18 +336,22 @@ const markLogAction = async (logId: string, action: 'xp' | 'advance' | 'succeede
   }
 };
 
-const unmarkLogAction = async (logId: string, action: 'xp' | 'advance' | 'succeeded') => {
+const unmarkLogAction = async (logId: string, action: 'xp' | 'evolve' | 'succeeded') => {
   const logIndex = rollHistory.value.findIndex(l => l.type === LOG_TYPE_ROLL && l.id === logId);
   if (logIndex === -1) return Promise.resolve();
 
   const entry = rollHistory.value[logIndex];
   if (entry.type !== LOG_TYPE_ROLL) return Promise.resolve();
 
-  const newActions = (entry.actionsTaken || []).filter(a => a !== action);
+  // Handle migration/backwards compatibility: 'advance' -> 'evolve'
+  const currentActions = entry.actionsTaken || [];
+  const normalizedActions = currentActions.map(a => a === ('advance' as any) ? 'evolve' : a);
+
+  const newActions = normalizedActions.filter(a => a !== action);
 
   // Optimistic update
   const newHistory = [...rollHistory.value];
-  newHistory[logIndex] = { ...entry, actionsTaken: newActions };
+  newHistory[logIndex] = { ...entry, actionsTaken: newActions as any };
   rollHistory.value = newHistory;
 
   setLogLock();
@@ -516,7 +524,7 @@ const importLogs = async (jsonContent: string) => {
           rank: Number(entry.rank),
           dice: Array.isArray(entry.dice) ? entry.dice.map((d: number) => Number(d)) : [],
           timestamp: Number(entry.timestamp),
-          actionsTaken: Array.isArray(entry.actionsTaken) ? entry.actionsTaken.filter((action: string) => action === 'xp' || action === 'advance' || action === 'succeeded') : [],
+          actionsTaken: Array.isArray(entry.actionsTaken) ? entry.actionsTaken.filter((action: string) => action === 'xp' || action === 'evolve' || action === 'succeeded') : [],
         } as RollLogEntry;
       }
 

@@ -49,7 +49,7 @@ const isDevBuild = Boolean(runtimeEnv?.DEV && typeof window !== 'undefined' && d
 // Tabs: 'DISPATCH' (list) | 'LOGS' (history) | 'SYSTEMS' (admin)
 const activeTab = ref<typeof TAB_DISPATCH | typeof TAB_LOGS | typeof TAB_SYSTEMS>(TAB_DISPATCH);
 
-const { awardFailureXp, advanceSkillFromRoll, markRollSucceeded } = useMissionReportControls();
+const { awardFailureXp, evolveSkillFromRoll, markRollSucceeded } = useMissionReportControls();
 
 const displayedRollIds = new Set<string>();
 let isModalReady = false;
@@ -449,12 +449,12 @@ const handleLogDelete = async (logId: string) => {
             }
         }
 
-        // 3. Unmark the "advance" action on the source roll so it can be used again
-        await unmarkLogAction(entry.sourceRollId, 'advance');
+        // 3. Unmark the "evolve" action on the source roll so it can be used again
+        await unmarkLogAction(entry.sourceRollId, 'evolve');
 
         // 4. Delete the log entry
         await deleteLogEntry(logId);
-        // OBR.notification.show("Advancement reverted.");
+        // OBR.notification.show("Evolution reverted.");
     } else {
         // Standard delete for other logs (Rolls, or Skills without source info)
         await deleteLogEntry(logId);
@@ -463,7 +463,7 @@ const handleLogDelete = async (logId: string) => {
 
 const handleLogEvolve = async (logId: string, characterId: string, rank: number, newSkillName: string, xpCost: number) => {
     const fallbackName = characterList.value.find(c => c.id === characterId)?.name;
-    await advanceSkillFromRoll({
+    await evolveSkillFromRoll({
         logId,
         newSkillName,
         xpCost,

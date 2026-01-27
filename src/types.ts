@@ -37,7 +37,7 @@ export interface LegacyRollEntry {
   rank: number;
   dice: number[];
   timestamp: number;
-  actionsTaken?: ('xp' | 'advance' | 'succeeded')[];
+  actionsTaken?: ('xp' | 'evolve' | 'succeeded')[];
 }
 
 export interface RollLogEntry {
@@ -49,7 +49,7 @@ export interface RollLogEntry {
   rank: number;
   dice: number[];
   timestamp: number;
-  actionsTaken?: ('xp' | 'advance' | 'succeeded')[];
+  actionsTaken?: ('xp' | 'evolve' | 'succeeded')[];
   evolvedSkillName?: string;
   isNpc?: boolean;
   isHiddenFromPlayers?: boolean;

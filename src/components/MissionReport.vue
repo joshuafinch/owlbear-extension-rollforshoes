@@ -9,7 +9,7 @@ export interface RollResult {
   skillName: string;
   rank: number;
   dice: number[];
-  actionsTaken?: Array<'xp' | 'advance' | 'succeeded'>;
+  actionsTaken?: Array<'xp' | 'evolve' | 'succeeded'>;
 }
 
 const props = withDefaults(defineProps<{
@@ -21,6 +21,7 @@ const props = withDefaults(defineProps<{
   evolvedSkillName?: string;
   isNpcReport?: boolean;
   isNpcHidden?: boolean;
+  resultOverride?: Partial<RollResult>;
 }>(), {
   isController: true,
 });
@@ -41,51 +42,31 @@ const isNpcHidden = computed(() => Boolean(props.isNpcHidden));
 const isAllSixes = computed(() => props.result.dice.length > 0 && props.result.dice.every(d => d === 6));
 const successCount = computed(() => props.result.dice.filter(d => d === 6).length);
 const isControllerView = computed(() => props.isController !== false);
-const actionState = computed(() => props.result.actionsTaken || []);
+const actionState = computed(() => props.resultOverride?.actionsTaken || props.result.actionsTaken || []);
+const isResolved = computed(() => actionState.value.includes('succeeded') || actionState.value.includes('xp'));
 const showActionControls = computed(() => isControllerView.value && !isNpcReport.value);
-const observerStatus = computed(() => {
-  if (isNpcReport.value) {
-    if (isNpcHidden.value) {
-      return {
-        label: 'GM kept this roll hidden',
-        tone: 'text-[var(--obr-status-danger)]',
-      };
-    }
-    return null;
-  }
-  if (actionState.value.includes('advance')) {
-    return {
-      label: props.evolvedSkillName
-        ? `Skill evolved: ${props.evolvedSkillName}`
-        : 'Skill evolved from this mission',
-      tone: 'text-[var(--obr-status-critical)]',
-    };
-  }
-  if (actionState.value.includes('succeeded')) {
-    return {
-      label: 'Mission marked as Success',
-      tone: 'text-[var(--obr-status-success)]',
-    };
-  }
-  if (actionState.value.includes('xp')) {
-    return {
-      label: '+1 XP logged from failure',
-      tone: 'text-[var(--obr-status-warning)]',
-    };
-  }
-  return null;
-});
 
-// Advancement Logic
+// Evolution Logic
 const nonSixesCount = computed(() => props.result.dice.length - successCount.value);
 const currentXp = computed(() => props.character?.xp || 0);
 
-// Can advance if: (Current XP) >= Cost (non-sixes)
-const canAdvanceOnFail = computed(() => {
+// Can evolve if: (Current XP) >= Cost (non-sixes)
+const canEvolveOnFail = computed(() => {
   if (isAllSixes.value) return false;
   // XP available - do NOT assume +1 from failure until failure is claimed
   const availableXp = currentXp.value;
   return availableXp >= nonSixesCount.value;
+});
+
+const showDecisionPhase = computed(() => !isAllSixes.value && !isResolved.value);
+const showEvolutionOption = computed(() => isAllSixes.value || (isResolved.value && canEvolveOnFail.value));
+const dismissLabel = computed(() => (isResolved.value || isAllSixes.value) ? 'Dismiss' : 'Decide Later...');
+
+const observerStatus = computed(() => {
+  if (actionState.value.includes('succeeded')) return { label: 'MISSION ACCOMPLISHED', tone: 'text-[var(--obr-status-success)]' };
+  if (actionState.value.includes('xp')) return { label: 'MISSION FAILED', tone: 'text-[var(--obr-status-danger)]' };
+  if (isAllSixes.value) return { label: 'CRITICAL SUCCESS', tone: 'text-[var(--obr-status-critical)]' };
+  return null;
 });
 
 const startEvolution = () => {
@@ -189,39 +170,38 @@ const confirmEvolution = () => {
 
             <!-- Normal Actions -->
             <div v-else class="space-y-4">
-              <!-- Advancement Option (Success) -->
-              <button v-if="isAllSixes" @click="startEvolution"
-                class="w-full bg-[var(--obr-status-critical)] hover:scale-105 text-white border-4 border-black font-black uppercase py-4 text-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all flex items-center justify-center gap-3">
-                <span>★</span> EVOLVE NOW <span>★</span>
-              </button>
-
-              <!-- Failure Options -->
-              <div v-if="!isAllSixes" class="flex flex-col gap-4">
-
-                <button v-if="!isRetroactive" @click="emit('succeeded', result.id)"
+              <!-- Decision Phase -->
+              <div v-if="showDecisionPhase" class="flex flex-col gap-4">
+                <button @click="emit('succeeded', result.id)"
                   class="w-full bg-[var(--obr-status-success)] hover:scale-[1.02] text-white border-4 border-black font-black uppercase py-4 text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 active:translate-x-1 transition-all">
                   MISSION ACCOMPLISHED
                 </button>
 
-                <button v-if="!isRetroactive" @click="emit('takeXp', result.id)"
+                <button @click="emit('takeXp', result.id)"
                   class="w-full bg-[var(--obr-status-danger)] hover:scale-[1.02] text-white border-4 border-black font-black uppercase py-4 text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 active:translate-x-1 transition-all">
                   MISSION FAILED (+1 XP)
                 </button>
+              </div>
 
-                <button v-if="canAdvanceOnFail" @click="startEvolution"
-                  class="w-full bg-[var(--obr-primary-main)] hover:scale-[1.02] text-white border-4 border-black font-black uppercase py-4 text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 active:translate-x-1 transition-all">
-                  SPEND ({{ nonSixesCount }} XP) TO EVOLVE
+              <!-- Evolution Phase -->
+              <div v-if="showEvolutionOption">
+                <button @click="startEvolution"
+                  class="w-full bg-[var(--obr-status-critical)] hover:scale-105 text-white border-4 border-black font-black uppercase py-4 text-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all flex items-center justify-center gap-3">
+                  <span v-if="isAllSixes">★</span>
+                  {{ isAllSixes ? 'EVOLVE NOW' : `SPEND (${nonSixesCount} XP) TO EVOLVE` }}
+                  <span v-if="isAllSixes">★</span>
                 </button>
+              </div>
 
-                <div v-else-if="!isRetroactive || (isRetroactive && !canAdvanceOnFail)"
-                  class="w-full bg-black/5 border-4 border-dashed border-[var(--obr-border-subtle)] text-[var(--obr-text-disabled)] font-black text-sm uppercase text-center p-4 cursor-not-allowed select-none">
-                  Gather {{ nonSixesCount }} XP to evolve
-                </div>
+              <!-- Locked Evolution -->
+              <div v-else-if="!isAllSixes && !showDecisionPhase && !showEvolutionOption"
+                class="w-full bg-black/5 border-4 border-dashed border-[var(--obr-border-subtle)] text-[var(--obr-text-disabled)] font-black text-sm uppercase text-center p-4 cursor-not-allowed select-none">
+                Gather {{ nonSixesCount }} XP to evolve
               </div>
 
               <button v-if="!isEvolving" @click="emit('close')"
                 class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] font-black uppercase text-xs tracking-[0.3em] py-4 transition-colors">
-                Decide Later...
+                {{ dismissLabel }}
               </button>
             </div>
           </template>

@@ -13,7 +13,7 @@ const rollId = params.get('rollId');
 const isControllerView = params.get('controller') === '1';
 
 const { rollHistory, characterList } = useRollForShoes();
-const { awardFailureXp, advanceSkillFromRoll, markRollSucceeded } = useMissionReportControls();
+const { awardFailureXp, evolveSkillFromRoll, markRollSucceeded } = useMissionReportControls();
 
 const missionReportChannel = getPluginId(BROADCAST_MISSION_REPORT);
 const HEARTBEAT_INTERVAL_MS = 300;
@@ -127,12 +127,11 @@ onBeforeUnmount(() => {
 const handleTakeXp = async () => {
   if (!rollEntry.value) return;
   await awardFailureXp(rollEntry.value.id, rollEntry.value.characterId);
-  await closeModal();
 };
 
 const handleConfirmEvolve = async (_logId: string, newSkillName: string, xpCost: number) => {
   if (!rollEntry.value) return;
-  await advanceSkillFromRoll({
+  await evolveSkillFromRoll({
     logId: rollEntry.value.id,
     newSkillName,
     xpCost,
@@ -146,7 +145,6 @@ const handleConfirmEvolve = async (_logId: string, newSkillName: string, xpCost:
 const handleSucceeded = async () => {
   if (!rollEntry.value) return;
   await markRollSucceeded(rollEntry.value.id);
-  await closeModal();
 };
 
 const isLoading = ref(Boolean(rollId));

@@ -52,16 +52,16 @@ const formatTime = (timestamp: number) => {
 
 const isCritical = (dice: number[]) => dice.length > 0 && dice.every(d => d === 6);
 const countSuccesses = (dice: number[]) => dice.filter(d => d === 6).length;
-const getAdvanceCost = (dice: number[]) => dice.length - countSuccesses(dice);
-const hasResolvedOutcome = (entry: RollLogEntry) => entry.actionsTaken?.some(action => action === 'advance' || action === 'succeeded') ?? false;
-const canAdvanceNow = (entry: RollLogEntry) => latestRollIds.value.has(entry.id);
-const shouldShowAdvanceSummary = (entry: RollLogEntry) => {
-    if (entry.actionsTaken?.includes('advance')) return true;
+const getEvolutionCost = (dice: number[]) => dice.length - countSuccesses(dice);
+const hasResolvedOutcome = (entry: RollLogEntry) => entry.actionsTaken?.some(action => action === 'evolve' || action === ('advance' as any) || action === 'succeeded') ?? false;
+const canEvolveNow = (entry: RollLogEntry) => latestRollIds.value.has(entry.id);
+const shouldShowEvolutionSummary = (entry: RollLogEntry) => {
+    if (entry.actionsTaken?.includes('evolve') || entry.actionsTaken?.includes('advance' as any)) return true;
     if (entry.actionsTaken?.includes('succeeded')) return false;
-    return canAdvanceNow(entry);
+    return canEvolveNow(entry);
 };
-const getAdvanceSummary = (entry: RollLogEntry) => {
-    if (entry.actionsTaken?.includes('advance')) {
+const getEvolutionSummary = (entry: RollLogEntry) => {
+    if (entry.actionsTaken?.includes('evolve') || entry.actionsTaken?.includes('advance' as any)) {
         return 'Skill evolved from this roll';
     }
     const dice = entry.dice;
@@ -69,10 +69,10 @@ const getAdvanceSummary = (entry: RollLogEntry) => {
         return 'No dice recorded';
     }
     if (isCritical(dice)) {
-        return 'All sixes — advance is free';
+        return 'All sixes — evolution is free';
     }
-    const xpCost = getAdvanceCost(dice);
-    return `Advance cost: ${xpCost} XP`;
+    const xpCost = getEvolutionCost(dice);
+    return `Evolution cost: ${xpCost} XP`;
 };
 
 // Manage Retroactive Evolution
@@ -90,8 +90,8 @@ const handleRetroEvolve = (logId: string, newSkillName: string, xpCost: number) 
     }
 };
 
-// Helper to check if a specific entry can afford advancement
-const canAffordAdvance = (entry: RollLogEntry) => {
+// Helper to check if a specific entry can afford evolution
+const canAffordEvolution = (entry: RollLogEntry) => {
     const char = props.characters.find(c => c.id === entry.characterId);
     if (!char) return false;
     
@@ -100,7 +100,7 @@ const canAffordAdvance = (entry: RollLogEntry) => {
     
     // XP >= Cost (Do NOT assume +1, user must claim Fail first to get the XP)
     // However, for retroactive actions in the log, the entry might NOT have 'xp' action taken yet.
-    // If we remove +1 here, users with 0 XP can NEVER advance from log unless they claim XP first.
+    // If we remove +1 here, users with 0 XP can NEVER evolve from log unless they claim XP first.
     // Which is the desired behavior for strict accounting.
     return char.xp >= nonSixes;
 };
@@ -147,6 +147,9 @@ const handleDeleteClick = (id: string) => {
         }"
         :character="characters.find(c => c.id === activeEvolutionEntry?.characterId)"
         :isRetroactive="true"
+        :resultOverride="{
+            actionsTaken: activeEvolutionEntry.actionsTaken
+        }"
         @close="activeEvolutionEntry = null"
         @takeXp="(id) => { emit('takeXp', id, activeEvolutionEntry!.characterId); activeEvolutionEntry = null; }"
         @confirmEvolve="handleRetroEvolve"
@@ -248,14 +251,14 @@ const handleDeleteClick = (id: string) => {
                                      </button>
                                      <span v-else class="text-[10px] text-[var(--obr-text-disabled)] font-bold italic uppercase mr-2">XP Claimed</span>
 
-                                     <!-- Advance -->
+                                     <!-- Evolve -->
                                      <button 
-                                        v-if="canAffordAdvance(entry) && canAdvanceNow(entry)"
+                                        v-if="canAffordEvolution(entry) && canEvolveNow(entry)"
                                         @click="startRetroEvolution(entry)"
                                         class="text-[10px] bg-[var(--obr-primary-main)] text-white hover:opacity-90 border border-[var(--obr-border-base)] px-2 py-1 font-bold uppercase animate-pulse"
-                                        title="Spend XP to Advance"
+                                        title="Spend XP to Evolve"
                                     >
-                                        Advance!
+                                        Evolve!
                                     </button>
 
                                       <!-- Success (Only if XP not taken) -->
@@ -272,7 +275,7 @@ const handleDeleteClick = (id: string) => {
                                 
                                 <!-- Terminal State Status -->
                                 <div v-else class="text-[10px] text-[var(--obr-text-disabled)] uppercase font-bold italic">
-                                    <span v-if="entry.actionsTaken?.includes('advance')">Evolved</span>
+                                    <span v-if="entry.actionsTaken?.includes('evolve') || entry.actionsTaken?.includes('advance' as any)">Evolved</span>
                                     <span v-else-if="entry.actionsTaken?.includes('succeeded')">Succeeded</span>
                                 </div>
                             </div>
@@ -283,10 +286,10 @@ const handleDeleteClick = (id: string) => {
                                         ★ CRITICAL ★
                                     </span>
                                     <span 
-                                        v-if="shouldShowAdvanceSummary(entry)"
+                                        v-if="shouldShowEvolutionSummary(entry)"
                                         class="text-[10px] font-bold uppercase tracking-wide text-[var(--obr-text-secondary)]"
                                     >
-                                        {{ getAdvanceSummary(entry) }}
+                                        {{ getEvolutionSummary(entry) }}
                                     </span>
                                 </div>
                                 
@@ -303,7 +306,7 @@ const handleDeleteClick = (id: string) => {
                         </template>
                         <template v-else>
                             <div class="text-[10px] uppercase font-black tracking-[0.35em] text-[var(--obr-text-secondary)]">
-                                No advancement options — NPC intel only.
+                                No evolution options — NPC intel only.
                             </div>
                             <div class="flex justify-end">
                                 <button 

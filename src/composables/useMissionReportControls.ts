@@ -3,7 +3,7 @@ import { LOG_TYPE_ROLL, LOG_TYPE_SKILL } from '../constants';
 import type { RollLogEntry } from '../types';
 import { useRollForShoes } from './useRollForShoes';
 
-interface AdvanceOptions {
+interface EvolveOptions {
   logId: string;
   newSkillName: string;
   xpCost: number;
@@ -14,7 +14,7 @@ interface AdvanceOptions {
 
 const ACTION_LABELS = {
   xp: 'xp',
-  advance: 'advance',
+  evolve: 'evolve',
   succeeded: 'succeeded',
 } as const;
 
@@ -80,18 +80,18 @@ export function useMissionReportControls() {
     }
   };
 
-  const advanceSkillFromRoll = async ({
+  const evolveSkillFromRoll = async ({
     logId,
     newSkillName,
     xpCost,
     fallbackCharacterId,
     fallbackCharacterName,
     fallbackRank,
-  }: AdvanceOptions) => {
+  }: EvolveOptions) => {
     const entry = findRollEntry(logId);
     const characterId = resolveCharacterId(entry, fallbackCharacterId);
     if (!characterId) {
-      console.warn('[MissionReport] Unable to locate character for advancement', { logId });
+      console.warn('[MissionReport] Unable to locate character for evolution', { logId });
       return;
     }
 
@@ -107,7 +107,7 @@ export function useMissionReportControls() {
       await addXp(characterId, -xpCost);
     }
 
-    await markLogAction(logId, ACTION_LABELS.advance);
+    await markLogAction(logId, ACTION_LABELS.evolve);
 
     await addLogEntry({
       type: LOG_TYPE_SKILL,
@@ -127,7 +127,7 @@ export function useMissionReportControls() {
     }));
 
     OBR.notification.show(
-      `${characterName} acquired new skill: ${newSkillName} (Rank ${rank + 1})`,
+      `${characterName} evolved new skill: ${newSkillName} (Rank ${rank + 1})`,
       'SUCCESS',
     );
   };
@@ -141,7 +141,7 @@ export function useMissionReportControls() {
 
   return {
     awardFailureXp,
-    advanceSkillFromRoll,
+    evolveSkillFromRoll,
     markRollSucceeded,
   };
 }
