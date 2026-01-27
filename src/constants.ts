@@ -11,6 +11,9 @@ export const TAB_SYSTEMS = 'SYSTEMS';
 export const LOG_TYPE_ROLL = 'ROLL';
 export const LOG_TYPE_SKILL = 'SKILL';
 
+// Modal IDs
+export const MODAL_MISSION_REPORT = 'mission-report';
+
 // Metadata Constants
 // Using a constant suffix to ensure we don't typo it elsewhere
 export const METADATA_SUFFIX_CHARACTERS = 'characters';

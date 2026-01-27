@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRollForShoes } from '../composables/useRollForShoes';
 import DispatchConsole from './DispatchConsole.vue';
 import SystemTerminal from './SystemTerminal.vue';
-import MissionReport, { type RollResult } from './MissionReport.vue';
 import MissionLog from './MissionLog.vue';
 import type { Skill } from '../types';
 import OBR from '@owlbear-rodeo/sdk';
@@ -12,21 +11,22 @@ import {
   TAB_LOGS, 
   TAB_SYSTEMS, 
   LOG_TYPE_ROLL, 
-  LOG_TYPE_SKILL 
+  LOG_TYPE_SKILL,
+  MODAL_MISSION_REPORT,
 } from '../constants';
+import { useMissionReportControls } from '../composables/useMissionReportControls';
+import getPluginId from '../utils/getPluginId';
 
 const { 
   characterList, 
   rollHistory,
   role,
   addXp, 
-  addSkill, 
   removeSkill,
   importData,
   importLogs,
   rollDice,
   addLogEntry,
-  markLogAction,
   unmarkLogAction,
   deleteLogEntry,
   clearLogs,
@@ -42,8 +42,69 @@ const isDevBuild = Boolean(runtimeEnv?.DEV && typeof window !== 'undefined' && d
 // Tabs: 'DISPATCH' (list) | 'LOGS' (history) | 'SYSTEMS' (admin)
 const activeTab = ref<typeof TAB_DISPATCH | typeof TAB_LOGS | typeof TAB_SYSTEMS>(TAB_DISPATCH);
 
-// Rolling State
-const currentRoll = ref<RollResult | null>(null);
+const { awardFailureXp, advanceSkillFromRoll, markRollSucceeded } = useMissionReportControls();
+
+const displayedRollIds = new Set<string>();
+let isModalReady = false;
+const modalReadyResolvers: Array<() => void> = [];
+const missionReportChannel = getPluginId('mission-report-open');
+const localConnectionId = ref<string | null>(null);
+let unsubscribeMissionReport: (() => void) | null = null;
+
+if (OBR.isAvailable) {
+    OBR.onReady(() => {
+        isModalReady = true;
+        while (modalReadyResolvers.length > 0) {
+            const resolver = modalReadyResolvers.shift();
+            resolver?.();
+        }
+    });
+}
+
+const waitForModalReady = () => {
+    if (!OBR.isAvailable) {
+        return Promise.resolve();
+    }
+    if (isModalReady) {
+        return Promise.resolve();
+    }
+    return new Promise<void>((resolve) => {
+        modalReadyResolvers.push(resolve);
+    });
+};
+
+const handleRemoteMissionReport = async (rollId: string) => {
+    if (!rollId || displayedRollIds.has(rollId)) {
+        return;
+    }
+    displayedRollIds.add(rollId);
+    await openMissionReportModal(rollId, false);
+};
+
+const setupMissionReportListener = () => {
+    if (!OBR.isAvailable) return;
+
+    OBR.onReady(async () => {
+        localConnectionId.value = await OBR.player.getConnectionId();
+        unsubscribeMissionReport = OBR.broadcast.onMessage(missionReportChannel, (event) => {
+            if (!event?.data || typeof event.data !== 'object') return;
+            if (event.connectionId === localConnectionId.value) return;
+            const payload = event.data as { type?: string; rollId?: string };
+            if (payload.type !== 'MISSION_REPORT') return;
+            if (!payload.rollId) return;
+            handleRemoteMissionReport(payload.rollId);
+        });
+    });
+};
+
+onMounted(() => {
+    setupMissionReportListener();
+});
+
+onUnmounted(() => {
+    unsubscribeMissionReport?.();
+    unsubscribeMissionReport = null;
+});
 
 const handleImport = (event: Event) => {
   const input = event.target as HTMLInputElement;
@@ -89,26 +150,55 @@ const handleExportLogs = () => {
   exportLogs();
 };
 
-const handleRoll = (characterId: string, skill: Skill) => {
+const buildMissionReportUrl = (rollId: string, isControllerView: boolean) => {
+    const baseUrl = new URL(window.location.href);
+    baseUrl.search = '';
+    baseUrl.searchParams.set('modal', MODAL_MISSION_REPORT);
+    baseUrl.searchParams.set('rollId', rollId);
+    if (isControllerView) {
+        baseUrl.searchParams.set('controller', '1');
+    }
+    return baseUrl.toString();
+};
+
+const openMissionReportModal = async (rollId: string, isControllerView: boolean) => {
+    if (!OBR.isAvailable) return;
+    try {
+        await waitForModalReady();
+        await OBR.modal.open({
+            id: MODAL_MISSION_REPORT,
+            url: buildMissionReportUrl(rollId, isControllerView),
+            height: 640,
+            width: 420,
+        });
+    } catch (error) {
+        console.error('Failed to open Mission Report modal', error);
+    }
+};
+
+const broadcastMissionReport = async (rollId: string) => {
+    if (!OBR.isAvailable) return;
+    try {
+        await waitForModalReady();
+        await OBR.broadcast.sendMessage(missionReportChannel, {
+            type: 'MISSION_REPORT',
+            rollId,
+        }, { destination: 'ALL' });
+    } catch (error) {
+        console.error('Failed to broadcast mission report', error);
+    }
+};
+
+const handleRoll = async (characterId: string, skill: Skill) => {
     const character = characterList.value.find(c => c.id === characterId);
     if (!character) return;
 
     const dice = rollDice(skill.rank, debugMode.value);
-    
     const rollId = crypto.randomUUID();
 
-    // Create local roll result for modal
-    currentRoll.value = {
-        id: rollId,
-        characterId,
-        characterName: character.name,
-        skillName: skill.name,
-        rank: skill.rank,
-        dice
-    };
+    displayedRollIds.add(rollId);
 
-    // Add to shared log
-    addLogEntry({
+    await addLogEntry({
         type: LOG_TYPE_ROLL,
         id: rollId,
         characterId,
@@ -119,60 +209,13 @@ const handleRoll = (characterId: string, skill: Skill) => {
         timestamp: Date.now(),
         actionsTaken: []
     });
-};
 
-const handleRollTakeXp = async (logId: string) => {
-    if (currentRoll.value) {
-        await addXp(currentRoll.value.characterId, 1);
-        await markLogAction(logId, 'xp');
-        // OBR.notification.show(`${currentRoll.value.characterName} gains 1 XP from failure.`);
-        currentRoll.value = null;
-    }
-};
-
-const handleRollEvolve = async (logId: string, newSkillName: string, xpCost: number) => {
-    if (currentRoll.value && newSkillName) {
-         await addSkill(currentRoll.value.characterId, {
-            name: newSkillName,
-            rank: currentRoll.value.rank + 1
-         });
-         
-         // Deduct XP cost
-         if (xpCost > 0) {
-             await addXp(currentRoll.value.characterId, -xpCost);
-         }
-
-         await markLogAction(logId, 'advance');
-
-         // Add SKILL Log
-         await addLogEntry({
-            type: LOG_TYPE_SKILL,
-            id: crypto.randomUUID(),
-            characterId: currentRoll.value.characterId,
-            characterName: currentRoll.value.characterName,
-            newSkillName: newSkillName,
-            rank: currentRoll.value.rank + 1,
-            timestamp: Date.now(),
-            cost: xpCost,
-            sourceRollId: logId // Link back to the roll
-         });
-         
-        //  OBR.notification.show(`${currentRoll.value.characterName} acquired new skill: ${newSkillName} (Rank ${currentRoll.value.rank + 1})`, "SUCCESS");
-         currentRoll.value = null;
-    }
+    await openMissionReportModal(rollId, true);
+    await broadcastMissionReport(rollId);
 };
 
 const handleLogTakeXp = async (logId: string, characterId: string) => {
-    await addXp(characterId, 1);
-    await markLogAction(logId, 'xp');
-    
-    // Get updated character for notification
-    // const char = characterList.value.find(c => c.id === characterId);
-    // if (char) {
-    //     // OBR.notification.show(`${char.name} gains 1 XP (Total: ${char.xp}).`);
-    // } else {
-    //     // OBR.notification.show(`Character gains 1 XP from archived failure.`);
-    // }
+    await awardFailureXp(logId, characterId);
 };
 
 const handleLogDelete = async (logId: string) => {
@@ -231,64 +274,25 @@ const handleLogDelete = async (logId: string) => {
 };
 
 const handleLogEvolve = async (logId: string, characterId: string, rank: number, newSkillName: string, xpCost: number) => {
-    // 1. Add the skill to the character
-    await addSkill(characterId, {
-        name: newSkillName,
-        rank: rank + 1
+    const fallbackName = characterList.value.find(c => c.id === characterId)?.name;
+    await advanceSkillFromRoll({
+        logId,
+        newSkillName,
+        xpCost,
+        fallbackCharacterId: characterId,
+        fallbackCharacterName: fallbackName,
+        fallbackRank: rank,
     });
-
-    // 2. Deduct XP cost
-    if (xpCost > 0) {
-        await addXp(characterId, -xpCost);
-    }
-    
-    // 3. Mark the roll log as 'advanced'
-    await markLogAction(logId, 'advance');
-
-    // Find character name for log
-    const char = characterList.value.find(c => c.id === characterId);
-    const charName = char ? char.name : 'Unknown';
-
-    // 4. Add SKILL Log
-    await addLogEntry({
-        type: LOG_TYPE_SKILL,
-        id: crypto.randomUUID(),
-        characterId: characterId,
-        characterName: charName,
-        newSkillName: newSkillName,
-        rank: rank + 1,
-        timestamp: Date.now(),
-        cost: xpCost,
-        sourceRollId: logId // Link back to the roll that spawned this
-    });
-
-    // OBR.notification.show(`Character acquired new skill: ${newSkillName} (Rank ${rank + 1})`, "SUCCESS");
 };
-const handleRollSucceeded = async (logId: string) => {
-    await markLogAction(logId, 'succeeded');
-    currentRoll.value = null;
-};
+
 const handleLogSucceeded = async (logId: string) => {
-    await markLogAction(logId, 'succeeded');
-    // OBR.notification.show(`Roll marked as Succeeded.`);
+    await markRollSucceeded(logId);
 };
 </script>
 
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-transparent">
     
-    <!-- Mission Report Overlay -->
-    <MissionReport 
-        v-if="currentRoll" 
-        :result="currentRoll"
-        :character="characterList.find(c => c.id === currentRoll?.characterId)"
-        :color="characterList.find(c => c.id === currentRoll?.characterId)?.color"
-        @close="currentRoll = null"
-        @takeXp="handleRollTakeXp"
-        @confirmEvolve="handleRollEvolve"
-        @succeeded="handleRollSucceeded"
-    />
-
     <!-- Main Interface Frame -->
     <div class="flex-1 flex flex-col overflow-hidden">
       

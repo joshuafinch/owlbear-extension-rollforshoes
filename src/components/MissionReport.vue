@@ -9,6 +9,7 @@ export interface RollResult {
   skillName: string;
   rank: number;
   dice: number[];
+  actionsTaken?: Array<'xp' | 'advance' | 'succeeded'>;
 }
 
 const props = defineProps<{
@@ -16,6 +17,8 @@ const props = defineProps<{
   character?: Character;
   isRetroactive?: boolean;
   color?: string;
+  isController?: boolean;
+  evolvedSkillName?: string;
 }>();
 
 const emit = defineEmits<{
@@ -31,6 +34,31 @@ const skillInput = ref<HTMLInputElement | null>(null);
 
 const isAllSixes = computed(() => props.result.dice.length > 0 && props.result.dice.every(d => d === 6));
 const successCount = computed(() => props.result.dice.filter(d => d === 6).length);
+const isControllerView = computed(() => props.isController !== false);
+const actionState = computed(() => props.result.actionsTaken || []);
+const observerStatus = computed(() => {
+    if (actionState.value.includes('advance')) {
+        return {
+            label: props.evolvedSkillName
+                ? `Skill evolved: ${props.evolvedSkillName}`
+                : 'Skill evolved from this mission',
+            tone: 'text-[var(--obr-status-critical)]',
+        };
+    }
+    if (actionState.value.includes('succeeded')) {
+        return {
+            label: 'Mission marked as Success',
+            tone: 'text-[var(--obr-status-success)]',
+        };
+    }
+    if (actionState.value.includes('xp')) {
+        return {
+            label: '+1 XP logged from failure',
+            tone: 'text-[var(--obr-status-warning)]',
+        };
+    }
+    return null;
+});
 
 // Advancement Logic
 const nonSixesCount = computed(() => props.result.dice.length - successCount.value);
@@ -125,100 +153,113 @@ const confirmEvolution = () => {
              </div>
         </div>
 
-        <!-- Actions -->
+        <!-- Actions / Observer Notice -->
         <div class="space-y-2">
-          
-          <!-- Evolution Form -->
-          <div v-if="isEvolving" class="animate-fade-in">
-             <input 
-                ref="skillInput"
-                v-model="newSkillName"
-                type="text"
-                autocomplete="off"
-                data-1p-ignore
-                class="w-full bg-[var(--obr-surface-input)] text-[var(--obr-text-primary)] border-2 border-[var(--obr-status-critical)] p-3 font-bold text-center mb-2 focus:outline-none focus:shadow-[0_0_10px_var(--obr-status-critical)]"
-                placeholder="NEW SKILL NAME..."
-                @keyup.enter="confirmEvolution"
-             />
-             <div class="grid grid-cols-2 gap-2">
-                <button 
-                  @click="isEvolving = false"
-                  class="w-full bg-[var(--obr-surface-card)] hover:bg-[var(--obr-surface-hover)] text-[var(--obr-text-primary)] border-2 border-[var(--obr-border-base)] font-bold uppercase py-3 text-sm"
-                >
-                  Cancel
-                </button>
-                <button 
-                  @click="confirmEvolution"
-                  class="w-full bg-[var(--obr-status-critical)] hover:opacity-90 text-white border-2 border-black font-black uppercase py-3 text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none"
-                >
-                  Confirm
-                </button>
-             </div>
-          </div>
+          <template v-if="isControllerView">
+            <!-- Evolution Form -->
+            <div v-if="isEvolving" class="animate-fade-in">
+               <input 
+                  ref="skillInput"
+                  v-model="newSkillName"
+                  type="text"
+                  autocomplete="off"
+                  data-1p-ignore
+                  class="w-full bg-[var(--obr-surface-input)] text-[var(--obr-text-primary)] border-2 border-[var(--obr-status-critical)] p-3 font-bold text-center mb-2 focus:outline-none focus:shadow-[0_0_10px_var(--obr-status-critical)]"
+                  placeholder="NEW SKILL NAME..."
+                  @keyup.enter="confirmEvolution"
+               />
+               <div class="grid grid-cols-2 gap-2">
+                  <button 
+                    @click="isEvolving = false"
+                    class="w-full bg-[var(--obr-surface-card)] hover:bg-[var(--obr-surface-hover)] text-[var(--obr-text-primary)] border-2 border-[var(--obr-border-base)] font-bold uppercase py-3 text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    @click="confirmEvolution"
+                    class="w-full bg-[var(--obr-status-critical)] hover:opacity-90 text-white border-2 border-black font-black uppercase py-3 text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none"
+                  >
+                    Confirm
+                  </button>
+               </div>
+            </div>
 
-          <!-- Normal Actions -->
-          <div v-else>
-            <!-- Advancement Option (Success) -->
-            <button 
-              v-if="isAllSixes"
-              @click="startEvolution"
-              class="w-full bg-[var(--obr-status-critical)] hover:opacity-90 text-white border-2 border-black font-black uppercase py-3 text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 mb-4"
-            >
-              <span>★</span> Evolve New Skill
-            </button>
-
-            <!-- Failure Options -->
-            <div v-if="!isAllSixes" class="flex flex-col gap-2">
-                
-              <!-- Option C: Succeeded (Mark as Success) -->
-              <!-- Only show if NOT retroactive (standard flow) OR if user specifically wants to mark success retroactively (which is rare but allowed if we want to change history). 
-                   But typically, "Advance!" button implies we want to advance. 
-                   If isRetroactive is true, we hide Success/Fail options because they are already handled in the main list view.
-              -->
+            <!-- Normal Actions -->
+            <div v-else>
+              <!-- Advancement Option (Success) -->
               <button 
-                v-if="!isRetroactive"
-                @click="emit('succeeded', result.id)"
-                class="w-full bg-[var(--obr-status-success)] hover:opacity-90 text-white border-2 border-black font-bold uppercase py-3 text-sm flex items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
+                v-if="isAllSixes"
+                @click="startEvolution"
+                class="w-full bg-[var(--obr-status-critical)] hover:opacity-90 text-white border-2 border-black font-black uppercase py-3 text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 mb-4"
               >
-                <span class="text-lg">✓</span> SUCCEEDED
+                <span>★</span> Evolve New Skill
               </button>
 
-              <div class="flex gap-2">
-                <!-- Option A: Standard Fail -->
+              <!-- Failure Options -->
+              <div v-if="!isAllSixes" class="flex flex-col gap-2">
+                  
                 <button 
-                    v-if="!isRetroactive"
-                    @click="emit('takeXp', result.id)"
-                    class="flex-1 bg-[var(--obr-surface-base)] hover:bg-[var(--obr-text-primary)] text-[var(--obr-text-primary)] hover:text-[var(--obr-bg-default)] border-2 border-[var(--obr-border-base)] font-bold uppercase py-3 text-sm flex flex-col items-center justify-center gap-1 group shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
+                  v-if="!isRetroactive"
+                  @click="emit('succeeded', result.id)"
+                  class="w-full bg-[var(--obr-status-success)] hover:opacity-90 text-white border-2 border-black font-bold uppercase py-3 text-sm flex items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
                 >
-                    <span class="text-[var(--obr-status-danger)] group-hover:text-[var(--obr-status-danger)] text-lg leading-none">⚠</span> 
-                    <span class="leading-none">FAIL (+1 XP)</span>
+                  <span class="text-lg">✓</span> SUCCEEDED
                 </button>
-                
-                <!-- Option B: Advance on Fail (If Eligible) -->
-                <button 
-                    v-if="canAdvanceOnFail"
-                    @click="startEvolution"
-                    class="flex-1 bg-[var(--obr-primary-main)] hover:opacity-90 text-[var(--obr-primary-contrast)] border-2 border-[var(--obr-border-base)] font-bold uppercase py-3 text-sm flex flex-col items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
-                >
-                    <span class="text-lg leading-none">⚡</span> 
-                    <span class="leading-none">ADVANCE (-{{ nonSixesCount }} XP)</span>
-                </button>
-                 <div v-else-if="!isRetroactive || (isRetroactive && !canAdvanceOnFail)" class="flex-1 flex items-center justify-center bg-[var(--obr-surface-base)] border-2 border-dashed border-[var(--obr-border-subtle)] text-[var(--obr-text-disabled)] font-bold text-xs uppercase text-center p-1 cursor-not-allowed select-none">
-                     Need {{ nonSixesCount }} XP to advance
-                 </div>
+
+                <div class="flex gap-2">
+                  <button 
+                      v-if="!isRetroactive"
+                      @click="emit('takeXp', result.id)"
+                      class="flex-1 bg-[var(--obr-surface-base)] hover:bg-[var(--obr-text-primary)] text-[var(--obr-text-primary)] hover:text-[var(--obr-bg-default)] border-2 border-[var(--obr-border-base)] font-bold uppercase py-3 text-sm flex flex-col items-center justify-center gap-1 group shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
+                  >
+                      <span class="text-[var(--obr-status-danger)] group-hover:text-[var(--obr-status-danger)] text-lg leading-none">⚠</span> 
+                      <span class="leading-none">FAIL (+1 XP)</span>
+                  </button>
+                  
+                  <button 
+                      v-if="canAdvanceOnFail"
+                      @click="startEvolution"
+                      class="flex-1 bg-[var(--obr-primary-main)] hover:opacity-90 text-[var(--obr-primary-contrast)] border-2 border-[var(--obr-border-base)] font-bold uppercase py-3 text-sm flex flex-col items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:shadow-none active:translate-y-0.5"
+                  >
+                      <span class="text-lg leading-none">⚡</span> 
+                      <span class="leading-none">ADVANCE (-{{ nonSixesCount }} XP)</span>
+                  </button>
+                   <div v-else-if="!isRetroactive || (isRetroactive && !canAdvanceOnFail)" class="flex-1 flex items-center justify-center bg-[var(--obr-surface-base)] border-2 border-dashed border-[var(--obr-border-subtle)] text-[var(--obr-text-disabled)] font-bold text-xs uppercase text-center p-1 cursor-not-allowed select-none">
+                       Need {{ nonSixesCount }} XP to advance
+                   </div>
+                </div>
               </div>
+              
+              <button 
+                v-if="!isEvolving"
+                 @click="emit('close')"
+                 class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-surface-hover)] font-bold uppercase text-xs tracking-widest py-4 mt-2 rounded border border-transparent hover:border-[var(--obr-border-subtle)] transition-colors"
+              >
+                 Dismiss Report (Decide Later)
+              </button>
             </div>
-            
-            <!-- Dismiss Button (Only show if all sixes because others are handled above) -->
-            <button 
-              v-if="!isEvolving"
-               @click="emit('close')"
-               class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-surface-hover)] font-bold uppercase text-xs tracking-widest py-4 mt-2 rounded border border-transparent hover:border-[var(--obr-border-subtle)] transition-colors"
-            >
-               Dismiss Report (Decide Later)
-            </button>
+          </template>
+          <div v-else class="text-xs uppercase tracking-widest bg-[var(--obr-surface-hover)] border border-dashed border-[var(--obr-border-subtle)] p-4">
+            <template v-if="observerStatus">
+              <p class="font-black" :class="observerStatus.tone">
+                {{ observerStatus.label }}
+              </p>
+              <p class="text-[var(--obr-text-secondary)] mt-1 tracking-normal normal-case">
+                Report updated live from command log.
+              </p>
+            </template>
+            <template v-else>
+              <p class="text-[var(--obr-text-secondary)]">Awaiting operator decision...</p>
+            </template>
           </div>
         </div>
+        <button 
+          v-if="!isControllerView"
+          @click="emit('close')"
+          class="w-full text-[var(--obr-text-secondary)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-surface-hover)] font-bold uppercase text-xs tracking-widest py-3 mt-4 rounded border border-transparent hover:border-[var(--obr-border-subtle)] transition-colors"
+        >
+          Close
+        </button>
       </div>
       
        <!-- Footer Striped -->

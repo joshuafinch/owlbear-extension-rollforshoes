@@ -43,6 +43,7 @@ export interface RollLogEntry {
   dice: number[];
   timestamp: number;
   actionsTaken?: ('xp' | 'advance' | 'succeeded')[];
+  evolvedSkillName?: string;
 }
 
 export interface SkillLogEntry {

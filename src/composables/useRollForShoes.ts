@@ -380,6 +380,30 @@ const deleteLogEntry = async (logId: string) => {
   }
 };
 
+const updateRollEntry = async (logId: string, updater: (entry: RollLogEntry) => RollLogEntry) => {
+  const index = rollHistory.value.findIndex(entry => entry.type === LOG_TYPE_ROLL && entry.id === logId);
+  if (index === -1) return;
+
+  const currentEntry = rollHistory.value[index] as RollLogEntry;
+  const updatedEntry = updater(currentEntry);
+  if (!updatedEntry) return;
+
+  const newHistory = [...rollHistory.value];
+  newHistory[index] = updatedEntry;
+  rollHistory.value = newHistory;
+
+  setLogLock();
+
+  try {
+    const cleanHistory = JSON.parse(JSON.stringify(newHistory));
+    await OBR.room.setMetadata({
+      [LOGS_DATA_KEY]: cleanHistory,
+    });
+  } catch (e) {
+    console.error('Failed to update roll entry', e);
+  }
+};
+
 const clearLogs = async () => {
   // Optimistic
   rollHistory.value = [];
@@ -692,9 +716,10 @@ export function useRollForShoes() {
     markLogAction,
     unmarkLogAction,
     deleteLogEntry,
-    clearLogs,
-    debugMode,
-    activeCharacterId,
-    reorderCharacters
+     clearLogs,
+     debugMode,
+     activeCharacterId,
+     reorderCharacters,
+     updateRollEntry,
   };
 }
