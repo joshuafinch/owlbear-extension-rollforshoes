@@ -35,7 +35,6 @@ const {
   unmarkLogAction,
   deleteLogEntry,
   clearLogs,
-  debugMode,
   exportData,
   exportLogs,
   settings,
@@ -357,7 +356,7 @@ const handleRoll = async (characterId: string, skill: Skill) => {
     const character = characterList.value.find(c => c.id === characterId);
     if (!character) return;
 
-    const dice = rollDice(skill.rank, debugMode.value);
+    const dice = rollDice(skill.rank, settings.value.luckModeEnabled);
     const rollId = crypto.randomUUID();
 
     displayedRollIds.add(rollId);
@@ -381,7 +380,7 @@ const handleRoll = async (characterId: string, skill: Skill) => {
 };
 
 const handleNpcRoll = async (payload: NpcRollRequest) => {
-    const dice = rollDice(payload.diceCount, debugMode.value);
+    const dice = rollDice(payload.diceCount, settings.value.luckModeEnabled);
     const rollId = crypto.randomUUID();
     displayedRollIds.add(rollId);
     const npcName = payload.npcName.trim() || 'NPC Operative';
@@ -554,11 +553,9 @@ const handleLogSucceeded = async (logId: string) => {
             />
         </div>
 
-         <!-- SYSTEMS TAB CONTENT -->
          <div v-if="activeTab === TAB_SYSTEMS" class="h-full">
              <SystemTerminal 
                :role="role"
-               :isDebug="debugMode"
                :isDevBuild="isDevBuild"
                :settings="settings"
                @export="exportData"
@@ -566,7 +563,6 @@ const handleLogSucceeded = async (logId: string) => {
                @exportLogs="handleExportLogs"
                @importLogs="handleImportLogs"
                @clearLogs="clearLogs"
-               @toggleDebug="debugMode = !debugMode"
                @updateSettings="updateSettings"
              />
          </div>

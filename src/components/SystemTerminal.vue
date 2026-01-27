@@ -5,7 +5,6 @@ import type { AppSettings } from '../types';
 
 const props = defineProps<{
   role: string;
-  isDebug?: boolean;
   isDevBuild?: boolean;
   settings: AppSettings;
 }>();
@@ -15,7 +14,6 @@ const emit = defineEmits<{
   (e: 'import', event: Event): void;
   (e: 'exportLogs'): void;
   (e: 'importLogs', event: Event): void;
-  (e: 'toggleDebug'): void;
   (e: 'clearLogs'): void;
   (e: 'updateSettings', updates: Partial<AppSettings>): void;
 }>();
@@ -139,24 +137,24 @@ const handleOverrideTap = (signal: OverrideSignal) => {
                 </p>
              </div>
 
-             <!-- DEBUG TOOLS -->
-             <div class="mt-6">
+              <div class="mt-6">
                 <p class="text-sm mb-3 text-yellow-500 font-bold">> DEBUG_PROTOCOLS:</p>
                 <div class="pl-2 border-l-2 border-yellow-900 ml-1">
                      <button 
-                        @click="emit('toggleDebug')"
+                        @click="emit('updateSettings', { luckModeEnabled: !settings.luckModeEnabled })"
                         class="w-full text-left hover:bg-yellow-900/30 p-3 rounded transition-colors flex items-center justify-between group"
                     >
                         <div>
-                             <p class="text-base font-bold" :class="isDebug ? 'text-yellow-400 animate-pulse' : 'text-gray-500'">
+                             <p class="text-base font-bold" :class="settings.luckModeEnabled ? 'text-yellow-400 animate-pulse' : 'text-gray-500'">
                                <span class="mr-2">⚡</span> FORCE_LUCK_MODE()
                             </p>
                             <p class="text-xs text-gray-500 pl-6 mt-1">Reroute entropy. Bias RNG towards success.</p>
                         </div>
-                        <div class="text-xs font-black px-3 py-1 border" :class="isDebug ? 'border-yellow-500 text-yellow-500 bg-yellow-900/20' : 'border-gray-700 text-gray-700'">
-                            {{ isDebug ? 'ACTIVE' : 'OFFLINE' }}
+                        <div class="text-xs font-black px-3 py-1 border" :class="settings.luckModeEnabled ? 'border-yellow-500 text-yellow-500 bg-yellow-900/20' : 'border-gray-700 text-gray-700'">
+                            {{ settings.luckModeEnabled ? 'ACTIVE' : 'OFFLINE' }}
                         </div>
                     </button>
+
 
                     <!-- Clear Logs -->
                     <button 

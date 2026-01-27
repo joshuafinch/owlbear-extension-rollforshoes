@@ -18,10 +18,10 @@ const characters = ref<CharacterData>({});
 const rollHistory = ref<LogEntry[]>([]);
 const selectedItems = ref<string[]>([]);
 const role = ref<string>(ROLE_PLAYER);
-const debugMode = ref<boolean>(false);
 const activeCharacterId = ref<string | null>(null);
 const settings = ref<AppSettings>({
   missionReportBroadcastEnabled: true,
+  luckModeEnabled: false,
 });
 
 // Locks
@@ -586,10 +586,12 @@ const updateSettings = async (updates: Partial<AppSettings>) => {
   }
 };
 
-function rollDice(count: number, debug = false): number[] {
-  if (debug) {
-    // High chance of failure (1s and 2s) for testing XP gain
-    return Array.from({ length: count }, () => Math.random() > 0.5 ? 1 : Math.floor(Math.random() * 5) + 1);
+function rollDice(count: number, isLuckMode = false): number[] {
+  if (isLuckMode) {
+    // FORCE_LUCK_MODE: High chance of 6s (80% chance for a 6, 20% for random 1-6)
+    return Array.from({ length: count }, () =>
+      Math.random() < 0.8 ? 6 : Math.floor(Math.random() * 6) + 1
+    );
   }
   return Array.from({ length: count }, () => Math.floor(Math.random() * 6) + 1);
 }
@@ -754,13 +756,14 @@ export function useRollForShoes() {
     markLogAction,
     unmarkLogAction,
     deleteLogEntry,
-     clearLogs,
-     debugMode,
-     activeCharacterId,
-      reorderCharacters,
-      updateRollEntry,
-      settings,
-      updateSettings,
-   };
- }
+    clearLogs,
+    activeCharacterId,
+    reorderCharacters,
+    updateRollEntry,
+    settings,
+    updateSettings,
+  };
+}
+
+
 

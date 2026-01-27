@@ -71,4 +71,5 @@ export type LogEntry = RollLogEntry | SkillLogEntry;
 
 export interface AppSettings {
   missionReportBroadcastEnabled: boolean;
+  luckModeEnabled: boolean;
 }
