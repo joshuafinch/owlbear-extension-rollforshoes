@@ -68,3 +68,7 @@ export interface SkillLogEntry {
 }
 
 export type LogEntry = RollLogEntry | SkillLogEntry;
+
+export interface AppSettings {
+  missionReportBroadcastEnabled: boolean;
+}

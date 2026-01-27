@@ -20,6 +20,7 @@ export const MODAL_NPC_ROLL_POPOVER = 'npc-roll-popover';
 export const METADATA_SUFFIX_CHARACTERS = 'characters';
 export const METADATA_SUFFIX_LOGS = 'logs';
 export const METADATA_SUFFIX_LINK = 'link';
+export const METADATA_SUFFIX_SETTINGS = 'settings';
 
 // Broadcast Channels
 export const BROADCAST_NPC_ROLL_REQUEST = 'npc-roll-request';

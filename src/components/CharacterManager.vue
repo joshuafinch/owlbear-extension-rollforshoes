@@ -37,7 +37,9 @@ const {
   clearLogs,
   debugMode,
   exportData,
-  exportLogs
+  exportLogs,
+  settings,
+  updateSettings
 } = useRollForShoes();
 
 const { hasElevatedAccess } = useAccessOverride(role);
@@ -373,7 +375,9 @@ const handleRoll = async (characterId: string, skill: Skill) => {
     });
 
     queueMissionReportModal(rollId, true);
-    await broadcastMissionReport(rollId);
+    if (settings.value.missionReportBroadcastEnabled) {
+        await broadcastMissionReport(rollId);
+    }
 };
 
 const handleNpcRoll = async (payload: NpcRollRequest) => {
@@ -397,7 +401,7 @@ const handleNpcRoll = async (payload: NpcRollRequest) => {
     });
 
     queueMissionReportModal(rollId, true);
-    if (payload.revealToPlayers) {
+    if (payload.revealToPlayers && settings.value.missionReportBroadcastEnabled) {
         await broadcastMissionReport(rollId);
     }
 };
@@ -550,20 +554,23 @@ const handleLogSucceeded = async (logId: string) => {
             />
         </div>
 
-        <!-- SYSTEMS TAB CONTENT -->
-        <div v-if="activeTab === TAB_SYSTEMS" class="h-full">
-            <SystemTerminal 
-              :role="role"
-              :isDebug="debugMode"
-              :isDevBuild="isDevBuild"
-              @export="exportData"
-              @import="handleImport"
-              @exportLogs="handleExportLogs"
-              @importLogs="handleImportLogs"
-              @clearLogs="clearLogs"
-              @toggleDebug="debugMode = !debugMode"
-            />
-        </div>
+         <!-- SYSTEMS TAB CONTENT -->
+         <div v-if="activeTab === TAB_SYSTEMS" class="h-full">
+             <SystemTerminal 
+               :role="role"
+               :isDebug="debugMode"
+               :isDevBuild="isDevBuild"
+               :settings="settings"
+               @export="exportData"
+               @import="handleImport"
+               @exportLogs="handleExportLogs"
+               @importLogs="handleImportLogs"
+               @clearLogs="clearLogs"
+               @toggleDebug="debugMode = !debugMode"
+               @updateSettings="updateSettings"
+             />
+         </div>
+
       </div>
     </div>
   </div>

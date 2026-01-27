@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, toRef } from 'vue';
 import { useAccessOverride, type OverrideSignal } from '../composables/useAccessOverride';
+import type { AppSettings } from '../types';
 
 const props = defineProps<{
   role: string;
   isDebug?: boolean;
   isDevBuild?: boolean;
+  settings: AppSettings;
 }>();
 
 const emit = defineEmits<{
@@ -15,6 +17,7 @@ const emit = defineEmits<{
   (e: 'importLogs', event: Event): void;
   (e: 'toggleDebug'): void;
   (e: 'clearLogs'): void;
+  (e: 'updateSettings', updates: Partial<AppSettings>): void;
 }>();
 
 const { hasElevatedAccess: isGm, triggerOverrideSignal } = useAccessOverride(toRef(props, 'role'));
@@ -103,12 +106,34 @@ const handleOverrideTap = (signal: OverrideSignal) => {
                            <span class="text-green-600 mr-2">➜</span> EXECUTE_IMPORT_OVERRIDE()
                         </p>
                         <p class="text-xs text-gray-500 pl-6 mt-1">Overwrite mainframe with external backup.</p>
-                        <input type="file" class="hidden" accept=".json" @change="(e) => emit('import', e)" />
+                         <input type="file" class="hidden" accept=".json" @change="(e) => emit('import', e)" />
                     </label>
                 </div>
              </div>
 
+             <!-- ROOM SETTINGS -->
+             <div class="mt-8 border-t border-dashed border-green-900 pt-6">
+                <p class="text-sm mb-3 text-green-400 font-bold">> ROOM_PROTOCOLS:</p>
+                <div class="pl-2 border-l-2 border-green-900 ml-1">
+                    <button 
+                        @click="emit('updateSettings', { missionReportBroadcastEnabled: !settings.missionReportBroadcastEnabled })"
+                        class="w-full text-left hover:bg-green-900/30 p-3 rounded transition-colors flex items-center justify-between group"
+                    >
+                        <div>
+                             <p class="text-base font-bold" :class="settings.missionReportBroadcastEnabled ? 'text-green-400' : 'text-gray-500'">
+                               <span class="mr-2">📡</span> MISSION_REPORT_BROADCAST()
+                            </p>
+                            <p class="text-xs text-gray-500 pl-6 mt-1">Transmit mission reports to all active operatives.</p>
+                        </div>
+                        <div class="text-xs font-black px-3 py-1 border" :class="settings.missionReportBroadcastEnabled ? 'border-green-500 text-green-500 bg-green-900/20' : 'border-gray-700 text-gray-700'">
+                            {{ settings.missionReportBroadcastEnabled ? 'ACTIVE' : 'OFFLINE' }}
+                        </div>
+                    </button>
+                </div>
+             </div>
+
              <div class="mt-8 border-t border-dashed border-green-900 pt-4">
+
                 <p class="text-xs text-red-400 bg-red-900/20 p-3 border border-red-900/50 leading-relaxed">
                     ⚠ WARNING: IMPORT_OVERRIDE is a destructive operation. Previous session data will be purged immediately. Proceed with caution.
                 </p>

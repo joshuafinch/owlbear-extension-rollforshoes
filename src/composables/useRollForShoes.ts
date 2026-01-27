@@ -1,12 +1,13 @@
 import { ref, computed, onMounted } from 'vue';
 import OBR from '@owlbear-rodeo/sdk';
 import getPluginId from '../utils/getPluginId';
-import type { Character, CharacterData, Skill, CharacterLink, LogEntry, RollLogEntry, SkillLogEntry } from '../types';
+import type { Character, CharacterData, Skill, CharacterLink, LogEntry, RollLogEntry, SkillLogEntry, AppSettings } from '../types';
 import {
   ROLE_PLAYER,
   METADATA_SUFFIX_CHARACTERS,
   METADATA_SUFFIX_LOGS,
   METADATA_SUFFIX_LINK,
+  METADATA_SUFFIX_SETTINGS,
   LOG_TYPE_ROLL,
   LOG_TYPE_SKILL,
   DEFAULT_DO_ANYTHING_RANK
@@ -19,6 +20,9 @@ const selectedItems = ref<string[]>([]);
 const role = ref<string>(ROLE_PLAYER);
 const debugMode = ref<boolean>(false);
 const activeCharacterId = ref<string | null>(null);
+const settings = ref<AppSettings>({
+  missionReportBroadcastEnabled: true,
+});
 
 // Locks
 const characterLocks = ref<Map<string, number>>(new Map());
@@ -29,6 +33,7 @@ const LOCK_DURATION = 500; // ms
 const ROOM_DATA_KEY = getPluginId(METADATA_SUFFIX_CHARACTERS);
 const LINK_KEY = getPluginId(METADATA_SUFFIX_LINK);
 const LOGS_DATA_KEY = getPluginId(METADATA_SUFFIX_LOGS);
+const SETTINGS_DATA_KEY = getPluginId(METADATA_SUFFIX_SETTINGS);
 
 // Initialization Flag
 const isInitialized = ref(false);
@@ -566,6 +571,21 @@ const importLogs = async (jsonContent: string) => {
   }
 };
 
+const updateSettings = async (updates: Partial<AppSettings>) => {
+  const newSettings = { ...settings.value, ...updates };
+  // Optimistic
+  settings.value = newSettings;
+
+  try {
+    const cleanSettings = JSON.parse(JSON.stringify(newSettings));
+    await OBR.room.setMetadata({
+      [SETTINGS_DATA_KEY]: cleanSettings
+    });
+  } catch (e) {
+    console.error('Failed to update settings', e);
+  }
+};
+
 function rollDice(count: number, debug = false): number[] {
   if (debug) {
     // High chance of failure (1s and 2s) for testing XP gain
@@ -583,6 +603,11 @@ const initListeners = async () => {
   const metadata = await OBR.room.getMetadata();
   characters.value = (metadata[ROOM_DATA_KEY] as CharacterData) || {};
   const rawLogs = (metadata[LOGS_DATA_KEY] as any[]) || [];
+  const rawSettings = metadata[SETTINGS_DATA_KEY] as AppSettings | undefined;
+
+  if (rawSettings) {
+    settings.value = { ...settings.value, ...rawSettings };
+  }
 
   // Migration: Ensure logs have a type and ID
   rollHistory.value = rawLogs.map(log => {
@@ -608,6 +633,11 @@ const initListeners = async () => {
   unsubscribeRoom = OBR.room.onMetadataChange((newMetadata) => {
     const newData = newMetadata[ROOM_DATA_KEY] as CharacterData;
     const newLogs = newMetadata[LOGS_DATA_KEY] as any[];
+    const newSettings = newMetadata[SETTINGS_DATA_KEY] as AppSettings | undefined;
+
+    if (newSettings) {
+      settings.value = { ...settings.value, ...newSettings };
+    }
 
     if (newData) {
       // Merging strategy for characters
@@ -727,7 +757,10 @@ export function useRollForShoes() {
      clearLogs,
      debugMode,
      activeCharacterId,
-     reorderCharacters,
-     updateRollEntry,
-  };
-}
+      reorderCharacters,
+      updateRollEntry,
+      settings,
+      updateSettings,
+   };
+ }
+
