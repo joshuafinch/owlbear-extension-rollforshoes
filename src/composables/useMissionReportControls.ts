@@ -69,8 +69,9 @@ export function useMissionReportControls() {
       return;
     }
 
-    await addXp(characterId, 1);
+    // Mark log FIRST to prevent potential UI race where user can click again
     await markLogAction(logId, ACTION_LABELS.xp);
+    await addXp(characterId, 1);
 
     const char = characterList.value.find((c) => c.id === characterId);
     if (char) {

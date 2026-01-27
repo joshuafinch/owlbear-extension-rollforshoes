@@ -23,7 +23,7 @@ const activeCharacterId = ref<string | null>(null);
 // Locks
 const characterLocks = ref<Map<string, number>>(new Map());
 const logLock = ref<number>(0);
-const LOCK_DURATION = 2000; // ms
+const LOCK_DURATION = 500; // ms
 
 // Constants
 const ROOM_DATA_KEY = getPluginId(METADATA_SUFFIX_CHARACTERS);
@@ -180,21 +180,21 @@ const deleteCharacter = async (id: string) => {
   }
 };
 
-const addXp = (id: string, amount: number) => {
+const addXp = async (id: string, amount: number) => {
   const char = characters.value[id];
-  if (!char) return Promise.resolve();
+  if (!char) return;
   const newXp = Math.max(0, char.xp + amount);
 
   // Enable log locking on character updates too to prevent race conditions
   setLogLock();
-  return updateCharacter(id, { xp: newXp });
+  await updateCharacter(id, { xp: newXp });
 };
 
-const addSkill = (id: string, skill: Skill) => {
+const addSkill = async (id: string, skill: Skill) => {
   const char = characters.value[id];
-  if (!char) return Promise.resolve();
+  if (!char) return;
   setLogLock();
-  return updateCharacter(id, { skills: [...char.skills, skill] });
+  await updateCharacter(id, { skills: [...char.skills, skill] });
 };
 
 const updateSkill = (id: string, skillIndex: number, updates: Partial<Skill>) => {
