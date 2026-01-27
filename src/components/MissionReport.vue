@@ -59,7 +59,7 @@ const canEvolveOnFail = computed(() => {
 });
 
 const showDecisionPhase = computed(() => !isAllSixes.value && !isResolved.value);
-const showEvolutionOption = computed(() => isAllSixes.value || (isResolved.value && canEvolveOnFail.value));
+const showEvolutionOption = computed(() => isAllSixes.value || isResolved.value && canEvolveOnFail.value);
 const dismissLabel = computed(() => (isResolved.value || isAllSixes.value) ? 'Dismiss' : 'Decide Later...');
 
 const observerStatus = computed(() => {
@@ -144,7 +144,7 @@ const confirmEvolution = () => {
               Evolution Protocol!
             </div>
             <p class="text-xs font-black uppercase text-[var(--obr-text-primary)]">Codename for Rank {{ result.rank + 1
-            }} Skill:</p>
+              }} Skill:</p>
           </div>
         </div>
 
