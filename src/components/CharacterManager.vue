@@ -16,13 +16,13 @@ import {
   MODAL_NPC_ROLL_POPOVER,
   BROADCAST_NPC_ROLL_REQUEST,
   BROADCAST_MISSION_REPORT,
-  ROLE_GM,
  } from '../constants';
 import { useMissionReportControls } from '../composables/useMissionReportControls';
 import getPluginId from '../utils/getPluginId';
 import { useModalQueue } from '../composables/useModalQueue';
+import { useAccessOverride } from '../composables/useAccessOverride';
 
-const { 
+const {
   characterList, 
   rollHistory,
   role,
@@ -39,6 +39,8 @@ const {
   exportData,
   exportLogs
 } = useRollForShoes();
+
+const { hasElevatedAccess } = useAccessOverride(role);
 
 const devHosts = ['localhost', '127.0.0.1', '::1'];
 const runtimeEnv = (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env;
@@ -172,7 +174,7 @@ const registerNpcContextMenu = () => {
                         icon: '/icons/npc-roll.svg',
                         label: 'NPC Roll',
                         filter: {
-                            roles: ['GM'],
+                            roles: ['GM', 'PLAYER'],
                         },
                     },
                 ],
@@ -207,8 +209,8 @@ const destroyNpcContextMenu = async () => {
 onMounted(() => {
     setupMissionReportListener();
     setupNpcRollListener();
-    stopRoleWatcher = watch(role, (currentRole) => {
-        if (currentRole === ROLE_GM) {
+    stopRoleWatcher = watch(hasElevatedAccess, (canAccessNpcTools) => {
+        if (canAccessNpcTools) {
             registerNpcContextMenu();
         } else {
             destroyNpcContextMenu();

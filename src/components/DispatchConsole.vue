@@ -5,7 +5,6 @@ import CharacterCard from './CharacterCard.vue';
 import CreationRow from './common/CreationRow.vue';
 import draggable from 'vuedraggable';
 import type { Skill, Character, NpcRollRequest } from '../types';
-import { ROLE_GM } from '../constants';
 
 const emit = defineEmits<{
   (e: 'roll', characterId: string, skill: Skill): void;
@@ -30,7 +29,6 @@ const {
 } = useRollForShoes();
 
 const isCreating = ref(false);
-const isGm = computed(() => role.value === ROLE_GM);
 
 // Computed property for vuedraggable to handle characters array
 const draggableCharacters = computed({
@@ -51,10 +49,6 @@ const handleUpdateName = (id: string, name: string) => {
 
 const onRoll = (characterId: string, skill: Skill) => {
     emit('roll', characterId, skill);
-};
-
-const handleNpcRoll = (payload: NpcRollRequest) => {
-    emit('npcRoll', payload);
 };
 
 const onDragStart = () => {

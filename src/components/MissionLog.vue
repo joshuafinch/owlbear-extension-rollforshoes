@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, toRef } from 'vue';
 import type { LogEntry, RollLogEntry, Character } from '../types';
 import MissionReport from './MissionReport.vue';
-import { LOG_TYPE_ROLL, LOG_TYPE_SKILL, ROLE_GM } from '../constants';
+import { LOG_TYPE_ROLL, LOG_TYPE_SKILL } from '../constants';
+import { useAccessOverride } from '../composables/useAccessOverride';
 
 const props = defineProps<{
   history: LogEntry[];
@@ -10,7 +11,7 @@ const props = defineProps<{
   role?: string;
 }>();
 
-const isGm = computed(() => props.role === ROLE_GM);
+const { hasElevatedAccess: isGm } = useAccessOverride(toRef(props, 'role'));
 const visibleHistory = computed(() => {
     if (isGm.value) {
         return props.history;

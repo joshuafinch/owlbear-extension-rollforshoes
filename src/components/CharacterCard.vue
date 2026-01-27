@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue';
+import { ref, computed, watch, nextTick, toRef } from 'vue';
 import draggable from 'vuedraggable';
 import type { Character, Skill } from '../types';
 import CreationRow from './common/CreationRow.vue';
 import SkillItem from './SkillItem.vue';
 import RankPicker from './RankPicker.vue';
-import { ROLE_GM, DEFAULT_NEW_SKILL_RANK, TACTICAL_PALETTE } from '../constants';
+import { DEFAULT_NEW_SKILL_RANK, TACTICAL_PALETTE } from '../constants';
+import { useAccessOverride } from '../composables/useAccessOverride';
 
 const props = defineProps<{
   character: Character;
@@ -72,7 +73,7 @@ const handleColorSelect = (color: string) => {
 };
 
 const canLink = computed(() => props.selectedTokenIds.length > 0);
-const isGm = computed(() => props.role === ROLE_GM);
+const { hasElevatedAccess: isGm } = useAccessOverride(toRef(props, 'role'));
 
 // Computed property for vuedraggable to handle skills array
 const draggableSkills = computed({

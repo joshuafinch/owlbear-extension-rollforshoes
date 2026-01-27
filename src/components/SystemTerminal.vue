@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { ROLE_GM } from '../constants';
+import { ref, toRef } from 'vue';
+import { useAccessOverride, type OverrideSignal } from '../composables/useAccessOverride';
 
 const props = defineProps<{
   role: string;
@@ -17,7 +17,7 @@ const emit = defineEmits<{
   (e: 'clearLogs'): void;
 }>();
 
-const isGm = computed(() => props.role === ROLE_GM);
+const { hasElevatedAccess: isGm, triggerOverrideSignal } = useAccessOverride(toRef(props, 'role'));
 const confirmClearLogs = ref(false);
 
 const handleClearLogs = () => {
@@ -30,6 +30,10 @@ const handleClearLogs = () => {
             confirmClearLogs.value = false;
         }, 4000);
     }
+};
+
+const handleOverrideTap = (signal: OverrideSignal) => {
+    triggerOverrideSignal(signal);
 };
 </script>
 
@@ -44,9 +48,24 @@ const handleClearLogs = () => {
     <div class="border-b border-green-800 pb-3 mb-4 flex justify-between items-center z-0 relative">
         <span class="text-sm font-bold tracking-widest">root@AGENCY-HQ:~$ SYS_ADMIN</span>
         <div class="flex gap-2">
-            <div class="w-4 h-4 rounded-full bg-red-500 animate-pulse"></div>
-            <div class="w-4 h-4 rounded-full bg-yellow-500"></div>
-            <div class="w-4 h-4 rounded-full bg-green-500"></div>
+            <button 
+                type="button"
+                class="w-4 h-4 rounded-full bg-red-500 animate-pulse cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-500"
+                aria-label="Red status LED"
+                @click="handleOverrideTap('red')"
+            ></button>
+            <button 
+                type="button"
+                class="w-4 h-4 rounded-full bg-yellow-500 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-500"
+                aria-label="Yellow status LED"
+                @click="handleOverrideTap('yellow')"
+            ></button>
+            <button 
+                type="button"
+                class="w-4 h-4 rounded-full bg-green-500 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-500"
+                aria-label="Green status LED"
+                @click="handleOverrideTap('green')"
+            ></button>
         </div>
     </div>
 
