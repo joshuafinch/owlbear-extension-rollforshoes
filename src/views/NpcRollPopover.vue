@@ -62,7 +62,7 @@ const submitRoll = async () => {
 
   try {
     isSubmitting.value = true;
-    await OBR.broadcast.sendMessage(npcRollChannel, payload, { destination: 'ALL' });
+    await OBR.broadcast.sendMessage(npcRollChannel, payload, { destination: 'LOCAL' });
     await closePopover();
   } catch (error) {
     console.error('Failed to dispatch NPC roll request', error);
@@ -130,7 +130,8 @@ onMounted(() => {
 
 <template>
   <div class="h-full w-full flex items-center justify-center p-3 text-[var(--obr-text-primary)]">
-    <div class="w-full max-w-[260px] bg-[var(--obr-surface-card)] border border-[var(--obr-border-base)] rounded-2xl p-4 space-y-3 shadow-xl">
+    <div
+      class="w-full max-w-[260px] bg-[var(--obr-surface-card)] border border-[var(--obr-border-base)] rounded-2xl p-4 space-y-3 shadow-xl">
       <header class="flex items-center justify-between">
         <h1 class="text-base font-black uppercase tracking-[0.3em]">NPC Roll</h1>
         <span class="text-[10px] font-bold text-[var(--obr-text-secondary)]">{{ diceCount }}d6</span>
@@ -141,52 +142,46 @@ onMounted(() => {
       </div>
 
       <div v-else class="space-y-2">
-        <input
-          v-model="npcName"
-          type="text"
+        <input v-model="npcName" type="text"
           class="w-full bg-[var(--obr-surface-input)] border border-[var(--obr-border-subtle)] rounded-lg px-3 py-2 font-bold"
-          placeholder="Codename"
-        />
+          placeholder="Codename" />
 
-        <input
-          v-model="skillName"
-          type="text"
+        <input v-model="skillName" type="text"
           class="w-full bg-[var(--obr-surface-input)] border border-[var(--obr-border-subtle)] rounded-lg px-3 py-2 font-bold"
-          placeholder="Skill (e.g. Do Anything)"
-        />
+          placeholder="Skill (e.g. Do Anything)" />
 
         <div class="flex items-center justify-between">
           <span class="text-xs uppercase tracking-[0.3em] text-[var(--obr-text-secondary)]">Dice</span>
           <RankPicker v-model="diceCount" :max-rank="MAX_DICE" label="" />
         </div>
 
-        <div class="flex items-center justify-between bg-[var(--obr-surface-base)] border border-[var(--obr-border-subtle)] rounded-lg px-3 py-2">
+        <div
+          class="flex items-center justify-between bg-[var(--obr-surface-base)] border border-[var(--obr-border-subtle)] rounded-lg px-3 py-2">
           <p class="text-xs font-bold">
-            {{ revealToPlayers ? 'Broadcast to players' : 'Hidden (GM only)' }}
+            {{ revealToPlayers ? 'Show players in log?' : 'Hidden (GM only)' }}
           </p>
           <label class="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" class="sr-only peer" v-model="revealToPlayers" />
-            <div class="w-10 h-5 bg-[var(--obr-border-subtle)] rounded-full peer-checked:bg-[var(--obr-primary-main)] transition-colors"></div>
-            <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-[var(--obr-surface-card)] rounded-full transition-all peer-checked:translate-x-5"></div>
+            <div
+              class="w-10 h-5 bg-[var(--obr-border-subtle)] rounded-full peer-checked:bg-[var(--obr-primary-main)] transition-colors">
+            </div>
+            <div
+              class="absolute left-0.5 top-0.5 w-4 h-4 bg-[var(--obr-surface-card)] rounded-full transition-all peer-checked:translate-x-5">
+            </div>
           </label>
         </div>
 
         <p v-if="errorMessage" class="text-xs text-[var(--obr-status-danger)] font-bold">{{ errorMessage }}</p>
 
         <div class="flex gap-2 pt-1">
-          <button
-            type="button"
+          <button type="button"
             class="flex-1 border border-[var(--obr-border-subtle)] text-[var(--obr-text-secondary)] rounded-lg py-2 font-bold uppercase text-[10px]"
-            @click="closePopover"
-          >
+            @click="closePopover">
             Cancel
           </button>
-          <button
-            type="button"
+          <button type="button"
             class="flex-1 bg-[var(--obr-status-critical)] text-white rounded-lg py-2 font-black uppercase text-[10px] tracking-[0.3em] shadow-[0_4px_0_rgba(0,0,0,0.4)] active:translate-y-0.5 active:shadow-none disabled:opacity-60"
-            :disabled="isSubmitting || !isLoaded"
-            @click="submitRoll"
-          >
+            :disabled="isSubmitting || !isLoaded" @click="submitRoll">
             {{ isSubmitting ? 'Rolling…' : 'Roll' }}
           </button>
         </div>

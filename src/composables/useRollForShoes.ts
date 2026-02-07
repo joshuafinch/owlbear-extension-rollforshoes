@@ -20,7 +20,6 @@ const selectedItems = ref<string[]>([]);
 const role = ref<string>(ROLE_PLAYER);
 const activeCharacterId = ref<string | null>(null);
 const settings = ref<AppSettings>({
-  missionReportBroadcastEnabled: false,
   luckModeEnabled: false,
 });
 

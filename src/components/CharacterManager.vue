@@ -6,39 +6,38 @@ import SystemTerminal from './SystemTerminal.vue';
 import MissionLog from './MissionLog.vue';
 import type { Skill, NpcRollRequest } from '../types';
 import OBR from '@owlbear-rodeo/sdk';
-import { 
-  TAB_DISPATCH, 
-  TAB_LOGS, 
-  TAB_SYSTEMS, 
-  LOG_TYPE_ROLL, 
-  LOG_TYPE_SKILL,
-  MODAL_MISSION_REPORT,
-  MODAL_NPC_ROLL_POPOVER,
-  BROADCAST_NPC_ROLL_REQUEST,
-  BROADCAST_MISSION_REPORT,
- } from '../constants';
+import {
+    TAB_DISPATCH,
+    TAB_LOGS,
+    TAB_SYSTEMS,
+    LOG_TYPE_ROLL,
+    LOG_TYPE_SKILL,
+    MODAL_MISSION_REPORT,
+    MODAL_NPC_ROLL_POPOVER,
+    BROADCAST_NPC_ROLL_REQUEST,
+    BROADCAST_MISSION_REPORT,
+} from '../constants';
 import { useMissionReportControls } from '../composables/useMissionReportControls';
 import getPluginId from '../utils/getPluginId';
-import { useModalQueue } from '../composables/useModalQueue';
 import { useAccessOverride } from '../composables/useAccessOverride';
 
 const {
-  characterList, 
-  rollHistory,
-  role,
-  addXp, 
-  removeSkill,
-  importData,
-  importLogs,
-  rollDice,
-  addLogEntry,
-  unmarkLogAction,
-  deleteLogEntry,
-  clearLogs,
-  exportData,
-  exportLogs,
-  settings,
-  updateSettings
+    characterList,
+    rollHistory,
+    role,
+    addXp,
+    removeSkill,
+    importData,
+    importLogs,
+    rollDice,
+    addLogEntry,
+    unmarkLogAction,
+    deleteLogEntry,
+    clearLogs,
+    exportData,
+    exportLogs,
+    settings,
+    updateSettings
 } = useRollForShoes();
 
 const { hasElevatedAccess } = useAccessOverride(role);
@@ -53,9 +52,6 @@ const activeTab = ref<typeof TAB_DISPATCH | typeof TAB_LOGS | typeof TAB_SYSTEMS
 const { awardFailureXp, evolveSkillFromRoll, markRollSucceeded } = useMissionReportControls();
 
 const displayedRollIds = new Set<string>();
-let isModalReady = false;
-const modalReadyResolvers: Array<() => void> = [];
-const missionReportChannel = getPluginId(BROADCAST_MISSION_REPORT);
 const npcRollRequestChannel = getPluginId(BROADCAST_NPC_ROLL_REQUEST);
 const npcPopoverId = getPluginId(MODAL_NPC_ROLL_POPOVER);
 const npcContextMenuId = getPluginId('npc-roll-menu');
@@ -64,71 +60,12 @@ let unsubscribeMissionReport: (() => void) | null = null;
 let unsubscribeNpcRoll: (() => void) | null = null;
 let hasNpcContextMenu = false;
 let stopRoleWatcher: WatchStopHandle | null = null;
-const { enqueueModal, releaseModal } = useModalQueue();
-
-const releaseMissionReportModal = () => {
-    releaseModal(MODAL_MISSION_REPORT);
-};
-
-if (OBR.isAvailable) {
-    OBR.onReady(() => {
-        isModalReady = true;
-        while (modalReadyResolvers.length > 0) {
-            const resolver = modalReadyResolvers.shift();
-            resolver?.();
-        }
-    });
-}
-
-const waitForModalReady = () => {
-    if (!OBR.isAvailable) {
-        return Promise.resolve();
-    }
-    if (isModalReady) {
-        return Promise.resolve();
-    }
-    return new Promise<void>((resolve) => {
-        modalReadyResolvers.push(resolve);
-    });
-};
-
-const handleRemoteMissionReport = async (rollId: string) => {
-    if (!rollId || displayedRollIds.has(rollId)) {
-        return;
-    }
-    displayedRollIds.add(rollId);
-    queueMissionReportModal(rollId, false);
-};
 
 const ensureConnectionId = async () => {
     if (!OBR.isAvailable) return;
     if (!localConnectionId.value) {
         localConnectionId.value = await OBR.player.getConnectionId();
     }
-};
-
-const setupMissionReportListener = () => {
-    if (!OBR.isAvailable) return;
-
-    OBR.onReady(async () => {
-        await ensureConnectionId();
-        unsubscribeMissionReport = OBR.broadcast.onMessage(missionReportChannel, (event) => {
-            if (!event?.data || typeof event.data !== 'object') return;
-            const payload = event.data as { type?: string; rollId?: string };
-
-            if (payload.type === 'MISSION_REPORT_CLOSED') {
-                if (event.connectionId === localConnectionId.value) {
-                    releaseMissionReportModal();
-                }
-                return;
-            }
-
-            if (event.connectionId === localConnectionId.value) return;
-            if (payload.type !== 'MISSION_REPORT') return;
-            if (!payload.rollId) return;
-            handleRemoteMissionReport(payload.rollId);
-        });
-    });
 };
 
 const setupNpcRollListener = () => {
@@ -138,6 +75,7 @@ const setupNpcRollListener = () => {
         unsubscribeNpcRoll = OBR.broadcast.onMessage(npcRollRequestChannel, (event) => {
             if (!event?.data || typeof event.data !== 'object') return;
             if (event.connectionId !== localConnectionId.value) return;
+            console.info(`Received NPC roll request from connectionId=${event.connectionId}`);
             const payload = event.data as NpcRollRequest;
             handleNpcRoll(payload);
         });
@@ -212,7 +150,6 @@ const destroyNpcContextMenu = async () => {
 };
 
 onMounted(() => {
-    setupMissionReportListener();
     setupNpcRollListener();
     stopRoleWatcher = watch(hasElevatedAccess, (canAccessNpcTools) => {
         if (canAccessNpcTools) {
@@ -231,51 +168,50 @@ onUnmounted(() => {
     destroyNpcContextMenu();
     stopRoleWatcher?.();
     stopRoleWatcher = null;
-    // clearMissionReportHeartbeat();
 });
 
 const handleImport = (event: Event) => {
-  const input = event.target as HTMLInputElement;
-  if (!input.files || input.files.length === 0) return;
-  
-  const file = input.files[0];
-  const reader = new FileReader();
-  
-  reader.onload = (e) => {
-    if (e.target?.result && typeof e.target.result === 'string') {
-        if (confirm('This will overwrite all current character data. Are you sure?')) {
-            importData(e.target.result);
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+        if (e.target?.result && typeof e.target.result === 'string') {
+            if (confirm('This will overwrite all current character data. Are you sure?')) {
+                importData(e.target.result);
+            }
         }
-    }
-  };
-  
-  reader.readAsText(file);
-  input.value = '';
+    };
+
+    reader.readAsText(file);
+    input.value = '';
 };
 
 const handleImportLogs = (event: Event) => {
-  if (!isDevBuild) return;
-  const input = event.target as HTMLInputElement;
-  if (!input.files || input.files.length === 0) return;
+    if (!isDevBuild) return;
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
 
-  const file = input.files[0];
-  const reader = new FileReader();
+    const file = input.files[0];
+    const reader = new FileReader();
 
-  reader.onload = (e) => {
-    if (e.target?.result && typeof e.target.result === 'string') {
-      if (confirm('This will overwrite all mission log history. Proceed?')) {
-        importLogs(e.target.result);
-      }
-    }
-  };
+    reader.onload = (e) => {
+        if (e.target?.result && typeof e.target.result === 'string') {
+            if (confirm('This will overwrite all mission log history. Proceed?')) {
+                importLogs(e.target.result);
+            }
+        }
+    };
 
-  reader.readAsText(file);
-  input.value = '';
+    reader.readAsText(file);
+    input.value = '';
 };
 
 const handleExportLogs = () => {
-  if (!isDevBuild) return;
-  exportLogs();
+    if (!isDevBuild) return;
+    exportLogs();
 };
 
 const buildMissionReportUrl = (rollId: string, isControllerView: boolean) => {
@@ -290,8 +226,7 @@ const buildMissionReportUrl = (rollId: string, isControllerView: boolean) => {
 };
 
 const openMissionReportModal = async (rollId: string, isControllerView: boolean) => {
-    if (!OBR.isAvailable) return;
-    await waitForModalReady();
+    if (!OBR.isAvailable || !OBR.isReady) return;
     await OBR.modal.open({
         id: MODAL_MISSION_REPORT,
         url: buildMissionReportUrl(rollId, isControllerView),
@@ -300,18 +235,9 @@ const openMissionReportModal = async (rollId: string, isControllerView: boolean)
     });
 };
 
-const queueMissionReportModal = (rollId: string, isControllerView: boolean) => {
-    enqueueModal({
-        id: MODAL_MISSION_REPORT,
-        opener: async () => {
-            try {
-                await openMissionReportModal(rollId, isControllerView);
-            } catch (error) {
-                console.error('Failed to open Mission Report modal', error);
-                releaseMissionReportModal();
-            }
-        },
-    });
+const showMissionReportModal = async (rollId: string, isControllerView: boolean) => {
+    console.info(`Opening Mission Report modal for rollId=${rollId} (controllerView=${isControllerView})`);
+    await openMissionReportModal(rollId, isControllerView);
 };
 
 const handleRoll = async (characterId: string, skill: Skill) => {
@@ -335,7 +261,7 @@ const handleRoll = async (characterId: string, skill: Skill) => {
         actionsTaken: []
     });
 
-    queueMissionReportModal(rollId, true);
+    await showMissionReportModal(rollId, true);
 };
 
 const handleNpcRoll = async (payload: NpcRollRequest) => {
@@ -358,7 +284,7 @@ const handleNpcRoll = async (payload: NpcRollRequest) => {
         isHiddenFromPlayers: !payload.revealToPlayers,
     });
 
-    queueMissionReportModal(rollId, true);
+    await showMissionReportModal(rollId, true);
 };
 
 const handleLogTakeXp = async (logId: string, characterId: string) => {
@@ -379,7 +305,7 @@ const handleLogDelete = async (logId: string) => {
             // Find index of skill matching name and rank
             // Search from end to find most recent
             let skillIndex = -1;
-            
+
             // Debug logging for reversion
             console.log(`[Revert] Looking for skill: "${entry.newSkillName}" (Rank ${entry.rank}) on character "${char.name}"`);
 
@@ -438,92 +364,72 @@ const handleLogSucceeded = async (logId: string) => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col overflow-hidden bg-transparent">
-    
-    <!-- Main Interface Frame -->
-    <div class="flex-1 flex flex-col overflow-hidden">
-      
-      <!-- Integrated Header / Nav -->
-      <nav class="flex flex-none border-b-4 border-[var(--obr-border-base)] z-10">
-        <!-- Dispatch Tab -->
-        <button 
-          @click="activeTab = TAB_DISPATCH"
-          class="flex-1 py-3 text-center font-black uppercase tracking-widest text-xs sm:text-sm transition-all relative group flex items-center justify-center gap-2"
-          :class="activeTab === TAB_DISPATCH 
-            ? 'bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)]' 
-            : 'text-[var(--obr-text-disabled)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-surface-hover)]'"
-        >
-          <span v-if="activeTab === TAB_DISPATCH" class="text-[var(--obr-brand-accent)]">●</span>
-          Dispatch
-        </button>
+    <div class="h-full flex flex-col overflow-hidden bg-transparent">
 
-        <!-- Vertical Divider -->
-        <div class="w-[4px] bg-[var(--obr-border-base)]"></div>
+        <!-- Main Interface Frame -->
+        <div class="flex-1 flex flex-col overflow-hidden">
 
-        <!-- Logs Tab -->
-        <button 
-          @click="activeTab = TAB_LOGS"
-          class="flex-1 py-3 text-center font-black uppercase tracking-widest text-xs sm:text-sm transition-all relative group flex items-center justify-center gap-2"
-          :class="activeTab === TAB_LOGS 
-            ? 'bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)]' 
-            : 'text-[var(--obr-text-disabled)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-surface-hover)]'"
-        >
-          <span v-if="activeTab === TAB_LOGS" class="text-[var(--obr-brand-accent)]">●</span>
-          Logs
-        </button>
+            <!-- Integrated Header / Nav -->
+            <nav class="flex flex-none border-b-4 border-[var(--obr-border-base)] z-10">
+                <!-- Dispatch Tab -->
+                <button @click="activeTab = TAB_DISPATCH"
+                    class="flex-1 py-3 text-center font-black uppercase tracking-widest text-xs sm:text-sm transition-all relative group flex items-center justify-center gap-2"
+                    :class="activeTab === TAB_DISPATCH
+                        ? 'bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)]'
+                        : 'text-[var(--obr-text-disabled)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-surface-hover)]'">
+                    <span v-if="activeTab === TAB_DISPATCH" class="text-[var(--obr-brand-accent)]">●</span>
+                    Dispatch
+                </button>
 
-        <!-- Vertical Divider -->
-        <div class="w-[4px] bg-[var(--obr-border-base)]"></div>
+                <!-- Vertical Divider -->
+                <div class="w-[4px] bg-[var(--obr-border-base)]"></div>
 
-        <!-- System Tab -->
-        <button 
-          @click="activeTab = TAB_SYSTEMS"
-          class="flex-1 py-3 text-center font-black uppercase tracking-widest text-xs sm:text-sm transition-all relative group flex items-center justify-center gap-2"
-          :class="activeTab === TAB_SYSTEMS 
-            ? 'bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)]' 
-            : 'text-[var(--obr-text-disabled)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-surface-hover)]'"
-        >
-          <span v-if="activeTab === TAB_SYSTEMS" class="text-[var(--obr-brand-accent)]">●</span>
-          System
-        </button>
-      </nav>
+                <!-- Logs Tab -->
+                <button @click="activeTab = TAB_LOGS"
+                    class="flex-1 py-3 text-center font-black uppercase tracking-widest text-xs sm:text-sm transition-all relative group flex items-center justify-center gap-2"
+                    :class="activeTab === TAB_LOGS
+                        ? 'bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)]'
+                        : 'text-[var(--obr-text-disabled)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-surface-hover)]'">
+                    <span v-if="activeTab === TAB_LOGS" class="text-[var(--obr-brand-accent)]">●</span>
+                    Logs
+                </button>
 
-      <!-- Scrollable Content Area -->
-      <div class="flex-1 min-h-0 overflow-hidden relative">
-        
-        <!-- DISPATCH TAB CONTENT -->
-        <div v-if="activeTab === TAB_DISPATCH" class="h-full">
-            <DispatchConsole @roll="handleRoll" @npcRoll="handleNpcRoll" />
+                <!-- Vertical Divider -->
+                <div class="w-[4px] bg-[var(--obr-border-base)]"></div>
+
+                <!-- System Tab -->
+                <button @click="activeTab = TAB_SYSTEMS"
+                    class="flex-1 py-3 text-center font-black uppercase tracking-widest text-xs sm:text-sm transition-all relative group flex items-center justify-center gap-2"
+                    :class="activeTab === TAB_SYSTEMS
+                        ? 'bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)]'
+                        : 'text-[var(--obr-text-disabled)] hover:text-[var(--obr-text-primary)] hover:bg-[var(--obr-surface-hover)]'">
+                    <span v-if="activeTab === TAB_SYSTEMS" class="text-[var(--obr-brand-accent)]">●</span>
+                    System
+                </button>
+            </nav>
+
+            <!-- Scrollable Content Area -->
+            <div class="flex-1 min-h-0 overflow-hidden relative">
+
+                <!-- DISPATCH TAB CONTENT -->
+                <div v-if="activeTab === TAB_DISPATCH" class="h-full">
+                    <DispatchConsole @roll="handleRoll" @npcRoll="handleNpcRoll" />
+                </div>
+
+                <!-- LOGS TAB CONTENT -->
+                <div v-if="activeTab === TAB_LOGS" class="h-full">
+                    <MissionLog :history="rollHistory" :characters="characterList" :role="role"
+                        @takeXp="handleLogTakeXp" @evolve="handleLogEvolve" @succeeded="handleLogSucceeded"
+                        @deleteLog="handleLogDelete" />
+                </div>
+
+                <div v-if="activeTab === TAB_SYSTEMS" class="h-full">
+                    <SystemTerminal :role="role" :isDevBuild="isDevBuild" :settings="settings" @export="exportData"
+                        @import="handleImport" @exportLogs="handleExportLogs" @importLogs="handleImportLogs"
+                        @clearLogs="clearLogs" @updateSettings="updateSettings" />
+                </div>
+
+            </div>
         </div>
-
-        <!-- LOGS TAB CONTENT -->
-        <div v-if="activeTab === TAB_LOGS" class="h-full">
-            <MissionLog 
-              :history="rollHistory" 
-              :characters="characterList"
-              :role="role"
-              @takeXp="handleLogTakeXp"
-              @evolve="handleLogEvolve"
-              @succeeded="handleLogSucceeded"
-              @deleteLog="handleLogDelete"
-            />
-        </div>
-
-         <div v-if="activeTab === TAB_SYSTEMS" class="h-full">
-             <SystemTerminal 
-               :role="role"
-               :isDevBuild="isDevBuild"
-               :settings="settings"
-               @export="exportData"
-               @import="handleImport"
-               @exportLogs="handleExportLogs"
-               @importLogs="handleImportLogs"
-               @clearLogs="clearLogs"
-               @updateSettings="updateSettings"
-             />
-         </div>
-
-      </div>
     </div>
-  </div>
 </template>
