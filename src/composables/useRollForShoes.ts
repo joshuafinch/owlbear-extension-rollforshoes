@@ -20,14 +20,9 @@ const selectedItems = ref<string[]>([]);
 const role = ref<string>(ROLE_PLAYER);
 const activeCharacterId = ref<string | null>(null);
 const settings = ref<AppSettings>({
-  missionReportBroadcastEnabled: true,
+  missionReportBroadcastEnabled: false,
   luckModeEnabled: false,
 });
-
-// Locks
-const characterLocks = ref<Map<string, number>>(new Map());
-const logLock = ref<number>(0);
-const LOCK_DURATION = 500; // ms
 
 // Constants
 const ROOM_DATA_KEY = getPluginId(METADATA_SUFFIX_CHARACTERS);
@@ -47,14 +42,6 @@ let unsubscribeRoom: (() => void) | null = null;
 let unsubscribeSelection: (() => void) | null = null;
 
 // --- Helper Functions ---
-
-const setCharLock = (id: string) => {
-  characterLocks.value.set(id, Date.now() + LOCK_DURATION);
-};
-
-const setLogLock = () => {
-  logLock.value = Date.now() + LOCK_DURATION;
-};
 
 // Computed helper to get list as array
 const characterList = computed({
@@ -121,7 +108,6 @@ const createCharacter = async (name: string) => {
 
   // Optimistic update
   characters.value[id] = newChar;
-  setCharLock(id);
 
   try {
     const roomMetadata = await OBR.room.getMetadata();
@@ -144,7 +130,6 @@ const updateCharacter = async (id: string, updates: Partial<Character>) => {
   // Optimistic
   const updatedChar = { ...characters.value[id], ...updates };
   characters.value[id] = updatedChar;
-  setCharLock(id);
 
   try {
     // Create a clean object for storage
@@ -167,7 +152,6 @@ const updateCharacter = async (id: string, updates: Partial<Character>) => {
 const deleteCharacter = async (id: string) => {
   // Optimistic update
   delete characters.value[id];
-  setCharLock(id);
 
   try {
     const roomMetadata = await OBR.room.getMetadata();
@@ -190,15 +174,13 @@ const addXp = async (id: string, amount: number) => {
   if (!char) return;
   const newXp = Math.max(0, char.xp + amount);
 
-  // Enable log locking on character updates too to prevent race conditions
-  setLogLock();
   await updateCharacter(id, { xp: newXp });
 };
 
 const addSkill = async (id: string, skill: Skill) => {
   const char = characters.value[id];
   if (!char) return;
-  setLogLock();
+
   await updateCharacter(id, { skills: [...char.skills, skill] });
 };
 
@@ -286,9 +268,6 @@ const addLogEntry = async (entry: LogEntry) => {
   const newHistory = [entry, ...rollHistory.value].slice(0, 50); // Keep last 50
   rollHistory.value = newHistory;
 
-  // Track that we are messing with the log list
-  setLogLock();
-
   try {
     // Strip reactivity to prevent DataCloneError
     const cleanHistory = JSON.parse(JSON.stringify(newHistory));
@@ -328,8 +307,6 @@ const markLogAction = async (logId: string, action: 'xp' | 'evolve' | 'succeeded
   newHistory[logIndex] = { ...entry, actionsTaken: newActions as any };
   rollHistory.value = newHistory;
 
-  setLogLock();
-
   try {
     const cleanHistory = JSON.parse(JSON.stringify(newHistory));
     return OBR.room.setMetadata({
@@ -359,8 +336,6 @@ const unmarkLogAction = async (logId: string, action: 'xp' | 'evolve' | 'succeed
   newHistory[logIndex] = { ...entry, actionsTaken: newActions as any };
   rollHistory.value = newHistory;
 
-  setLogLock();
-
   try {
     const cleanHistory = JSON.parse(JSON.stringify(newHistory));
     return OBR.room.setMetadata({
@@ -377,18 +352,16 @@ const deleteLogEntry = async (logId: string) => {
   const newHistory = rollHistory.value.filter(entry => entry.id !== logId);
   rollHistory.value = newHistory;
 
-  setLogLock();
-
   try {
     const cleanHistory = JSON.parse(JSON.stringify(newHistory));
     await OBR.room.setMetadata({
       [LOGS_DATA_KEY]: cleanHistory
     });
-    OBR.notification.show('Log entry deleted.', 'SUCCESS');
+    // OBR.notification.show('Log entry deleted.', 'SUCCESS');
     return Promise.resolve();
   } catch (e) {
     console.error('Failed to delete log entry', e);
-    OBR.notification.show('Failed to delete log entry.', 'ERROR');
+    // OBR.notification.show('Failed to delete log entry.', 'ERROR');
     return Promise.resolve();
   }
 };
@@ -405,8 +378,6 @@ const updateRollEntry = async (logId: string, updater: (entry: RollLogEntry) => 
   newHistory[index] = updatedEntry;
   rollHistory.value = newHistory;
 
-  setLogLock();
-
   try {
     const cleanHistory = JSON.parse(JSON.stringify(newHistory));
     await OBR.room.setMetadata({
@@ -421,16 +392,14 @@ const clearLogs = async () => {
   // Optimistic
   rollHistory.value = [];
 
-  setLogLock();
-
   try {
     await OBR.room.setMetadata({
       [LOGS_DATA_KEY]: []
     });
-    OBR.notification.show('Mission logs have been purged.', 'SUCCESS');
+    // OBR.notification.show('Mission logs have been purged.', 'SUCCESS');
   } catch (e) {
     console.error('Failed to clear logs', e);
-    OBR.notification.show('Failed to purge logs.', 'ERROR');
+    // OBR.notification.show('Failed to purge logs.', 'ERROR');
   }
 };
 
@@ -448,7 +417,7 @@ const exportData = () => {
     URL.revokeObjectURL(url);
   } catch (e) {
     console.error("Failed to export data", e);
-    OBR.notification.show("Failed to export data", "ERROR");
+    // OBR.notification.show("Failed to export data", "ERROR");
   }
 };
 
@@ -478,10 +447,10 @@ const importData = async (jsonContent: string) => {
       [ROOM_DATA_KEY]: data
     });
 
-    OBR.notification.show('Data imported successfully');
+    // OBR.notification.show('Data imported successfully');
   } catch (e) {
     console.error('Import failed', e);
-    OBR.notification.show('Failed to import data: Invalid format', 'ERROR');
+    // OBR.notification.show('Failed to import data: Invalid format', 'ERROR');
   }
 };
 
@@ -499,7 +468,7 @@ const exportLogs = () => {
     URL.revokeObjectURL(url);
   } catch (e) {
     console.error('Failed to export mission logs', e);
-    OBR.notification.show('Failed to export mission logs', 'ERROR');
+    // OBR.notification.show('Failed to export mission logs', 'ERROR');
   }
 };
 
@@ -557,17 +526,16 @@ const importLogs = async (jsonContent: string) => {
     });
 
     rollHistory.value = sanitized;
-    setLogLock();
 
     const cleanHistory = JSON.parse(JSON.stringify(sanitized));
     await OBR.room.setMetadata({
       [LOGS_DATA_KEY]: cleanHistory,
     });
 
-    OBR.notification.show('Mission logs imported successfully', 'SUCCESS');
+    // OBR.notification.show('Mission logs imported successfully', 'SUCCESS');
   } catch (e) {
     console.error('Failed to import mission logs', e);
-    OBR.notification.show('Failed to import mission logs: Invalid format', 'ERROR');
+    // OBR.notification.show('Failed to import mission logs: Invalid format', 'ERROR');
   }
 };
 
@@ -645,41 +613,21 @@ const initListeners = async () => {
       // Merging strategy for characters
       const currentIds = new Set(Object.keys(characters.value));
       const newIds = new Set(Object.keys(newData));
-      const now = Date.now();
 
       // 1. Update/Add characters that aren't currently being modified by us
       for (const [id, char] of Object.entries(newData)) {
-        const lockTime = characterLocks.value.get(id);
-        const isLocked = lockTime && lockTime > now;
-
-        if (!isLocked) {
-          characters.value[id] = char;
-        }
+        characters.value[id] = char;
       }
 
       // 2. Handle deletions (if ID is in current but not in new, and not pending)
       for (const id of currentIds) {
-        const lockTime = characterLocks.value.get(id);
-        const isLocked = lockTime && lockTime > now;
-
-        if (!newIds.has(id) && !isLocked) {
+        if (!newIds.has(id)) {
           delete characters.value[id];
         }
-      }
-    } else {
-      if (characterLocks.value.size === 0) {
-        characters.value = {};
       }
     }
 
     if (newLogs) {
-      const now = Date.now();
-      const isLocked = logLock.value > now;
-
-      if (isLocked) {
-        return;
-      }
-
       rollHistory.value = newLogs.map(log => {
         if (!log.type) {
           return { ...log, type: LOG_TYPE_ROLL } as RollLogEntry;

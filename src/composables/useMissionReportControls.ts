@@ -75,9 +75,9 @@ export function useMissionReportControls() {
 
     const char = characterList.value.find((c) => c.id === characterId);
     if (char) {
-      OBR.notification.show(`${char.name} gains 1 XP (Total: ${char.xp}).`);
+      // OBR.notification.show(`${char.name} gains 1 XP (Total: ${char.xp}).`);
     } else {
-      OBR.notification.show('Failure recorded: +1 XP applied.');
+      // OBR.notification.show('Failure recorded: +1 XP applied.');
     }
   };
 
@@ -127,17 +127,17 @@ export function useMissionReportControls() {
       evolvedSkillName: newSkillName,
     }));
 
-    OBR.notification.show(
-      `${characterName} evolved new skill: ${newSkillName} (Rank ${rank + 1})`,
-      'SUCCESS',
-    );
+    // OBR.notification.show(
+    //   `${characterName} evolved new skill: ${newSkillName} (Rank ${rank + 1})`,
+    //   'SUCCESS',
+    // );
   };
 
   const markRollSucceeded = async (logId: string) => {
     await markLogAction(logId, ACTION_LABELS.succeeded);
     const entry = findRollEntry(logId);
     const characterName = resolveCharacterName(entry);
-    OBR.notification.show(`${characterName}'s roll marked as Succeeded.`);
+    // OBR.notification.show(`${characterName}'s roll marked as Succeeded.`);
   };
 
   return {
