@@ -65,28 +65,10 @@ let unsubscribeNpcRoll: (() => void) | null = null;
 let hasNpcContextMenu = false;
 let stopRoleWatcher: WatchStopHandle | null = null;
 const { enqueueModal, releaseModal } = useModalQueue();
-// const missionReportHeartbeatReleaseDelay = 600;
-// let missionReportHeartbeatTimeout: ReturnType<typeof setTimeout> | null = null;
-
-// const clearMissionReportHeartbeat = () => {
-//     if (missionReportHeartbeatTimeout !== null) {
-//         clearTimeout(missionReportHeartbeatTimeout);
-//         missionReportHeartbeatTimeout = null;
-//     }
-// };
 
 const releaseMissionReportModal = () => {
-    // clearMissionReportHeartbeat();
     releaseModal(MODAL_MISSION_REPORT);
 };
-
-// const scheduleMissionReportHeartbeatRelease = () => {
-//     clearMissionReportHeartbeat();
-//     missionReportHeartbeatTimeout = setTimeout(() => {
-//         missionReportHeartbeatTimeout = null;
-//         releaseMissionReportModal();
-//     }, missionReportHeartbeatReleaseDelay);
-// };
 
 if (OBR.isAvailable) {
     OBR.onReady(() => {
@@ -140,13 +122,6 @@ const setupMissionReportListener = () => {
                 }
                 return;
             }
-
-            // if (payload.type === 'MISSION_REPORT_HEARTBEAT') {
-            //     if (event.connectionId === localConnectionId.value) {
-            //         scheduleMissionReportHeartbeatRelease();
-            //     }
-            //     return;
-            // }
 
             if (event.connectionId === localConnectionId.value) return;
             if (payload.type !== 'MISSION_REPORT') return;
@@ -339,19 +314,6 @@ const queueMissionReportModal = (rollId: string, isControllerView: boolean) => {
     });
 };
 
-// const broadcastMissionReport = async (rollId: string) => {
-//     if (!OBR.isAvailable) return;
-//     try {
-//         await waitForModalReady();
-//         await OBR.broadcast.sendMessage(missionReportChannel, {
-//             type: 'MISSION_REPORT',
-//             rollId,
-//         }, { destination: 'ALL' });
-//     } catch (error) {
-//         console.error('Failed to broadcast mission report', error);
-//     }
-// };
-
 const handleRoll = async (characterId: string, skill: Skill) => {
     const character = characterList.value.find(c => c.id === characterId);
     if (!character) return;
@@ -374,9 +336,6 @@ const handleRoll = async (characterId: string, skill: Skill) => {
     });
 
     queueMissionReportModal(rollId, true);
-    // if (settings.value.missionReportBroadcastEnabled) {
-    //     await broadcastMissionReport(rollId);
-    // }
 };
 
 const handleNpcRoll = async (payload: NpcRollRequest) => {
@@ -400,9 +359,6 @@ const handleNpcRoll = async (payload: NpcRollRequest) => {
     });
 
     queueMissionReportModal(rollId, true);
-    // if (payload.revealToPlayers && settings.value.missionReportBroadcastEnabled) {
-    //     await broadcastMissionReport(rollId);
-    // }
 };
 
 const handleLogTakeXp = async (logId: string, characterId: string) => {
