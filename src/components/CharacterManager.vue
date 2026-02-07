@@ -65,28 +65,28 @@ let unsubscribeNpcRoll: (() => void) | null = null;
 let hasNpcContextMenu = false;
 let stopRoleWatcher: WatchStopHandle | null = null;
 const { enqueueModal, releaseModal } = useModalQueue();
-const missionReportHeartbeatReleaseDelay = 600;
-let missionReportHeartbeatTimeout: ReturnType<typeof setTimeout> | null = null;
+// const missionReportHeartbeatReleaseDelay = 600;
+// let missionReportHeartbeatTimeout: ReturnType<typeof setTimeout> | null = null;
 
-const clearMissionReportHeartbeat = () => {
-    if (missionReportHeartbeatTimeout !== null) {
-        clearTimeout(missionReportHeartbeatTimeout);
-        missionReportHeartbeatTimeout = null;
-    }
-};
+// const clearMissionReportHeartbeat = () => {
+//     if (missionReportHeartbeatTimeout !== null) {
+//         clearTimeout(missionReportHeartbeatTimeout);
+//         missionReportHeartbeatTimeout = null;
+//     }
+// };
 
 const releaseMissionReportModal = () => {
-    clearMissionReportHeartbeat();
+    // clearMissionReportHeartbeat();
     releaseModal(MODAL_MISSION_REPORT);
 };
 
-const scheduleMissionReportHeartbeatRelease = () => {
-    clearMissionReportHeartbeat();
-    missionReportHeartbeatTimeout = setTimeout(() => {
-        missionReportHeartbeatTimeout = null;
-        releaseMissionReportModal();
-    }, missionReportHeartbeatReleaseDelay);
-};
+// const scheduleMissionReportHeartbeatRelease = () => {
+//     clearMissionReportHeartbeat();
+//     missionReportHeartbeatTimeout = setTimeout(() => {
+//         missionReportHeartbeatTimeout = null;
+//         releaseMissionReportModal();
+//     }, missionReportHeartbeatReleaseDelay);
+// };
 
 if (OBR.isAvailable) {
     OBR.onReady(() => {
@@ -141,12 +141,12 @@ const setupMissionReportListener = () => {
                 return;
             }
 
-            if (payload.type === 'MISSION_REPORT_HEARTBEAT') {
-                if (event.connectionId === localConnectionId.value) {
-                    scheduleMissionReportHeartbeatRelease();
-                }
-                return;
-            }
+            // if (payload.type === 'MISSION_REPORT_HEARTBEAT') {
+            //     if (event.connectionId === localConnectionId.value) {
+            //         scheduleMissionReportHeartbeatRelease();
+            //     }
+            //     return;
+            // }
 
             if (event.connectionId === localConnectionId.value) return;
             if (payload.type !== 'MISSION_REPORT') return;
@@ -256,7 +256,7 @@ onUnmounted(() => {
     destroyNpcContextMenu();
     stopRoleWatcher?.();
     stopRoleWatcher = null;
-    clearMissionReportHeartbeat();
+    // clearMissionReportHeartbeat();
 });
 
 const handleImport = (event: Event) => {

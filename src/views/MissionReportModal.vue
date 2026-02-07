@@ -16,50 +16,52 @@ const { rollHistory, characterList } = useRollForShoes();
 const { awardFailureXp, evolveSkillFromRoll, markRollSucceeded } = useMissionReportControls();
 
 const missionReportChannel = getPluginId(BROADCAST_MISSION_REPORT);
-const HEARTBEAT_INTERVAL_MS = 300;
+
 let hasNotifiedClose = false;
-let heartbeatIntervalId: number | null = null;
 
-const stopHeartbeat = () => {
-  if (heartbeatIntervalId !== null) {
-    clearInterval(heartbeatIntervalId);
-    heartbeatIntervalId = null;
-  }
-};
+// const HEARTBEAT_INTERVAL_MS = 300;
+// let heartbeatIntervalId: number | null = null;
 
-const sendHeartbeat = async () => {
-  if (!OBR.isAvailable) return;
-  try {
-    await OBR.broadcast.sendMessage(
-      missionReportChannel,
-      { type: 'MISSION_REPORT_HEARTBEAT' },
-      { destination: 'LOCAL' },
-    );
-  } catch (error) {
-    console.error('Failed to send mission report heartbeat', error);
-  }
-};
+// const stopHeartbeat = () => {
+//   if (heartbeatIntervalId !== null) {
+//     clearInterval(heartbeatIntervalId);
+//     heartbeatIntervalId = null;
+//   }
+// };
 
-const startHeartbeat = () => {
-  if (heartbeatIntervalId !== null) return;
-  if (!OBR.isAvailable) return;
-  const bootHeartbeat = () => {
-    if (heartbeatIntervalId !== null) return;
-    if (typeof window === 'undefined') return;
-    void sendHeartbeat();
-    heartbeatIntervalId = window.setInterval(() => {
-      void sendHeartbeat();
-    }, HEARTBEAT_INTERVAL_MS);
-  };
-  OBR.onReady(bootHeartbeat);
-};
+// const sendHeartbeat = async () => {
+//   if (!OBR.isAvailable) return;
+//   try {
+//     await OBR.broadcast.sendMessage(
+//       missionReportChannel,
+//       { type: 'MISSION_REPORT_HEARTBEAT' },
+//       { destination: 'LOCAL' },
+//     );
+//   } catch (error) {
+//     console.error('Failed to send mission report heartbeat', error);
+//   }
+// };
 
-onMounted(() => {
-  startHeartbeat();
-});
+// const startHeartbeat = () => {
+//   if (heartbeatIntervalId !== null) return;
+//   if (!OBR.isAvailable) return;
+//   const bootHeartbeat = () => {
+//     if (heartbeatIntervalId !== null) return;
+//     if (typeof window === 'undefined') return;
+//     void sendHeartbeat();
+//     heartbeatIntervalId = window.setInterval(() => {
+//       void sendHeartbeat();
+//     }, HEARTBEAT_INTERVAL_MS);
+//   };
+//   OBR.onReady(bootHeartbeat);
+// };
+
+// onMounted(() => {
+//   startHeartbeat();
+// });
 
 const notifyMissionReportClosed = async () => {
-  stopHeartbeat();
+  // stopHeartbeat();
   if (hasNotifiedClose) return;
   hasNotifiedClose = true;
   if (!OBR.isAvailable) return;
@@ -120,7 +122,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 onBeforeUnmount(() => {
-  stopHeartbeat();
+  // stopHeartbeat();
   void notifyMissionReportClosed();
 });
 

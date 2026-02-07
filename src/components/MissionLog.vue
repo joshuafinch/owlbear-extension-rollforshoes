@@ -53,16 +53,11 @@ const formatTime = (timestamp: number) => {
 const isCritical = (dice: number[]) => dice.length > 0 && dice.every(d => d === 6);
 const countSuccesses = (dice: number[]) => dice.filter(d => d === 6).length;
 const getEvolutionCost = (dice: number[]) => dice.length - countSuccesses(dice);
-const isOutcomeDecided = (entry: RollLogEntry) => entry.actionsTaken?.some(action => action === 'xp' || action === 'succeeded') ?? false;
 const hasResolvedOutcome = (entry: RollLogEntry) => entry.actionsTaken?.some(action => action === 'xp' || action === 'succeeded') ?? false;
-const hasEvolved = (entry: RollLogEntry) => entry.actionsTaken?.some(action => action === 'evolve' || action === ('advance' as any)) ?? false;
+const hasEvolved = (entry: RollLogEntry) => entry.actionsTaken?.some(action => action === 'evolve') ?? false;
 const canEvolveNow = (entry: RollLogEntry) => latestRollIds.value.has(entry.id);
-const shouldShowEvolutionSummary = (entry: RollLogEntry) => {
-    if (hasEvolved(entry)) return true;
-    return canEvolveNow(entry);
-};
 const getEvolutionSummary = (entry: RollLogEntry) => {
-    if (entry.actionsTaken?.includes('evolve') || entry.actionsTaken?.includes('advance' as any)) {
+    if (entry.actionsTaken?.includes('evolve')) {
         return 'Skill evolved from this roll';
     }
     const dice = entry.dice;
@@ -182,9 +177,9 @@ const handleDeleteClick = (id: string) => {
                         <div
                             class="flex justify-between items-baseline border-b border-dashed border-[var(--obr-border-subtle)] pb-1 mb-1">
                             <span class="font-black text-[var(--obr-text-primary)] text-base">{{ entry.characterName
-                                }}</span>
+                            }}</span>
                             <span class="text-xs text-[var(--obr-text-secondary)]">{{ entry.skillName }} ({{ entry.rank
-                                }})</span>
+                            }})</span>
                         </div>
 
                         <!-- Dice Display -->
@@ -209,57 +204,51 @@ const handleDeleteClick = (id: string) => {
                             <template v-if="!entry.isNpc">
                                 <div class="flex flex-wrap items-center gap-2 justify-between pt-2">
                                     <div class="flex flex-wrap items-center gap-2">
-                                        <span v-if="isCritical(entry.dice)"
-                                            class="text-[var(--obr-status-critical)] font-black text-xs uppercase border-2 border-[var(--obr-status-critical)] px-1 transform -rotate-2">
-                                            ★ CRITICAL ★
-                                        </span>
-
-                                        <!-- Terminal State Status -->
-                                        <button
-                                            v-if="shouldShowEvolutionSummary(entry) && isOutcomeDecided(entry) && canAffordEvolution(entry) && canEvolveNow(entry)"
-                                            @click="startRetroEvolution(entry)"
-                                            class="text-[10px] bg-[var(--obr-primary-main)] text-white hover:opacity-90 border border-[var(--obr-border-base)] px-2 py-1 font-bold uppercase animate-pulse"
-                                            :title="`Spend ${getEvolutionSummary(entry)} to evolve this skill`">
-                                            Evolve (for {{ getEvolutionSummary(entry) }})
-                                        </button>
-                                        <div v-else-if="hasEvolved(entry) || hasResolvedOutcome(entry)"
+                                        <div
                                             class="text-[10px] text-[var(--obr-text-disabled)] uppercase font-bold italic">
                                             <span v-if="hasEvolved(entry)">Evolved</span>
-                                            <span v-else-if="entry.actionsTaken?.includes('succeeded')">Succeeded</span>
-                                            <span v-else-if="entry.actionsTaken?.includes('xp')">XP Claimed</span>
-                                            <span v-else>Action Taken</span>
-                                        </div>
-                                        <div v-else
-                                            class="text-[10px] text-[var(--obr-text-disabled)] uppercase font-bold italic">
-                                            <!-- Pending Actions -->
-                                            <div v-if="!hasEvolved(entry)" class="flex flex-wrap gap-2">
-                                                <!-- CRITICAL CASE -->
-                                                <template v-if="isCritical(entry.dice)">
+
+                                            <template v-else-if="isCritical(entry.dice) && !hasEvolved(entry)">
+                                                <div class="flex items-center gap-2">
+                                                    <span
+                                                        class="text-[var(--obr-status-critical)] font-black text-xs uppercase border-2 border-[var(--obr-status-critical)] px-1 transform -rotate-2">
+                                                        ★ CRITICAL ★
+                                                    </span>
                                                     <button @click="startRetroEvolution(entry)"
                                                         class="text-[10px] bg-[var(--obr-status-critical)] text-white hover:opacity-90 border border-[var(--obr-border-base)] px-2 py-1 font-bold uppercase animate-pulse">
                                                         Evolve!
                                                     </button>
-                                                </template>
+                                                </div>
+                                            </template>
 
-                                                <!-- STANDARD CASE -->
-                                                <template v-else>
-                                                    <!-- Fail (+1 XP) -->
-                                                    <button v-if="!hasResolvedOutcome(entry)"
-                                                        @click="emit('takeXp', entry.id, entry.characterId)"
-                                                        class="text-[10px] bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-1 font-bold uppercase text-[var(--obr-status-danger)]"
-                                                        title="Claim 1 XP for Failure">
-                                                        FAIL (+1 XP)
-                                                    </button>
+                                            <div v-else-if="!hasResolvedOutcome(entry)" class="flex flex-wrap gap-2">
+                                                <!-- Fail (+1 XP) -->
+                                                <button @click="emit('takeXp', entry.id, entry.characterId)"
+                                                    class="text-[10px] bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-1 font-bold uppercase text-[var(--obr-status-danger)]"
+                                                    title="Claim 1 XP for Failure">
+                                                    FAIL (+1 XP)
+                                                </button>
 
-                                                    <!-- Success (Only if outcome not decided) -->
-                                                    <button v-if="!hasResolvedOutcome(entry)"
-                                                        @click="emit('succeeded', entry.id)"
-                                                        class="text-[10px] bg-green-50 hover:bg-green-100 border border-green-200 px-2 py-1 font-bold uppercase text-[var(--obr-status-success)]"
-                                                        title="Mark as Succeeded">
-                                                        SUCCESS
-                                                    </button>
-                                                </template>
+                                                <!-- Success (Only if outcome not decided) -->
+                                                <button @click="emit('succeeded', entry.id)"
+                                                    class="text-[10px] bg-green-50 hover:bg-green-100 border border-green-200 px-2 py-1 font-bold uppercase text-[var(--obr-status-success)]"
+                                                    title="Mark as Succeeded">
+                                                    SUCCESS
+                                                </button>
                                             </div>
+
+                                            <template
+                                                v-else-if="hasResolvedOutcome(entry) && canAffordEvolution(entry) && canEvolveNow(entry) && !hasEvolved(entry)">
+                                                <button @click="startRetroEvolution(entry)"
+                                                    class="text-[10px] bg-[var(--obr-primary-main)] text-white hover:opacity-90 border border-[var(--obr-border-base)] px-2 py-1 font-bold uppercase animate-pulse"
+                                                    :title="`Spend ${getEvolutionSummary(entry)} to evolve this skill`">
+                                                    Evolve (for {{ getEvolutionSummary(entry) }})
+                                                </button>
+                                            </template>
+
+                                            <span v-else-if="entry.actionsTaken?.includes('succeeded')">Succeeded</span>
+                                            <span v-else-if="entry.actionsTaken?.includes('xp')">XP Claimed</span>
+                                            <span v-else>Action Taken</span>
                                         </div>
 
 
@@ -306,7 +295,7 @@ const handleDeleteClick = (id: string) => {
                     <div
                         class="flex justify-between items-baseline border-b border-dashed border-[var(--obr-border-subtle)] pb-1 mb-2">
                         <span class="font-black text-[var(--obr-text-primary)] text-base">{{ entry.characterName
-                            }}</span>
+                        }}</span>
                         <span class="text-[10px] font-bold text-[var(--obr-text-secondary)]">{{
                             formatTime(entry.timestamp) }}</span>
                     </div>
