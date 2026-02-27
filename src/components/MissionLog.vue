@@ -105,6 +105,11 @@ const canAffordEvolution = (entry: RollLogEntry) => {
 const deletingLogId = ref<string | null>(null);
 const deleteTimeout = ref<number | null>(null);
 
+const getCharacterName = (characterId: string, fallbackName?: string) => {
+    const char = props.characters.find(c => c.id === characterId);
+    return char?.name || fallbackName || 'Unknown Agent';
+};
+
 const getCharacterColor = (characterId: string) => {
     const char = props.characters.find(c => c.id === characterId);
     return char?.color || 'var(--obr-border-base)';
@@ -134,7 +139,7 @@ const handleDeleteClick = (id: string) => {
         <MissionReport v-if="activeEvolutionEntry" :result="{
             id: activeEvolutionEntry.id,
             characterId: activeEvolutionEntry.characterId,
-            characterName: activeEvolutionEntry.characterName,
+            characterName: getCharacterName(activeEvolutionEntry.characterId, activeEvolutionEntry.characterName),
             skillName: activeEvolutionEntry.skillName,
             rank: activeEvolutionEntry.rank,
             dice: activeEvolutionEntry.dice
@@ -176,7 +181,7 @@ const handleDeleteClick = (id: string) => {
                     <div class="flex flex-col gap-1">
                         <div
                             class="flex justify-between items-baseline border-b border-dashed border-[var(--obr-border-subtle)] pb-1 mb-1">
-                            <span class="font-black text-[var(--obr-text-primary)] text-base">{{ entry.characterName
+                            <span class="font-black text-[var(--obr-text-primary)] text-base">{{ getCharacterName(entry.characterId, entry.characterName)
                             }}</span>
                             <span class="text-xs text-[var(--obr-text-secondary)]">{{ entry.skillName }} ({{ entry.rank
                             }})</span>
@@ -294,7 +299,7 @@ const handleDeleteClick = (id: string) => {
                     <!-- Header: Character Name + Time -->
                     <div
                         class="flex justify-between items-baseline border-b border-dashed border-[var(--obr-border-subtle)] pb-1 mb-2">
-                        <span class="font-black text-[var(--obr-text-primary)] text-base">{{ entry.characterName
+                        <span class="font-black text-[var(--obr-text-primary)] text-base">{{ getCharacterName(entry.characterId, entry.characterName)
                         }}</span>
                         <span class="text-[10px] font-bold text-[var(--obr-text-secondary)]">{{
                             formatTime(entry.timestamp) }}</span>

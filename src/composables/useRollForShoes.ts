@@ -10,7 +10,8 @@ import {
   METADATA_SUFFIX_SETTINGS,
   LOG_TYPE_ROLL,
   LOG_TYPE_SKILL,
-  DEFAULT_DO_ANYTHING_RANK
+  DEFAULT_DO_ANYTHING_RANK,
+  MAX_LOG_ENTRIES,
 } from '../constants';
 
 // --- Singleton State ---
@@ -45,13 +46,15 @@ let unsubscribeSelection: (() => void) | null = null;
 // Computed helper to get list as array
 const characterList = computed({
   get: () => {
-    return Object.values(characters.value).sort((a, b) => {
-      // Sort by order if available, otherwise fallback to creation date
-      if (a.order !== undefined && b.order !== undefined) {
-        return a.order - b.order;
-      }
-      return a.createdAt - b.createdAt;
-    });
+    return Object.entries(characters.value)
+      .map(([id, char]) => ({ ...char, id }))
+      .sort((a, b) => {
+        // Sort by order if available, otherwise fallback to creation date
+        if (a.order !== undefined && b.order !== undefined) {
+          return a.order - b.order;
+        }
+        return a.createdAt - b.createdAt;
+      });
   },
   set: () => {
     // We can't directly set a computed property like this to reorder
@@ -76,10 +79,11 @@ const reorderCharacters = async (newOrder: Character[]) => {
   });
 
   try {
-    // Strip reactivity
+    // Strip reactivity and id from character objects before saving
     const cleanUpdates: CharacterData = {};
     for (const id in updates) {
-      cleanUpdates[id] = JSON.parse(JSON.stringify(updates[id]));
+      const { id: _id, ...rest } = JSON.parse(JSON.stringify(updates[id]));
+      cleanUpdates[id] = rest as Character;
     }
 
     await OBR.room.setMetadata({
@@ -112,10 +116,11 @@ const createCharacter = async (name: string) => {
     const roomMetadata = await OBR.room.getMetadata();
     const currentData = (roomMetadata[ROOM_DATA_KEY] as CharacterData) || {};
 
+    const { id: _id, ...charWithoutId } = newChar;
     await OBR.room.setMetadata({
       [ROOM_DATA_KEY]: {
         ...currentData,
-        [id]: newChar
+        [id]: charWithoutId
       }
     });
   } catch (e) {
@@ -131,8 +136,9 @@ const updateCharacter = async (id: string, updates: Partial<Character>) => {
   characters.value[id] = updatedChar;
 
   try {
-    // Create a clean object for storage
-    const cleanData = JSON.parse(JSON.stringify(updatedChar));
+    // Create a clean object for storage, stripping id
+    const { id: _id, ...rest } = JSON.parse(JSON.stringify(updatedChar));
+    const cleanData = rest;
 
     const roomMetadata = await OBR.room.getMetadata();
     const currentData = (roomMetadata[ROOM_DATA_KEY] as CharacterData) || {};
@@ -264,7 +270,7 @@ const linkSelectionToCharacter = async (characterId: string | null) => {
 
 const addLogEntry = async (entry: LogEntry) => {
   // Optimistic
-  const newHistory = [entry, ...rollHistory.value].slice(0, 50); // Keep last 50
+  const newHistory = [entry, ...rollHistory.value].slice(0, MAX_LOG_ENTRIES);
   rollHistory.value = newHistory;
 
   try {
@@ -433,7 +439,7 @@ const importData = async (jsonContent: string) => {
     const values = Object.values(data);
     if (values.length > 0) {
       const sample = values[0] as any;
-      if (!sample.id || !sample.name || !sample.skills) {
+      if (!sample.name || !sample.skills) {
         throw new Error('Invalid data format: Missing character fields');
       }
     }
@@ -482,7 +488,7 @@ const importLogs = async (jsonContent: string) => {
     const sanitized = data.map((entry, index) => {
       const withType = entry?.type ?? LOG_TYPE_ROLL;
       if (withType === LOG_TYPE_ROLL) {
-        const required = ['characterId', 'characterName', 'skillName', 'rank', 'dice', 'timestamp'];
+        const required = ['characterId', 'skillName', 'rank', 'dice', 'timestamp'];
         for (const field of required) {
           if (entry[field] === undefined) {
             throw new Error(`Missing field "${field}" on roll log at index ${index}`);
@@ -492,7 +498,7 @@ const importLogs = async (jsonContent: string) => {
           type: LOG_TYPE_ROLL,
           id: entry.id ?? crypto.randomUUID(),
           characterId: String(entry.characterId),
-          characterName: String(entry.characterName),
+          ...(entry.characterName ? { characterName: String(entry.characterName) } : {}),
           skillName: String(entry.skillName),
           rank: Number(entry.rank),
           dice: Array.isArray(entry.dice) ? entry.dice.map((d: number) => Number(d)) : [],
@@ -502,7 +508,7 @@ const importLogs = async (jsonContent: string) => {
       }
 
       if (withType === LOG_TYPE_SKILL) {
-        const required = ['characterId', 'characterName', 'newSkillName', 'rank', 'timestamp'];
+        const required = ['characterId', 'newSkillName', 'rank', 'timestamp'];
         for (const field of required) {
           if (entry[field] === undefined) {
             throw new Error(`Missing field "${field}" on skill log at index ${index}`);
@@ -512,7 +518,7 @@ const importLogs = async (jsonContent: string) => {
           type: LOG_TYPE_SKILL,
           id: entry.id ?? crypto.randomUUID(),
           characterId: String(entry.characterId),
-          characterName: String(entry.characterName),
+          ...(entry.characterName ? { characterName: String(entry.characterName) } : {}),
           newSkillName: String(entry.newSkillName),
           rank: Number(entry.rank),
           timestamp: Number(entry.timestamp),
@@ -621,7 +627,15 @@ const initListeners = async () => {
 
   // Load initial data
   const metadata = await OBR.room.getMetadata();
-  characters.value = (metadata[ROOM_DATA_KEY] as CharacterData) || {};
+  const rawChars = (metadata[ROOM_DATA_KEY] as Record<string, any>) || {};
+
+  // Inject id from record key into character objects
+  const injectedChars: CharacterData = {};
+  for (const [id, char] of Object.entries(rawChars)) {
+    injectedChars[id] = { ...char, id } as Character;
+  }
+  characters.value = injectedChars;
+
   const rawLogs = (metadata[LOGS_DATA_KEY] as any[]) || [];
   const rawSettings = metadata[SETTINGS_DATA_KEY] as AppSettings | undefined;
 
@@ -629,7 +643,7 @@ const initListeners = async () => {
     settings.value = { ...settings.value, ...rawSettings };
   }
 
-  // Migration: Ensure logs have a type and ID
+  // Migration: Ensure logs have a type and ID, strip characterName from non-NPC entries
   rollHistory.value = rawLogs.map(log => {
     if (!log.type) {
       // Legacy ROLL entry
@@ -651,7 +665,7 @@ const initListeners = async () => {
 
   // Listen for room data changes
   unsubscribeRoom = OBR.room.onMetadataChange((newMetadata) => {
-    const newData = newMetadata[ROOM_DATA_KEY] as CharacterData;
+    const newData = newMetadata[ROOM_DATA_KEY] as Record<string, any>;
     const newLogs = newMetadata[LOGS_DATA_KEY] as any[];
     const newSettings = newMetadata[SETTINGS_DATA_KEY] as AppSettings | undefined;
 
@@ -660,16 +674,16 @@ const initListeners = async () => {
     }
 
     if (newData) {
-      // Merging strategy for characters
+      // Inject id from record key
       const currentIds = new Set(Object.keys(characters.value));
       const newIds = new Set(Object.keys(newData));
 
-      // 1. Update/Add characters that aren't currently being modified by us
+      // 1. Update/Add characters, injecting id
       for (const [id, char] of Object.entries(newData)) {
-        characters.value[id] = char;
+        characters.value[id] = { ...char, id } as Character;
       }
 
-      // 2. Handle deletions (if ID is in current but not in new, and not pending)
+      // 2. Handle deletions
       for (const id of currentIds) {
         if (!newIds.has(id)) {
           delete characters.value[id];
@@ -686,7 +700,6 @@ const initListeners = async () => {
           return {
             ...log,
             id: crypto.randomUUID(),
-
             characterId: ''
           } as SkillLogEntry;
         }

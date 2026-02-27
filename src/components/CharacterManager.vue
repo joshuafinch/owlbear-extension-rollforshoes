@@ -15,7 +15,6 @@ import {
     MODAL_MISSION_REPORT,
     MODAL_NPC_ROLL_POPOVER,
     BROADCAST_NPC_ROLL_REQUEST,
-    BROADCAST_MISSION_REPORT,
 } from '../constants';
 import { useMissionReportControls } from '../composables/useMissionReportControls';
 import getPluginId from '../utils/getPluginId';
@@ -254,7 +253,6 @@ const handleRoll = async (characterId: string, skill: Skill) => {
         type: LOG_TYPE_ROLL,
         id: rollId,
         characterId,
-        characterName: character.name,
         skillName: skill.name,
         rank: skill.rank,
         dice,
@@ -348,13 +346,11 @@ const handleLogDelete = async (logId: string) => {
 };
 
 const handleLogEvolve = async (logId: string, characterId: string, rank: number, newSkillName: string, xpCost: number) => {
-    const fallbackName = characterList.value.find(c => c.id === characterId)?.name;
     await evolveSkillFromRoll({
         logId,
         newSkillName,
         xpCost,
         fallbackCharacterId: characterId,
-        fallbackCharacterName: fallbackName,
         fallbackRank: rank,
     });
 };

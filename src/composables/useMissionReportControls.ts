@@ -1,4 +1,3 @@
-import OBR from '@owlbear-rodeo/sdk';
 import { LOG_TYPE_ROLL, LOG_TYPE_SKILL } from '../constants';
 import type { RollLogEntry } from '../types';
 import { useRollForShoes } from './useRollForShoes';
@@ -8,7 +7,6 @@ interface EvolveOptions {
   newSkillName: string;
   xpCost: number;
   fallbackCharacterId?: string;
-  fallbackCharacterName?: string;
   fallbackRank?: number;
 }
 
@@ -42,18 +40,6 @@ export function useMissionReportControls() {
     return entry?.characterId ?? fallbackCharacterId;
   };
 
-  const resolveCharacterName = (
-    entry: RollLogEntry | undefined,
-    fallbackCharacterName?: string,
-  ) => {
-    if (entry?.characterName) return entry.characterName;
-    if (fallbackCharacterName) return fallbackCharacterName;
-    if (entry?.characterId) {
-      const char = characterList.value.find((c) => c.id === entry.characterId);
-      if (char) return char.name;
-    }
-    return 'Unknown Agent';
-  };
 
   const resolveRank = (entry: RollLogEntry | undefined, fallbackRank?: number) => {
     if (entry) return entry.rank;
@@ -86,7 +72,6 @@ export function useMissionReportControls() {
     newSkillName,
     xpCost,
     fallbackCharacterId,
-    fallbackCharacterName,
     fallbackRank,
   }: EvolveOptions) => {
     const entry = findRollEntry(logId);
@@ -96,7 +81,6 @@ export function useMissionReportControls() {
       return;
     }
 
-    const characterName = resolveCharacterName(entry, fallbackCharacterName);
     const rank = resolveRank(entry, fallbackRank);
 
     await addSkill(characterId, {
@@ -114,7 +98,6 @@ export function useMissionReportControls() {
       type: LOG_TYPE_SKILL,
       id: crypto.randomUUID(),
       characterId,
-      characterName,
       newSkillName,
       rank: rank + 1,
       timestamp: Date.now(),
@@ -135,9 +118,6 @@ export function useMissionReportControls() {
 
   const markRollSucceeded = async (logId: string) => {
     await markLogAction(logId, ACTION_LABELS.succeeded);
-    const entry = findRollEntry(logId);
-    const characterName = resolveCharacterName(entry);
-    // OBR.notification.show(`${characterName}'s roll marked as Succeeded.`);
   };
 
   return {

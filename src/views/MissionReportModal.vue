@@ -66,7 +66,6 @@ const handleConfirmEvolve = async (_logId: string, newSkillName: string, xpCost:
     newSkillName,
     xpCost,
     fallbackCharacterId: rollEntry.value.characterId,
-    fallbackCharacterName: rollEntry.value.characterName,
     fallbackRank: rollEntry.value.rank,
   });
   await closeModal();

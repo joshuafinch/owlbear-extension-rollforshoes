@@ -5,7 +5,7 @@ import type { Character } from '../types';
 export interface RollResult {
   id: string; // Add ID to track specific roll
   characterId: string;
-  characterName: string;
+  characterName?: string;
   skillName: string;
   rank: number;
   dice: number[];
@@ -46,6 +46,9 @@ const actionState = computed(() => props.resultOverride?.actionsTaken || props.r
 const isResolved = computed(() => actionState.value.includes('succeeded') || actionState.value.includes('xp'));
 const showActionControls = computed(() => isControllerView.value && !isNpcReport.value);
 
+const displayName = computed(() => {
+  return props.character?.name || props.result.characterName || 'Unknown Agent';
+});
 // Evolution Logic
 const nonSixesCount = computed(() => props.result.dice.length - successCount.value);
 const currentXp = computed(() => props.character?.xp || 0);
@@ -102,7 +105,7 @@ const confirmEvolution = () => {
         <div class="relative mb-6 mt-1 transform -rotate-1 group text-center">
           <div
             class="inline-block bg-[var(--obr-text-primary)] text-[var(--obr-text-inverse)] text-2xl sm:text-3xl font-black px-4 py-1.5 tracking-tighter uppercase transform skew-x-12 shadow-[4px_4px_0px_0px_var(--obr-status-critical)] mb-1">
-            {{ result.characterName }}
+            {{ displayName }}
           </div>
           <h2
             class="text-xl sm:text-2xl font-black uppercase tracking-tight italic text-[var(--obr-text-primary)] leading-tight mt-2">

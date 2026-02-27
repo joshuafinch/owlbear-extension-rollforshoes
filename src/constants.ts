@@ -31,6 +31,7 @@ export const DEFAULT_NEW_SKILL_RANK = 2;
 export const DEFAULT_DO_ANYTHING_RANK = 1;
 export const DEFAULT_XP_ANIMATION_DURATION = 1000;
 export const DEFAULT_DELETE_CONFIRM_DURATION = 3000;
+export const MAX_LOG_ENTRIES = 15;
 
 // Tactical Palette (Tailwind-ish values adjusted for visibility)
 export const TACTICAL_PALETTE = [

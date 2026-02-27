@@ -32,7 +32,7 @@ export type CharacterData = Record<string, Character>;
 export interface LegacyRollEntry {
   id: string;
   characterId: string;
-  characterName: string;
+  characterName?: string;
   skillName: string;
   rank: number;
   dice: number[];
@@ -44,7 +44,7 @@ export interface RollLogEntry {
   type: typeof LOG_TYPE_ROLL;
   id: string;
   characterId: string;
-  characterName: string;
+  characterName?: string;
   skillName: string;
   rank: number;
   dice: number[];
@@ -59,7 +59,7 @@ export interface SkillLogEntry {
   type: 'SKILL';
   id: string;
   characterId: string;
-  characterName: string;
+  characterName?: string;
   newSkillName: string;
   rank: number;
   timestamp: number;
