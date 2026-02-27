@@ -2,6 +2,7 @@ import { ref, computed, onMounted } from 'vue';
 import OBR from '@owlbear-rodeo/sdk';
 import getPluginId from '../utils/getPluginId';
 import type { Character, CharacterData, Skill, CharacterLink, LogEntry, RollLogEntry, SkillLogEntry, AppSettings } from '../types';
+import { fromCompactCharacters, fromCompactCharacter, toCompactCharacter, toCompactCharacters } from '../utils/compactCharacter';
 import {
   ROLE_PLAYER,
   METADATA_SUFFIX_CHARACTERS,
@@ -48,13 +49,7 @@ const characterList = computed({
   get: () => {
     return Object.entries(characters.value)
       .map(([id, char]) => ({ ...char, id }))
-      .sort((a, b) => {
-        // Sort by order if available, otherwise fallback to creation date
-        if (a.order !== undefined && b.order !== undefined) {
-          return a.order - b.order;
-        }
-        return a.createdAt - b.createdAt;
-      });
+      .sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity));
   },
   set: () => {
     // We can't directly set a computed property like this to reorder
@@ -79,17 +74,15 @@ const reorderCharacters = async (newOrder: Character[]) => {
   });
 
   try {
-    // Strip reactivity and id from character objects before saving
-    const cleanUpdates: CharacterData = {};
-    for (const id in updates) {
-      const { id: _id, ...rest } = JSON.parse(JSON.stringify(updates[id]));
-      cleanUpdates[id] = rest as Character;
+    const compactUpdates: Record<string, any> = {};
+    for (const [id, char] of Object.entries(updates)) {
+      compactUpdates[id] = toCompactCharacter(char);
     }
 
     await OBR.room.setMetadata({
       [ROOM_DATA_KEY]: {
         ...currentData,
-        ...cleanUpdates
+        ...compactUpdates
       }
     });
   } catch (e) {
@@ -105,7 +98,6 @@ const createCharacter = async (name: string) => {
     name,
     xp: 0,
     skills: [{ name: 'Do Anything', rank: DEFAULT_DO_ANYTHING_RANK }],
-    createdAt: Date.now(),
     order: existingCount // Append to end
   };
 
@@ -114,13 +106,12 @@ const createCharacter = async (name: string) => {
 
   try {
     const roomMetadata = await OBR.room.getMetadata();
-    const currentData = (roomMetadata[ROOM_DATA_KEY] as CharacterData) || {};
+    const currentData = (roomMetadata[ROOM_DATA_KEY] as Record<string, any>) || {};
 
-    const { id: _id, ...charWithoutId } = newChar;
     await OBR.room.setMetadata({
       [ROOM_DATA_KEY]: {
         ...currentData,
-        [id]: charWithoutId
+        [id]: toCompactCharacter(newChar)
       }
     });
   } catch (e) {
@@ -136,17 +127,13 @@ const updateCharacter = async (id: string, updates: Partial<Character>) => {
   characters.value[id] = updatedChar;
 
   try {
-    // Create a clean object for storage, stripping id
-    const { id: _id, ...rest } = JSON.parse(JSON.stringify(updatedChar));
-    const cleanData = rest;
-
     const roomMetadata = await OBR.room.getMetadata();
-    const currentData = (roomMetadata[ROOM_DATA_KEY] as CharacterData) || {};
+    const currentData = (roomMetadata[ROOM_DATA_KEY] as Record<string, any>) || {};
 
     await OBR.room.setMetadata({
       [ROOM_DATA_KEY]: {
         ...currentData,
-        [id]: cleanData
+        [id]: toCompactCharacter(updatedChar)
       }
     });
   } catch (e) {
@@ -439,17 +426,21 @@ const importData = async (jsonContent: string) => {
     const values = Object.values(data);
     if (values.length > 0) {
       const sample = values[0] as any;
-      if (!sample.name || !sample.skills) {
+      // Accept both legacy (name/skills) and compact (n/s) formats
+      const hasLegacyKeys = sample.name && sample.skills;
+      const hasCompactKeys = typeof sample.n === 'string' && Array.isArray(sample.s);
+      if (!hasLegacyKeys && !hasCompactKeys) {
         throw new Error('Invalid data format: Missing character fields');
       }
     }
 
-    // Optimistic update
-    characters.value = data as CharacterData;
+    // Parse through migration layer (handles both formats)
+    const { characters: parsed } = fromCompactCharacters(data);
+    characters.value = parsed;
 
-    // Update Room
+    // Always persist in compact format
     await OBR.room.setMetadata({
-      [ROOM_DATA_KEY]: data
+      [ROOM_DATA_KEY]: toCompactCharacters(parsed)
     });
 
     // OBR.notification.show('Data imported successfully');
@@ -625,16 +616,22 @@ function rollDice(count: number, isLuckMode = false): number[] {
 const initListeners = async () => {
   if (!OBR.isAvailable) return;
 
-  // Load initial data
+  // Load initial data and migrate if needed
   const metadata = await OBR.room.getMetadata();
   const rawChars = (metadata[ROOM_DATA_KEY] as Record<string, any>) || {};
+  const { characters: parsedChars, needsMigration } = fromCompactCharacters(rawChars);
+  characters.value = parsedChars;
 
-  // Inject id from record key into character objects
-  const injectedChars: CharacterData = {};
-  for (const [id, char] of Object.entries(rawChars)) {
-    injectedChars[id] = { ...char, id } as Character;
+  // One-time migration: re-save in compact format if legacy data detected
+  if (needsMigration && Object.keys(parsedChars).length > 0) {
+    try {
+      const compactData = toCompactCharacters(parsedChars);
+      await OBR.room.setMetadata({ [ROOM_DATA_KEY]: compactData });
+      console.info('[RollForShoes] Migrated character data to compact format');
+    } catch (e) {
+      console.error('[RollForShoes] Migration failed', e);
+    }
   }
-  characters.value = injectedChars;
 
   const rawLogs = (metadata[LOGS_DATA_KEY] as any[]) || [];
   const rawSettings = metadata[SETTINGS_DATA_KEY] as AppSettings | undefined;
@@ -674,16 +671,15 @@ const initListeners = async () => {
     }
 
     if (newData) {
-      // Inject id from record key
       const currentIds = new Set(Object.keys(characters.value));
       const newIds = new Set(Object.keys(newData));
 
-      // 1. Update/Add characters, injecting id
-      for (const [id, char] of Object.entries(newData)) {
-        characters.value[id] = { ...char, id } as Character;
+      // Update/Add characters via compact deserialization
+      for (const [id, charData] of Object.entries(newData)) {
+        characters.value[id] = fromCompactCharacter(id, charData as Record<string, any>);
       }
 
-      // 2. Handle deletions
+      // Handle deletions
       for (const id of currentIds) {
         if (!newIds.has(id)) {
           delete characters.value[id];

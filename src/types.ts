@@ -17,10 +17,9 @@ export interface Character {
   name: string;
   xp: number;
   skills: Skill[];
-  createdAt: number;
   imageUrl?: string;
-  order?: number; // Added order field
-  color?: string; // Character specific accent color
+  order?: number;
+  color?: string;
 }
 
 export interface CharacterLink {
