@@ -3,6 +3,7 @@ import OBR from '@owlbear-rodeo/sdk';
 import getPluginId from '../utils/getPluginId';
 import type { Character, CharacterData, Skill, CharacterLink, LogEntry, RollLogEntry, SkillLogEntry, AppSettings } from '../types';
 import { fromCompactCharacters, fromCompactCharacter, toCompactCharacter, toCompactCharacters } from '../utils/compactCharacter';
+import { fromCompactLogs, toCompactLogs } from '../utils/compactLog';
 import {
   ROLE_PLAYER,
   METADATA_SUFFIX_CHARACTERS,
@@ -261,10 +262,8 @@ const addLogEntry = async (entry: LogEntry) => {
   rollHistory.value = newHistory;
 
   try {
-    // Strip reactivity to prevent DataCloneError
-    const cleanHistory = JSON.parse(JSON.stringify(newHistory));
     return OBR.room.setMetadata({
-      [LOGS_DATA_KEY]: cleanHistory
+      [LOGS_DATA_KEY]: toCompactLogs(newHistory)
     });
   } catch (e) {
     console.error('Failed to add log entry', e);
@@ -300,9 +299,8 @@ const markLogAction = async (logId: string, action: 'xp' | 'evolve' | 'succeeded
   rollHistory.value = newHistory;
 
   try {
-    const cleanHistory = JSON.parse(JSON.stringify(newHistory));
     return OBR.room.setMetadata({
-      [LOGS_DATA_KEY]: cleanHistory
+      [LOGS_DATA_KEY]: toCompactLogs(newHistory)
     });
   } catch (e) {
     console.error('Failed to mark log action', e);
@@ -329,9 +327,8 @@ const unmarkLogAction = async (logId: string, action: 'xp' | 'evolve' | 'succeed
   rollHistory.value = newHistory;
 
   try {
-    const cleanHistory = JSON.parse(JSON.stringify(newHistory));
     return OBR.room.setMetadata({
-      [LOGS_DATA_KEY]: cleanHistory
+      [LOGS_DATA_KEY]: toCompactLogs(newHistory)
     });
   } catch (e) {
     console.error('Failed to unmark log action', e);
@@ -345,9 +342,8 @@ const deleteLogEntry = async (logId: string) => {
   rollHistory.value = newHistory;
 
   try {
-    const cleanHistory = JSON.parse(JSON.stringify(newHistory));
     await OBR.room.setMetadata({
-      [LOGS_DATA_KEY]: cleanHistory
+      [LOGS_DATA_KEY]: toCompactLogs(newHistory)
     });
     // OBR.notification.show('Log entry deleted.', 'SUCCESS');
     return Promise.resolve();
@@ -371,9 +367,8 @@ const updateRollEntry = async (logId: string, updater: (entry: RollLogEntry) => 
   rollHistory.value = newHistory;
 
   try {
-    const cleanHistory = JSON.parse(JSON.stringify(newHistory));
     await OBR.room.setMetadata({
-      [LOGS_DATA_KEY]: cleanHistory,
+      [LOGS_DATA_KEY]: toCompactLogs(newHistory),
     });
   } catch (e) {
     console.error('Failed to update roll entry', e);
@@ -523,9 +518,8 @@ const importLogs = async (jsonContent: string) => {
 
     rollHistory.value = sanitized;
 
-    const cleanHistory = JSON.parse(JSON.stringify(sanitized));
     await OBR.room.setMetadata({
-      [LOGS_DATA_KEY]: cleanHistory,
+      [LOGS_DATA_KEY]: toCompactLogs(sanitized),
     });
 
     // OBR.notification.show('Mission logs imported successfully', 'SUCCESS');
@@ -640,22 +634,19 @@ const initListeners = async () => {
     settings.value = { ...settings.value, ...rawSettings };
   }
 
-  // Migration: Ensure logs have a type and ID, strip characterName from non-NPC entries
-  rollHistory.value = rawLogs.map(log => {
-    if (!log.type) {
-      // Legacy ROLL entry
-      return { ...log, type: LOG_TYPE_ROLL } as RollLogEntry;
+  // Parse logs via compact deserialization (handles both legacy and compact formats)
+  const { logs: parsedLogs, needsMigration: logsMigration } = fromCompactLogs(rawLogs);
+  rollHistory.value = parsedLogs;
+
+  // One-time migration: re-save logs in compact format if legacy data detected
+  if (logsMigration && parsedLogs.length > 0) {
+    try {
+      await OBR.room.setMetadata({ [LOGS_DATA_KEY]: toCompactLogs(parsedLogs) });
+      console.info('[RollForShoes] Migrated log data to compact format');
+    } catch (e) {
+      console.error('[RollForShoes] Log migration failed', e);
     }
-    if (log.type === LOG_TYPE_SKILL && !log.id) {
-      // Fix missing ID/CharacterID in Skill Logs
-      return {
-        ...log,
-        id: crypto.randomUUID(),
-        characterId: '' // Fallback for legacy data without char ID
-      } as SkillLogEntry;
-    }
-    return log as LogEntry;
-  });
+  }
 
   // Load initial role
   role.value = await OBR.player.getRole();
@@ -688,19 +679,8 @@ const initListeners = async () => {
     }
 
     if (newLogs) {
-      rollHistory.value = newLogs.map(log => {
-        if (!log.type) {
-          return { ...log, type: LOG_TYPE_ROLL } as RollLogEntry;
-        }
-        if (log.type === LOG_TYPE_SKILL && !log.id) {
-          return {
-            ...log,
-            id: crypto.randomUUID(),
-            characterId: ''
-          } as SkillLogEntry;
-        }
-        return log as LogEntry;
-      });
+      const { logs: parsed } = fromCompactLogs(newLogs);
+      rollHistory.value = parsed;
     }
   });
 
