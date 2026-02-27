@@ -553,6 +553,57 @@ const updateSettings = async (updates: Partial<AppSettings>) => {
   }
 };
 
+export interface MetadataDiagnosticResult {
+  totalSizeKB: number;
+  extensionSizeKB: number;
+  otherExtensionsSizeKB: number;
+  limitKB: number;
+  extensionKeys: string[];
+}
+
+const runMetadataDiagnostic = async (): Promise<MetadataDiagnosticResult | null> => {
+  try {
+    const roomMetadata = await OBR.room.getMetadata();
+    const fullJson = JSON.stringify(roomMetadata);
+    const totalBytes = new TextEncoder().encode(fullJson).length;
+
+    // Extract only this extension's keys
+    const extensionPrefix = 'com.aurayu.rollforshoes/';
+    const extensionData: Record<string, unknown> = {};
+    const extensionKeys: string[] = [];
+    for (const [key, value] of Object.entries(roomMetadata)) {
+      if (key.startsWith(extensionPrefix)) {
+        extensionData[key] = value;
+        extensionKeys.push(key);
+      }
+    }
+    const extensionJson = JSON.stringify(extensionData);
+    const extensionBytes = new TextEncoder().encode(extensionJson).length;
+
+    const totalSizeKB = totalBytes / 1024;
+    const extensionSizeKB = extensionBytes / 1024;
+    const otherExtensionsSizeKB = totalSizeKB - extensionSizeKB;
+    const limitKB = 16;
+
+    // Download full dump
+    const prettyJson = JSON.stringify(roomMetadata, null, 2);
+    const blob = new Blob([prettyJson], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `room-metadata-dump-${new Date().toISOString().replace(/:/g, '-').split('.')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    return { totalSizeKB, extensionSizeKB, otherExtensionsSizeKB, limitKB, extensionKeys };
+  } catch (e) {
+    console.error('Failed to run metadata diagnostic', e);
+    return null;
+  }
+};
+
 function rollDice(count: number, isLuckMode = false): number[] {
   if (isLuckMode) {
     // FORCE_LUCK_MODE: High chance of 6s (80% chance for a 6, 20% for random 1-6)
@@ -709,6 +760,7 @@ export function useRollForShoes() {
     updateRollEntry,
     settings,
     updateSettings,
+    runMetadataDiagnostic,
   };
 }
 

@@ -37,7 +37,8 @@ const {
     exportData,
     exportLogs,
     settings,
-    updateSettings
+    updateSettings,
+    runMetadataDiagnostic,
 } = useRollForShoes();
 
 const { hasElevatedAccess } = useAccessOverride(role);
@@ -424,7 +425,8 @@ const handleLogSucceeded = async (logId: string) => {
                 </div>
 
                 <div v-if="activeTab === TAB_SYSTEMS" class="h-full">
-                    <SystemTerminal :role="role" :isDevBuild="isDevBuild" :settings="settings" @export="exportData"
+                    <SystemTerminal :role="role" :isDevBuild="isDevBuild" :settings="settings"
+                        :runMetadataDiagnostic="runMetadataDiagnostic" @export="exportData"
                         @import="handleImport" @exportLogs="handleExportLogs" @importLogs="handleImportLogs"
                         @clearLogs="clearLogs" @updateSettings="updateSettings" />
                 </div>

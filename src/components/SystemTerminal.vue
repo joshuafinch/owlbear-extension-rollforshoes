@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, toRef } from 'vue';
+import { ref, toRef, computed } from 'vue';
 import { useAccessOverride, type OverrideSignal } from '../composables/useAccessOverride';
 import type { AppSettings } from '../types';
+import type { MetadataDiagnosticResult } from '../composables/useRollForShoes';
 
 const props = defineProps<{
   role: string;
   isDevBuild?: boolean;
   settings: AppSettings;
+  runMetadataDiagnostic: () => Promise<MetadataDiagnosticResult | null>;
 }>();
 
 const emit = defineEmits<{
@@ -20,6 +22,29 @@ const emit = defineEmits<{
 
 const { hasElevatedAccess: isGm, triggerOverrideSignal } = useAccessOverride(toRef(props, 'role'));
 const confirmClearLogs = ref(false);
+const diagnosticResult = ref<MetadataDiagnosticResult | null>(null);
+const isDiagnosticRunning = ref(false);
+
+const diagnosticSeverity = computed(() => {
+    if (!diagnosticResult.value) return null;
+    const ratio = diagnosticResult.value.totalSizeKB / diagnosticResult.value.limitKB;
+    if (ratio > 0.875) return 'danger';
+    if (ratio > 0.75) return 'warning';
+    return 'safe';
+});
+
+const handleMetadataDiagnostic = async () => {
+    isDiagnosticRunning.value = true;
+    diagnosticResult.value = null;
+    try {
+        const result = await props.runMetadataDiagnostic();
+        diagnosticResult.value = result;
+    } catch {
+        diagnosticResult.value = null;
+    } finally {
+        isDiagnosticRunning.value = false;
+    }
+};
 
 const handleClearLogs = () => {
     if (confirmClearLogs.value) {
@@ -147,6 +172,33 @@ const handleOverrideTap = (signal: OverrideSignal) => {
                            </p>
                            <p v-if="confirmClearLogs" class="text-xs text-red-400 pl-6 mt-1 font-bold">⚠️ CONFIRM DELETION? CLICK AGAIN.</p>
                            <p v-else class="text-xs text-gray-500 pl-6 mt-1">Permanently erase all mission logs.</p>
+                       </div>
+                   </button>
+
+                    <!-- Metadata Diagnostic -->
+                    <button 
+                       @click="handleMetadataDiagnostic"
+                       :disabled="isDiagnosticRunning"
+                       class="w-full text-left p-3 rounded transition-all group mt-2"
+                       :class="isDiagnosticRunning ? 'opacity-50 cursor-wait' : 'hover:bg-yellow-900/30'"
+                   >
+                       <div class="flex items-center justify-between">
+                           <div>
+                                <p class="text-base font-bold" :class="diagnosticResult ? (diagnosticSeverity === 'danger' ? 'text-red-500' : diagnosticSeverity === 'warning' ? 'text-yellow-400' : 'text-green-400') : 'text-gray-500'">
+                                  <span class="mr-2">📡</span> METADATA_DIAGNOSTIC()
+                               </p>
+                               <p v-if="isDiagnosticRunning" class="text-xs text-yellow-400 pl-6 mt-1 animate-pulse">Scanning room metadata...</p>
+                               <p v-else-if="!diagnosticResult" class="text-xs text-gray-500 pl-6 mt-1">Measure room metadata size against 16KB limit. Exports dump.</p>
+                           </div>
+                           <div v-if="diagnosticResult && !isDiagnosticRunning" class="text-xs font-black px-3 py-1 border" :class="diagnosticSeverity === 'danger' ? 'border-red-500 text-red-500 bg-red-900/20' : diagnosticSeverity === 'warning' ? 'border-yellow-500 text-yellow-500 bg-yellow-900/20' : 'border-green-500 text-green-500 bg-green-900/20'">
+                               {{ diagnosticResult.totalSizeKB.toFixed(1) }} / {{ diagnosticResult.limitKB }} KB
+                           </div>
+                       </div>
+                       <!-- Diagnostic Results Breakdown -->
+                       <div v-if="diagnosticResult && !isDiagnosticRunning" class="mt-2 pl-6 space-y-1 text-xs font-mono">
+                           <p class="text-green-600">├─ Extension: <span class="text-green-400">{{ diagnosticResult.extensionSizeKB.toFixed(2) }} KB</span></p>
+                           <p class="text-green-600">├─ Other: <span class="text-gray-400">{{ diagnosticResult.otherExtensionsSizeKB.toFixed(2) }} KB</span></p>
+                           <p class="text-green-600">└─ Keys: <span class="text-gray-500">{{ diagnosticResult.extensionKeys.join(', ') }}</span></p>
                        </div>
                    </button>
 
