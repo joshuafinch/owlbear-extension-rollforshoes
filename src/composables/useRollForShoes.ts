@@ -3,11 +3,12 @@ import OBR from '@owlbear-rodeo/sdk';
 import getPluginId from '../utils/getPluginId';
 import type { Character, CharacterData, Skill, CharacterLink, LogEntry, RollLogEntry, SkillLogEntry, AppSettings } from '../types';
 import { fromCompactCharacters, fromCompactCharacter, toCompactCharacter, toCompactCharacters } from '../utils/compactCharacter';
-import { fromCompactLogs, toCompactLogs } from '../utils/compactLog';
+import { fromCompactLog, fromCompactLogs, toCompactLog } from '../utils/compactLog';
 import {
   ROLE_PLAYER,
   METADATA_SUFFIX_CHARACTERS,
   METADATA_SUFFIX_LOGS,
+  METADATA_SUFFIX_LOG_ENTRY,
   METADATA_SUFFIX_LINK,
   METADATA_SUFFIX_SETTINGS,
   LOG_TYPE_ROLL,
@@ -29,8 +30,11 @@ const settings = ref<AppSettings>({
 // Constants
 const ROOM_DATA_KEY = getPluginId(METADATA_SUFFIX_CHARACTERS);
 const LINK_KEY = getPluginId(METADATA_SUFFIX_LINK);
-const LOGS_DATA_KEY = getPluginId(METADATA_SUFFIX_LOGS);
+const LEGACY_LOGS_KEY = getPluginId(METADATA_SUFFIX_LOGS);
+const LOG_KEY_PREFIX = getPluginId(METADATA_SUFFIX_LOG_ENTRY);
 const SETTINGS_DATA_KEY = getPluginId(METADATA_SUFFIX_SETTINGS);
+
+const logEntryKey = (id: string) => `${LOG_KEY_PREFIX}${id}`;
 
 // Initialization Flag
 const isInitialized = ref(false);
@@ -256,119 +260,165 @@ const linkSelectionToCharacter = async (characterId: string | null) => {
   }
 };
 
-const addLogEntry = async (entry: LogEntry) => {
-  // Optimistic
-  const newHistory = [entry, ...rollHistory.value].slice(0, MAX_LOG_ENTRIES);
-  rollHistory.value = newHistory;
+/**
+ * Rebuild the sorted log list from per-entry metadata keys.
+ * Each log lives at its own top-level key (LOG_KEY_PREFIX + id),
+ * so concurrent writes from different clients never collide.
+ */
+const rebuildLogsFromMetadata = (metadata: Record<string, unknown>): LogEntry[] => {
+  const entries: LogEntry[] = [];
+  for (const [key, value] of Object.entries(metadata)) {
+    if (key.startsWith(LOG_KEY_PREFIX) && value != null) {
+      entries.push(fromCompactLog(value as Record<string, any>));
+    }
+  }
+  entries.sort((a, b) => b.timestamp - a.timestamp || b.id.localeCompare(a.id));
+  return entries.slice(0, MAX_LOG_ENTRIES);
+};
+
+const getServerLogs = async (): Promise<LogEntry[]> => {
+  const metadata = await OBR.room.getMetadata();
+  return rebuildLogsFromMetadata(metadata);
+};
+
+const pruneExcessLogs = async (allLogs: LogEntry[]) => {
+  if (allLogs.length <= MAX_LOG_ENTRIES) return;
+
+  const toDelete = allLogs.slice(MAX_LOG_ENTRIES);
+  const deletions: Record<string, undefined> = {};
+  for (const entry of toDelete) {
+    deletions[logEntryKey(entry.id)] = undefined;
+  }
 
   try {
-    return OBR.room.setMetadata({
-      [LOGS_DATA_KEY]: toCompactLogs(newHistory)
+    await OBR.room.setMetadata(deletions);
+  } catch (e) {
+    console.error('Failed to prune excess log entries', e);
+  }
+};
+
+const addLogEntry = async (entry: LogEntry) => {
+  rollHistory.value = [entry, ...rollHistory.value].slice(0, MAX_LOG_ENTRIES);
+
+  try {
+    await OBR.room.setMetadata({
+      [logEntryKey(entry.id)]: toCompactLog(entry),
     });
+
+    const allLogs = await getServerLogs();
+    rollHistory.value = allLogs;
+    await pruneExcessLogs(allLogs);
   } catch (e) {
     console.error('Failed to add log entry', e);
-    return Promise.resolve();
   }
 };
 
 const markLogAction = async (logId: string, action: 'xp' | 'evolve' | 'succeeded') => {
-  const logIndex = rollHistory.value.findIndex(l => l.type === LOG_TYPE_ROLL && l.id === logId);
-  if (logIndex === -1) {
-    console.warn(`[RollForShoes] markLogAction: Log ${logId} not found locally.`);
-    return Promise.resolve();
+  const applyMark = (entry: RollLogEntry): RollLogEntry | null => {
+    const currentActions = entry.actionsTaken || [];
+    const normalizedActions = currentActions.map(a => a === ('advance' as any) ? 'evolve' : a);
+    if (normalizedActions.includes(action)) return null;
+    return { ...entry, actionsTaken: [...normalizedActions, action] as any };
+  };
+
+  const localIdx = rollHistory.value.findIndex(l => l.type === LOG_TYPE_ROLL && l.id === logId);
+  if (localIdx !== -1) {
+    const localEntry = rollHistory.value[localIdx] as RollLogEntry;
+    const marked = applyMark(localEntry);
+    if (marked) {
+      const updated = [...rollHistory.value];
+      updated[localIdx] = marked;
+      rollHistory.value = updated;
+    }
   }
-
-  const entry = rollHistory.value[logIndex];
-  // Type guard already happened in findIndex, but TS might need help
-  if (entry.type !== LOG_TYPE_ROLL) return Promise.resolve();
-
-  // Handle migration/backwards compatibility: 'advance' -> 'evolve'
-  const currentActions = entry.actionsTaken || [];
-  const normalizedActions = currentActions.map(a => a === ('advance' as any) ? 'evolve' : a);
-
-  // Avoid duplicates
-  if (normalizedActions.includes(action)) {
-    return Promise.resolve();
-  }
-
-  const newActions = [...normalizedActions, action];
-
-  // Optimistic update
-  const newHistory = [...rollHistory.value];
-  newHistory[logIndex] = { ...entry, actionsTaken: newActions as any };
-  rollHistory.value = newHistory;
 
   try {
-    return OBR.room.setMetadata({
-      [LOGS_DATA_KEY]: toCompactLogs(newHistory)
+    const metadata = await OBR.room.getMetadata();
+    const raw = metadata[logEntryKey(logId)] as Record<string, any> | undefined;
+    if (!raw) return;
+
+    const serverEntry = fromCompactLog(raw);
+    if (serverEntry.type !== LOG_TYPE_ROLL) return;
+
+    const marked = applyMark(serverEntry as RollLogEntry);
+    if (!marked) return;
+
+    await OBR.room.setMetadata({
+      [logEntryKey(logId)]: toCompactLog(marked),
     });
   } catch (e) {
     console.error('Failed to mark log action', e);
-    return Promise.resolve();
   }
 };
 
 const unmarkLogAction = async (logId: string, action: 'xp' | 'evolve' | 'succeeded') => {
-  const logIndex = rollHistory.value.findIndex(l => l.type === LOG_TYPE_ROLL && l.id === logId);
-  if (logIndex === -1) return Promise.resolve();
+  const applyUnmark = (entry: RollLogEntry): RollLogEntry => {
+    const currentActions = entry.actionsTaken || [];
+    const normalizedActions = currentActions.map(a => a === ('advance' as any) ? 'evolve' : a);
+    return { ...entry, actionsTaken: normalizedActions.filter(a => a !== action) as any };
+  };
 
-  const entry = rollHistory.value[logIndex];
-  if (entry.type !== LOG_TYPE_ROLL) return Promise.resolve();
-
-  // Handle migration/backwards compatibility: 'advance' -> 'evolve'
-  const currentActions = entry.actionsTaken || [];
-  const normalizedActions = currentActions.map(a => a === ('advance' as any) ? 'evolve' : a);
-
-  const newActions = normalizedActions.filter(a => a !== action);
-
-  // Optimistic update
-  const newHistory = [...rollHistory.value];
-  newHistory[logIndex] = { ...entry, actionsTaken: newActions as any };
-  rollHistory.value = newHistory;
+  const localIdx = rollHistory.value.findIndex(l => l.type === LOG_TYPE_ROLL && l.id === logId);
+  if (localIdx !== -1) {
+    const updated = [...rollHistory.value];
+    updated[localIdx] = applyUnmark(rollHistory.value[localIdx] as RollLogEntry);
+    rollHistory.value = updated;
+  }
 
   try {
-    return OBR.room.setMetadata({
-      [LOGS_DATA_KEY]: toCompactLogs(newHistory)
+    const metadata = await OBR.room.getMetadata();
+    const raw = metadata[logEntryKey(logId)] as Record<string, any> | undefined;
+    if (!raw) return;
+
+    const serverEntry = fromCompactLog(raw);
+    if (serverEntry.type !== LOG_TYPE_ROLL) return;
+
+    const unmarked = applyUnmark(serverEntry as RollLogEntry);
+
+    await OBR.room.setMetadata({
+      [logEntryKey(logId)]: toCompactLog(unmarked),
     });
   } catch (e) {
     console.error('Failed to unmark log action', e);
-    return Promise.resolve();
   }
 };
 
 const deleteLogEntry = async (logId: string) => {
-  // Optimistic
-  const newHistory = rollHistory.value.filter(entry => entry.id !== logId);
-  rollHistory.value = newHistory;
+  rollHistory.value = rollHistory.value.filter(entry => entry.id !== logId);
 
   try {
     await OBR.room.setMetadata({
-      [LOGS_DATA_KEY]: toCompactLogs(newHistory)
+      [logEntryKey(logId)]: undefined,
     });
-    // OBR.notification.show('Log entry deleted.', 'SUCCESS');
-    return Promise.resolve();
   } catch (e) {
     console.error('Failed to delete log entry', e);
-    // OBR.notification.show('Failed to delete log entry.', 'ERROR');
-    return Promise.resolve();
   }
 };
 
 const updateRollEntry = async (logId: string, updater: (entry: RollLogEntry) => RollLogEntry) => {
-  const index = rollHistory.value.findIndex(entry => entry.type === LOG_TYPE_ROLL && entry.id === logId);
-  if (index === -1) return;
-
-  const currentEntry = rollHistory.value[index] as RollLogEntry;
-  const updatedEntry = updater(currentEntry);
-  if (!updatedEntry) return;
-
-  const newHistory = [...rollHistory.value];
-  newHistory[index] = updatedEntry;
-  rollHistory.value = newHistory;
+  const localIdx = rollHistory.value.findIndex(e => e.type === LOG_TYPE_ROLL && e.id === logId);
+  if (localIdx !== -1) {
+    const updatedEntry = updater(rollHistory.value[localIdx] as RollLogEntry);
+    if (updatedEntry) {
+      const updated = [...rollHistory.value];
+      updated[localIdx] = updatedEntry;
+      rollHistory.value = updated;
+    }
+  }
 
   try {
+    const metadata = await OBR.room.getMetadata();
+    const raw = metadata[logEntryKey(logId)] as Record<string, any> | undefined;
+    if (!raw) return;
+
+    const serverEntry = fromCompactLog(raw);
+    if (serverEntry.type !== LOG_TYPE_ROLL) return;
+
+    const updatedEntry = updater(serverEntry as RollLogEntry);
+    if (!updatedEntry) return;
+
     await OBR.room.setMetadata({
-      [LOGS_DATA_KEY]: toCompactLogs(newHistory),
+      [logEntryKey(logId)]: toCompactLog(updatedEntry),
     });
   } catch (e) {
     console.error('Failed to update roll entry', e);
@@ -376,17 +426,29 @@ const updateRollEntry = async (logId: string, updater: (entry: RollLogEntry) => 
 };
 
 const clearLogs = async () => {
-  // Optimistic
+  const currentLogs = [...rollHistory.value];
   rollHistory.value = [];
 
   try {
-    await OBR.room.setMetadata({
-      [LOGS_DATA_KEY]: []
-    });
-    // OBR.notification.show('Mission logs have been purged.', 'SUCCESS');
+    const metadata = await OBR.room.getMetadata();
+    const deletions: Record<string, undefined> = {};
+    for (const key of Object.keys(metadata)) {
+      if (key.startsWith(LOG_KEY_PREFIX)) {
+        deletions[key] = undefined;
+      }
+    }
+
+    if (currentLogs.length > 0) {
+      for (const entry of currentLogs) {
+        deletions[logEntryKey(entry.id)] = undefined;
+      }
+    }
+
+    if (Object.keys(deletions).length > 0) {
+      await OBR.room.setMetadata(deletions);
+    }
   } catch (e) {
     console.error('Failed to clear logs', e);
-    // OBR.notification.show('Failed to purge logs.', 'ERROR');
   }
 };
 
@@ -518,9 +580,22 @@ const importLogs = async (jsonContent: string) => {
 
     rollHistory.value = sanitized;
 
-    await OBR.room.setMetadata({
-      [LOGS_DATA_KEY]: toCompactLogs(sanitized),
-    });
+    const metadataUpdate: Record<string, any> = {};
+    for (const entry of sanitized) {
+      metadataUpdate[logEntryKey(entry.id)] = toCompactLog(entry);
+    }
+
+    const currentMetadata = await OBR.room.getMetadata();
+    for (const key of Object.keys(currentMetadata)) {
+      if (key.startsWith(LOG_KEY_PREFIX) && !metadataUpdate[key]) {
+        metadataUpdate[key] = undefined;
+      }
+    }
+    if (currentMetadata[LEGACY_LOGS_KEY] != null) {
+      metadataUpdate[LEGACY_LOGS_KEY] = undefined;
+    }
+
+    await OBR.room.setMetadata(metadataUpdate);
 
     // OBR.notification.show('Mission logs imported successfully', 'SUCCESS');
   } catch (e) {
@@ -627,26 +702,35 @@ const initListeners = async () => {
     }
   }
 
-  const rawLogs = (metadata[LOGS_DATA_KEY] as any[]) || [];
+  const rawLogs = (metadata[LEGACY_LOGS_KEY] as any[]) || [];
   const rawSettings = metadata[SETTINGS_DATA_KEY] as AppSettings | undefined;
 
   if (rawSettings) {
     settings.value = { ...settings.value, ...rawSettings };
   }
 
-  // Parse logs via compact deserialization (handles both legacy and compact formats)
-  const { logs: parsedLogs, needsMigration: logsMigration } = fromCompactLogs(rawLogs);
-  rollHistory.value = parsedLogs;
+  if (rawLogs.length > 0) {
+    const { logs: legacyParsed } = fromCompactLogs(rawLogs);
+    const migration: Record<string, any> = {};
+    for (const entry of legacyParsed) {
+      const key = logEntryKey(entry.id);
+      if (metadata[key] == null) {
+        migration[key] = toCompactLog(entry);
+      }
+    }
+    migration[LEGACY_LOGS_KEY] = undefined;
 
-  // One-time migration: re-save logs in compact format if legacy data detected
-  if (logsMigration && parsedLogs.length > 0) {
     try {
-      await OBR.room.setMetadata({ [LOGS_DATA_KEY]: toCompactLogs(parsedLogs) });
-      console.info('[RollForShoes] Migrated log data to compact format');
+      await OBR.room.setMetadata(migration);
+      console.info('[RollForShoes] Migrated logs from array to per-entry keys');
     } catch (e) {
       console.error('[RollForShoes] Log migration failed', e);
     }
   }
+
+  // Rebuild logs from per-entry keys (re-read metadata after potential migration)
+  const freshMetadata = rawLogs.length > 0 ? await OBR.room.getMetadata() : metadata;
+  rollHistory.value = rebuildLogsFromMetadata(freshMetadata);
 
   // Load initial role
   role.value = await OBR.player.getRole();
@@ -654,7 +738,6 @@ const initListeners = async () => {
   // Listen for room data changes
   unsubscribeRoom = OBR.room.onMetadataChange((newMetadata) => {
     const newData = newMetadata[ROOM_DATA_KEY] as Record<string, any>;
-    const newLogs = newMetadata[LOGS_DATA_KEY] as any[];
     const newSettings = newMetadata[SETTINGS_DATA_KEY] as AppSettings | undefined;
 
     if (newSettings) {
@@ -678,10 +761,7 @@ const initListeners = async () => {
       }
     }
 
-    if (newLogs) {
-      const { logs: parsed } = fromCompactLogs(newLogs);
-      rollHistory.value = parsed;
-    }
+    rollHistory.value = rebuildLogsFromMetadata(newMetadata as Record<string, unknown>);
   });
 
   // Listen for selection changes and role changes

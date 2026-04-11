@@ -19,6 +19,7 @@ export const MODAL_NPC_ROLL_POPOVER = 'npc-roll-popover';
 // Using a constant suffix to ensure we don't typo it elsewhere
 export const METADATA_SUFFIX_CHARACTERS = 'characters';
 export const METADATA_SUFFIX_LOGS = 'logs';
+export const METADATA_SUFFIX_LOG_ENTRY = 'log/v1/';
 export const METADATA_SUFFIX_LINK = 'link';
 export const METADATA_SUFFIX_SETTINGS = 'settings';
 
