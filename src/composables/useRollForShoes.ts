@@ -2,11 +2,12 @@ import { ref, computed, onMounted } from 'vue';
 import OBR from '@owlbear-rodeo/sdk';
 import getPluginId from '../utils/getPluginId';
 import type { Character, CharacterData, Skill, CharacterLink, LogEntry, RollLogEntry, SkillLogEntry, AppSettings } from '../types';
-import { fromCompactCharacters, fromCompactCharacter, toCompactCharacter, toCompactCharacters } from '../utils/compactCharacter';
+import { fromCompactCharacters, fromCompactCharacter, toCompactCharacter } from '../utils/compactCharacter';
 import { fromCompactLog, fromCompactLogs, toCompactLog } from '../utils/compactLog';
 import {
   ROLE_PLAYER,
   METADATA_SUFFIX_CHARACTERS,
+  METADATA_SUFFIX_CHAR_ENTRY,
   METADATA_SUFFIX_LOGS,
   METADATA_SUFFIX_LOG_ENTRY,
   METADATA_SUFFIX_LINK,
@@ -28,12 +29,14 @@ const settings = ref<AppSettings>({
 });
 
 // Constants
-const ROOM_DATA_KEY = getPluginId(METADATA_SUFFIX_CHARACTERS);
+const LEGACY_CHARS_KEY = getPluginId(METADATA_SUFFIX_CHARACTERS);
+const CHAR_KEY_PREFIX = getPluginId(METADATA_SUFFIX_CHAR_ENTRY);
 const LINK_KEY = getPluginId(METADATA_SUFFIX_LINK);
 const LEGACY_LOGS_KEY = getPluginId(METADATA_SUFFIX_LOGS);
 const LOG_KEY_PREFIX = getPluginId(METADATA_SUFFIX_LOG_ENTRY);
 const SETTINGS_DATA_KEY = getPluginId(METADATA_SUFFIX_SETTINGS);
 
+const charEntryKey = (id: string) => `${CHAR_KEY_PREFIX}${id}`;
 const logEntryKey = (id: string) => `${LOG_KEY_PREFIX}${id}`;
 
 // Initialization Flag
@@ -48,6 +51,17 @@ let unsubscribeRoom: (() => void) | null = null;
 let unsubscribeSelection: (() => void) | null = null;
 
 // --- Helper Functions ---
+
+const rebuildCharactersFromMetadata = (metadata: Record<string, unknown>): CharacterData => {
+  const result: CharacterData = {};
+  for (const [key, value] of Object.entries(metadata)) {
+    if (key.startsWith(CHAR_KEY_PREFIX) && value != null) {
+      const id = key.slice(CHAR_KEY_PREFIX.length);
+      result[id] = fromCompactCharacter(id, value as Record<string, any>);
+    }
+  }
+  return result;
+};
 
 // Computed helper to get list as array
 const characterList = computed({
@@ -65,33 +79,20 @@ const characterList = computed({
 // --- Actions ---
 
 const reorderCharacters = async (newOrder: Character[]) => {
-  // Create updates for all characters with new order indices
-  const updates: Record<string, Character> = {};
-  const roomMetadata = await OBR.room.getMetadata();
-  const currentData = (roomMetadata[ROOM_DATA_KEY] as CharacterData) || {};
+  const metadataUpdate: Record<string, any> = {};
 
   newOrder.forEach((char, index) => {
-    updates[char.id] = { ...char, order: index };
-    // Optimistic update
+    const updated = { ...char, order: index };
     if (characters.value[char.id]) {
       characters.value[char.id].order = index;
     }
+    metadataUpdate[charEntryKey(char.id)] = toCompactCharacter(updated);
   });
 
   try {
-    const compactUpdates: Record<string, any> = {};
-    for (const [id, char] of Object.entries(updates)) {
-      compactUpdates[id] = toCompactCharacter(char);
-    }
-
-    await OBR.room.setMetadata({
-      [ROOM_DATA_KEY]: {
-        ...currentData,
-        ...compactUpdates
-      }
-    });
+    await OBR.room.setMetadata(metadataUpdate);
   } catch (e) {
-    console.error("Failed to reorder characters", e);
+    console.error('Failed to reorder characters', e);
   }
 };
 
@@ -103,21 +104,14 @@ const createCharacter = async (name: string) => {
     name,
     xp: 0,
     skills: [{ name: 'Do Anything', rank: DEFAULT_DO_ANYTHING_RANK }],
-    order: existingCount // Append to end
+    order: existingCount
   };
 
-  // Optimistic update
   characters.value[id] = newChar;
 
   try {
-    const roomMetadata = await OBR.room.getMetadata();
-    const currentData = (roomMetadata[ROOM_DATA_KEY] as Record<string, any>) || {};
-
     await OBR.room.setMetadata({
-      [ROOM_DATA_KEY]: {
-        ...currentData,
-        [id]: toCompactCharacter(newChar)
-      }
+      [charEntryKey(id)]: toCompactCharacter(newChar),
     });
   } catch (e) {
     console.error('Failed to create character', e);
@@ -127,19 +121,12 @@ const createCharacter = async (name: string) => {
 const updateCharacter = async (id: string, updates: Partial<Character>) => {
   if (!characters.value[id]) return;
 
-  // Optimistic
   const updatedChar = { ...characters.value[id], ...updates };
   characters.value[id] = updatedChar;
 
   try {
-    const roomMetadata = await OBR.room.getMetadata();
-    const currentData = (roomMetadata[ROOM_DATA_KEY] as Record<string, any>) || {};
-
     await OBR.room.setMetadata({
-      [ROOM_DATA_KEY]: {
-        ...currentData,
-        [id]: toCompactCharacter(updatedChar)
-      }
+      [charEntryKey(id)]: toCompactCharacter(updatedChar),
     });
   } catch (e) {
     console.error('Failed to update character', e);
@@ -147,22 +134,14 @@ const updateCharacter = async (id: string, updates: Partial<Character>) => {
 };
 
 const deleteCharacter = async (id: string) => {
-  // Optimistic update
   delete characters.value[id];
 
   try {
-    const roomMetadata = await OBR.room.getMetadata();
-    const currentData = (roomMetadata[ROOM_DATA_KEY] as CharacterData) || {};
-
-    // Create a copy and remove the character
-    const newData = { ...currentData };
-    delete newData[id];
-
     await OBR.room.setMetadata({
-      [ROOM_DATA_KEY]: newData
+      [charEntryKey(id)]: undefined,
     });
   } catch (e) {
-    console.error("Failed to delete character", e);
+    console.error('Failed to delete character', e);
   }
 };
 
@@ -491,14 +470,25 @@ const importData = async (jsonContent: string) => {
       }
     }
 
-    // Parse through migration layer (handles both formats)
     const { characters: parsed } = fromCompactCharacters(data);
     characters.value = parsed;
 
-    // Always persist in compact format
-    await OBR.room.setMetadata({
-      [ROOM_DATA_KEY]: toCompactCharacters(parsed)
-    });
+    const metadataUpdate: Record<string, any> = {};
+    for (const [id, char] of Object.entries(parsed)) {
+      metadataUpdate[charEntryKey(id)] = toCompactCharacter(char);
+    }
+
+    const currentMetadata = await OBR.room.getMetadata();
+    for (const key of Object.keys(currentMetadata)) {
+      if (key.startsWith(CHAR_KEY_PREFIX) && !metadataUpdate[key]) {
+        metadataUpdate[key] = undefined;
+      }
+    }
+    if (currentMetadata[LEGACY_CHARS_KEY] != null) {
+      metadataUpdate[LEGACY_CHARS_KEY] = undefined;
+    }
+
+    await OBR.room.setMetadata(metadataUpdate);
 
     // OBR.notification.show('Data imported successfully');
   } catch (e) {
@@ -685,31 +675,41 @@ function rollDice(count: number, isLuckMode = false): number[] {
 const initListeners = async () => {
   if (!OBR.isAvailable) return;
 
-  // Load initial data and migrate if needed
   const metadata = await OBR.room.getMetadata();
-  const rawChars = (metadata[ROOM_DATA_KEY] as Record<string, any>) || {};
-  const { characters: parsedChars, needsMigration } = fromCompactCharacters(rawChars);
-  characters.value = parsedChars;
+  let metadataDirty = false;
 
-  // One-time migration: re-save in compact format if legacy data detected
-  if (needsMigration && Object.keys(parsedChars).length > 0) {
+  const rawChars = (metadata[LEGACY_CHARS_KEY] as Record<string, any>) || {};
+  const hasLegacyChars = Object.keys(rawChars).length > 0;
+
+  if (hasLegacyChars) {
+    const { characters: parsedChars } = fromCompactCharacters(rawChars);
+    const migration: Record<string, any> = {};
+    for (const [id, char] of Object.entries(parsedChars)) {
+      const key = charEntryKey(id);
+      if (metadata[key] == null) {
+        migration[key] = toCompactCharacter(char);
+      }
+    }
+    migration[LEGACY_CHARS_KEY] = undefined;
+
     try {
-      const compactData = toCompactCharacters(parsedChars);
-      await OBR.room.setMetadata({ [ROOM_DATA_KEY]: compactData });
-      console.info('[RollForShoes] Migrated character data to compact format');
+      await OBR.room.setMetadata(migration);
+      console.info('[RollForShoes] Migrated characters from shared key to per-entry keys');
+      metadataDirty = true;
     } catch (e) {
-      console.error('[RollForShoes] Migration failed', e);
+      console.error('[RollForShoes] Character migration failed', e);
     }
   }
 
   const rawLogs = (metadata[LEGACY_LOGS_KEY] as any[]) || [];
+  const hasLegacyLogs = rawLogs.length > 0;
   const rawSettings = metadata[SETTINGS_DATA_KEY] as AppSettings | undefined;
 
   if (rawSettings) {
     settings.value = { ...settings.value, ...rawSettings };
   }
 
-  if (rawLogs.length > 0) {
+  if (hasLegacyLogs) {
     const { logs: legacyParsed } = fromCompactLogs(rawLogs);
     const migration: Record<string, any> = {};
     for (const entry of legacyParsed) {
@@ -723,13 +723,14 @@ const initListeners = async () => {
     try {
       await OBR.room.setMetadata(migration);
       console.info('[RollForShoes] Migrated logs from array to per-entry keys');
+      metadataDirty = true;
     } catch (e) {
       console.error('[RollForShoes] Log migration failed', e);
     }
   }
 
-  // Rebuild logs from per-entry keys (re-read metadata after potential migration)
-  const freshMetadata = rawLogs.length > 0 ? await OBR.room.getMetadata() : metadata;
+  const freshMetadata = metadataDirty ? await OBR.room.getMetadata() : metadata;
+  characters.value = rebuildCharactersFromMetadata(freshMetadata);
   rollHistory.value = rebuildLogsFromMetadata(freshMetadata);
 
   // Load initial role
@@ -737,30 +738,13 @@ const initListeners = async () => {
 
   // Listen for room data changes
   unsubscribeRoom = OBR.room.onMetadataChange((newMetadata) => {
-    const newData = newMetadata[ROOM_DATA_KEY] as Record<string, any>;
     const newSettings = newMetadata[SETTINGS_DATA_KEY] as AppSettings | undefined;
 
     if (newSettings) {
       settings.value = { ...settings.value, ...newSettings };
     }
 
-    if (newData) {
-      const currentIds = new Set(Object.keys(characters.value));
-      const newIds = new Set(Object.keys(newData));
-
-      // Update/Add characters via compact deserialization
-      for (const [id, charData] of Object.entries(newData)) {
-        characters.value[id] = fromCompactCharacter(id, charData as Record<string, any>);
-      }
-
-      // Handle deletions
-      for (const id of currentIds) {
-        if (!newIds.has(id)) {
-          delete characters.value[id];
-        }
-      }
-    }
-
+    characters.value = rebuildCharactersFromMetadata(newMetadata as Record<string, unknown>);
     rollHistory.value = rebuildLogsFromMetadata(newMetadata as Record<string, unknown>);
   });
 

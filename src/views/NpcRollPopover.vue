@@ -3,12 +3,13 @@ import { onMounted, ref, computed } from 'vue';
 import OBR from '@owlbear-rodeo/sdk';
 import {
   MODAL_NPC_ROLL_POPOVER,
-  METADATA_SUFFIX_CHARACTERS,
+  METADATA_SUFFIX_CHAR_ENTRY,
   METADATA_SUFFIX_LINK,
   BROADCAST_NPC_ROLL_REQUEST,
 } from '../constants';
-import type { CharacterData, CharacterLink, NpcRollRequest } from '../types';
+import type { CharacterLink, NpcRollRequest } from '../types';
 import getPluginId from '../utils/getPluginId';
+import { fromCompactCharacter } from '../utils/compactCharacter';
 import RankPicker from '../components/RankPicker.vue';
 
 const params = new URLSearchParams(window.location.search);
@@ -25,7 +26,7 @@ const errorMessage = ref<string | null>(null);
 const MIN_DICE = 1;
 const MAX_DICE = 10;
 
-const charactersKey = getPluginId(METADATA_SUFFIX_CHARACTERS);
+const charKeyPrefix = getPluginId(METADATA_SUFFIX_CHAR_ENTRY);
 const linkKey = getPluginId(METADATA_SUFFIX_LINK);
 const popoverId = getPluginId(MODAL_NPC_ROLL_POPOVER);
 const npcRollChannel = getPluginId(BROADCAST_NPC_ROLL_REQUEST);
@@ -103,10 +104,14 @@ const hydrateDefaults = async () => {
     }
 
     const metadata = await OBR.room.getMetadata();
-    const characters = (metadata[charactersKey] as CharacterData | undefined) ?? undefined;
     const link = item.metadata[linkKey] as CharacterLink | undefined;
-    if (!tokenText && !tokenName && link?.characterId && characters?.[link.characterId]) {
-      npcName.value = characters[link.characterId].name;
+    if (!tokenText && !tokenName && link?.characterId) {
+      const charKey = `${charKeyPrefix}${link.characterId}`;
+      const rawChar = metadata[charKey] as Record<string, any> | undefined;
+      if (rawChar) {
+        const char = fromCompactCharacter(link.characterId, rawChar);
+        npcName.value = char.name;
+      }
     }
   } catch (error) {
     console.error('Failed to hydrate NPC popover defaults', error);
