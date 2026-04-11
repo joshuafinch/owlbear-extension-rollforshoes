@@ -106,23 +106,28 @@ const handleOverrideTap = (signal: OverrideSignal) => {
             <p class="text-xs text-gray-500">----------------------------------------</p>
         </div>
 
+        <!-- Export (Available to all players) -->
+        <div class="animate-fade-in">
+            <p class="text-sm mb-3 text-green-400 font-bold">> DATA_EXPORT:</p>
+            <div class="grid gap-4 pl-2 border-l-2 border-green-900 ml-1">
+                <button 
+                    @click="emit('export')"
+                    class="group text-left hover:bg-green-900/30 p-3 rounded transition-colors w-full"
+                >
+                    <p class="text-base font-bold text-white group-hover:text-green-300">
+                       <span class="text-green-600 mr-2">➜</span> EXECUTE_EXPORT_PROTOCOL()
+                    </p>
+                    <p class="text-xs text-gray-500 pl-6 mt-1">Dump current database to local JSON storage.</p>
+                </button>
+            </div>
+        </div>
+
         <!-- GM Controls -->
         <div v-if="isGm" class="space-y-8 animate-fade-in">
              <div>
-                <p class="text-sm mb-3 text-green-400 font-bold">> AVAILABLE COMMANDS:</p>
+                <p class="text-sm mb-3 text-green-400 font-bold">> ADMIN COMMANDS:</p>
                 
                 <div class="grid gap-4 pl-2 border-l-2 border-green-900 ml-1">
-                    <!-- Export -->
-                    <button 
-                        @click="emit('export')"
-                        class="group text-left hover:bg-green-900/30 p-3 rounded transition-colors w-full"
-                    >
-                        <p class="text-base font-bold text-white group-hover:text-green-300">
-                           <span class="text-green-600 mr-2">➜</span> EXECUTE_EXPORT_PROTOCOL()
-                        </p>
-                        <p class="text-xs text-gray-500 pl-6 mt-1">Dump current database to local JSON storage.</p>
-                    </button>
-
                     <!-- Import -->
                     <label class="group text-left hover:bg-green-900/30 p-3 rounded transition-colors cursor-pointer block w-full">
                          <p class="text-base font-bold text-white group-hover:text-green-300">
@@ -243,11 +248,11 @@ const handleOverrideTap = (signal: OverrideSignal) => {
              </div>
         </div>
 
-        <!-- Player View (Access Denied) -->
-        <div v-else class="h-64 flex flex-col items-center justify-center text-center space-y-4 opacity-50">
-            <div class="text-6xl">🔒</div>
-            <p class="text-2xl text-red-500 font-black tracking-widest blink">ACCESS DENIED</p>
-            <p class="text-sm">Administrative privileges required.</p>
+        <!-- Player View (Admin Restricted) -->
+        <div v-else class="flex flex-col items-center justify-center text-center space-y-3 opacity-50 py-8">
+            <div class="text-4xl">🔒</div>
+            <p class="text-sm text-red-500 font-bold tracking-widest">ADMIN COMMANDS RESTRICTED</p>
+            <p class="text-xs">Import, debug, and purge protocols require GM access.</p>
         </div>
 
     </div>
