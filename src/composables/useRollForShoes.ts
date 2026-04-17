@@ -5,6 +5,7 @@ import type { Character, CharacterData, Skill, CharacterLink, LogEntry, RollLogE
 import { fromCompactCharacters, fromCompactCharacter, toCompactCharacter } from '../utils/compactCharacter';
 import { fromCompactLog, fromCompactLogs, toCompactLog } from '../utils/compactLog';
 import {
+  ROLE_GM,
   ROLE_PLAYER,
   METADATA_SUFFIX_CHARACTERS,
   METADATA_SUFFIX_CHAR_ENTRY,
@@ -24,9 +25,10 @@ const rollHistory = ref<LogEntry[]>([]);
 const selectedItems = ref<string[]>([]);
 const role = ref<string>(ROLE_PLAYER);
 const activeCharacterId = ref<string | null>(null);
-const settings = ref<AppSettings>({
+const DEFAULT_SETTINGS: AppSettings = {
   luckModeEnabled: false,
-});
+};
+const settings = ref<AppSettings>({ ...DEFAULT_SETTINGS });
 
 // Constants
 const LEGACY_CHARS_KEY = getPluginId(METADATA_SUFFIX_CHARACTERS);
@@ -594,16 +596,19 @@ const importLogs = async (jsonContent: string) => {
   }
 };
 
+const isDefaultSettings = (s: AppSettings): boolean =>
+  (Object.keys(DEFAULT_SETTINGS) as (keyof AppSettings)[])
+    .every((k) => s[k] === DEFAULT_SETTINGS[k]);
+
 const updateSettings = async (updates: Partial<AppSettings>) => {
   const newSettings = { ...settings.value, ...updates };
-  // Optimistic
   settings.value = newSettings;
 
   try {
-    const cleanSettings = JSON.parse(JSON.stringify(newSettings));
-    await OBR.room.setMetadata({
-      [SETTINGS_DATA_KEY]: cleanSettings
-    });
+    const value = isDefaultSettings(newSettings)
+      ? undefined
+      : JSON.parse(JSON.stringify(newSettings));
+    await OBR.room.setMetadata({ [SETTINGS_DATA_KEY]: value });
   } catch (e) {
     console.error('Failed to update settings', e);
   }
@@ -678,10 +683,13 @@ const initListeners = async () => {
   const metadata = await OBR.room.getMetadata();
   let metadataDirty = false;
 
+  role.value = await OBR.player.getRole();
+  const isGm = role.value === ROLE_GM;
+
   const rawChars = (metadata[LEGACY_CHARS_KEY] as Record<string, any>) || {};
   const hasLegacyChars = Object.keys(rawChars).length > 0;
 
-  if (hasLegacyChars) {
+  if (hasLegacyChars && isGm) {
     const { characters: parsedChars } = fromCompactCharacters(rawChars);
     const migration: Record<string, any> = {};
     for (const [id, char] of Object.entries(parsedChars)) {
@@ -703,13 +711,49 @@ const initListeners = async () => {
 
   const rawLogs = (metadata[LEGACY_LOGS_KEY] as any[]) || [];
   const hasLegacyLogs = rawLogs.length > 0;
-  const rawSettings = metadata[SETTINGS_DATA_KEY] as AppSettings | undefined;
+  const rawSettings = metadata[SETTINGS_DATA_KEY] as Record<string, unknown> | undefined;
 
   if (rawSettings) {
-    settings.value = { ...settings.value, ...rawSettings };
+    // Only pick known keys to avoid persisting dead settings (e.g. missionReportBroadcastEnabled)
+    const KNOWN_SETTINGS_KEYS: (keyof AppSettings)[] = ['luckModeEnabled'];
+    const cleaned: Partial<AppSettings> = {};
+    let hasStaleKeys = false;
+
+    for (const key of KNOWN_SETTINGS_KEYS) {
+      if (key in rawSettings) {
+        (cleaned as Record<string, unknown>)[key] = rawSettings[key];
+      }
+    }
+
+    for (const key of Object.keys(rawSettings)) {
+      if (!KNOWN_SETTINGS_KEYS.includes(key as keyof AppSettings)) {
+        hasStaleKeys = true;
+      }
+    }
+
+    settings.value = { ...settings.value, ...cleaned };
+
+    const mergedSettings = settings.value;
+    const allDefaults = isDefaultSettings(mergedSettings);
+
+    if ((hasStaleKeys || allDefaults) && isGm) {
+      try {
+        await OBR.room.setMetadata({
+          [SETTINGS_DATA_KEY]: allDefaults
+            ? undefined
+            : JSON.parse(JSON.stringify(mergedSettings)),
+        });
+        console.info('[RollForShoes] Cleaned settings metadata' +
+          (hasStaleKeys ? ' (removed stale keys)' : '') +
+          (allDefaults ? ' (removed default-only entry)' : ''));
+        metadataDirty = true;
+      } catch (e) {
+        console.error('[RollForShoes] Settings cleanup failed', e);
+      }
+    }
   }
 
-  if (hasLegacyLogs) {
+  if (hasLegacyLogs && isGm) {
     const { logs: legacyParsed } = fromCompactLogs(rawLogs);
     const migration: Record<string, any> = {};
     for (const entry of legacyParsed) {
@@ -733,9 +777,6 @@ const initListeners = async () => {
   characters.value = rebuildCharactersFromMetadata(freshMetadata);
   rollHistory.value = rebuildLogsFromMetadata(freshMetadata);
 
-  // Load initial role
-  role.value = await OBR.player.getRole();
-
   // Listen for room data changes
   unsubscribeRoom = OBR.room.onMetadataChange((newMetadata) => {
     const newSettings = newMetadata[SETTINGS_DATA_KEY] as AppSettings | undefined;
@@ -748,7 +789,7 @@ const initListeners = async () => {
     rollHistory.value = rebuildLogsFromMetadata(newMetadata as Record<string, unknown>);
   });
 
-  // Listen for selection changes and role changes
+  // Listen for selection changes and role changes (for the current connected player)
   unsubscribeSelection = OBR.player.onChange(async (player) => {
     selectedItems.value = player.selection || [];
     role.value = player.role;
