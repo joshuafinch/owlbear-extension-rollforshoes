@@ -52,6 +52,9 @@ let unsubscribeRoom: (() => void) | null = null;
 // @ts-ignore
 let unsubscribeSelection: (() => void) | null = null;
 
+// Debounce timer for background log pruning on metadata changes
+let pruneDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
 // --- Helper Functions ---
 
 const rebuildCharactersFromMetadata = (metadata: Record<string, unknown>): CharacterData => {
@@ -775,7 +778,19 @@ const initListeners = async () => {
 
   const freshMetadata = metadataDirty ? await OBR.room.getMetadata() : metadata;
   characters.value = rebuildCharactersFromMetadata(freshMetadata);
-  rollHistory.value = rebuildLogsFromMetadata(freshMetadata);
+  const initLogs = rebuildLogsFromMetadata(freshMetadata);
+  rollHistory.value = initLogs;
+
+  if (isGm) {
+    const allLogEntries: LogEntry[] = [];
+    for (const [key, value] of Object.entries(freshMetadata)) {
+      if (key.startsWith(LOG_KEY_PREFIX) && value != null) {
+        allLogEntries.push(fromCompactLog(value as Record<string, any>));
+      }
+    }
+    allLogEntries.sort((a, b) => b.timestamp - a.timestamp || b.id.localeCompare(a.id));
+    await pruneExcessLogs(allLogEntries);
+  }
 
   // Listen for room data changes
   unsubscribeRoom = OBR.room.onMetadataChange((newMetadata) => {
@@ -787,6 +802,21 @@ const initListeners = async () => {
 
     characters.value = rebuildCharactersFromMetadata(newMetadata as Record<string, unknown>);
     rollHistory.value = rebuildLogsFromMetadata(newMetadata as Record<string, unknown>);
+
+    if (isGm) {
+      if (pruneDebounceTimer) clearTimeout(pruneDebounceTimer);
+      pruneDebounceTimer = setTimeout(async () => {
+        const freshMeta = await OBR.room.getMetadata();
+        const allLogEntries: LogEntry[] = [];
+        for (const [key, value] of Object.entries(freshMeta)) {
+          if (key.startsWith(LOG_KEY_PREFIX) && value != null) {
+            allLogEntries.push(fromCompactLog(value as Record<string, any>));
+          }
+        }
+        allLogEntries.sort((a, b) => b.timestamp - a.timestamp || b.id.localeCompare(a.id));
+        await pruneExcessLogs(allLogEntries);
+      }, 2000);
+    }
   });
 
   // Listen for selection changes and role changes (for the current connected player)
